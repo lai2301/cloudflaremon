@@ -1,5 +1,7 @@
 # Cloudflare Heartbeat Monitor
 
+[![Deploy to Cloudflare Workers](https://github.com/your-username/cloudflaremon/actions/workflows/deploy.yml/badge.svg)](https://github.com/your-username/cloudflaremon/actions/workflows/deploy.yml)
+
 A push-based Cloudflare Worker heartbeat monitoring solution for internal network services. Your internal services send heartbeats TO the Cloudflare Worker, eliminating the need to expose your services to the public internet.
 
 ## Features
@@ -90,11 +92,32 @@ Edit `services.json` to add your services to monitor:
 
 ### 5. Deploy the Worker
 
+#### Option A: Deploy Manually
+
 ```bash
 npm run deploy
 ```
 
 Your worker will be deployed to Cloudflare's network!
+
+#### Option B: Deploy via GitHub Actions (Recommended)
+
+Set up automated deployment with GitHub Actions:
+
+1. **Add secrets to your GitHub repository:**
+   - `CLOUDFLARE_API_TOKEN` - Get from Cloudflare Dashboard → API Tokens
+   - `CLOUDFLARE_ACCOUNT_ID` - Get from Cloudflare Dashboard → Workers
+
+2. **Push to GitHub:**
+   ```bash
+   git add .
+   git commit -m "Initial commit"
+   git push origin main
+   ```
+
+3. **Automatic deployment** will trigger on every push to `main`!
+
+See [`.github/DEPLOYMENT.md`](.github/DEPLOYMENT.md) for detailed setup instructions.
 
 ## Usage
 

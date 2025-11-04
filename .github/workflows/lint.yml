@@ -1,0 +1,44 @@
+name: Lint and Validate
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    name: Lint Code
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate wrangler.toml
+        run: npx wrangler deploy --dry-run
+
+      - name: Validate services.json
+        run: |
+          if ! jq empty services.json 2>/dev/null; then
+            echo "services.json is not valid JSON"
+            exit 1
+          fi
+          echo "services.json is valid"
+
+      - name: Check for TODO/FIXME comments
+        run: |
+          if grep -r "TODO\|FIXME" src/ --exclude-dir=node_modules; then
+            echo "Found TODO/FIXME comments. Please resolve before merging."
+            exit 1
+          fi
+        continue-on-error: true
+

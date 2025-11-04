@@ -1,0 +1,49 @@
+name: Deploy to Cloudflare Workers
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:  # Allows manual trigger from GitHub Actions tab
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy Worker
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fetch Account ID
+        id: fetch_account_id
+        run: |
+          if [[ -n "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" ]]; then
+            ACCOUNT_ID="${{ secrets.CLOUDFLARE_ACCOUNT_ID }}"
+            echo "Using provided CLOUDFLARE_ACCOUNT_ID from secrets."
+          else
+            ACCOUNT_ID=$(curl -X GET "https://api.cloudflare.com/client/v4/accounts" -H "Authorization: Bearer ${apiToken}" -H "Content-Type:application/json" | jq ".result[0].id" -r)
+            if [[ "$ACCOUNT_ID" == "null" ]]; then
+              echo "Failed to get an account id, please make sure you have set up apiToken correctly!"
+              exit 1
+            fi
+          fi
+          echo 'account_id='$ACCOUNT_ID >> $GITHUB_OUTPUT
+
+        env:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ steps.fetch_account_id.outputs.account_id }}
+
