@@ -1,0 +1,12 @@
+# Cloudflare Heartbeat Monitor - Crontab Example
+# Edit with: crontab -e
+
+# Send heartbeat every 2 minutes using bash script
+*/2 * * * * /usr/local/bin/heartbeat-client.sh >> /var/log/heartbeat.log 2>&1
+
+# Or use Python script
+# */2 * * * * /usr/bin/python3 /usr/local/bin/heartbeat-client.py >> /var/log/heartbeat.log 2>&1
+
+# Or use Node.js script
+# */2 * * * * /usr/bin/node /usr/local/bin/heartbeat-client.js >> /var/log/heartbeat.log 2>&1
+

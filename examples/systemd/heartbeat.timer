@@ -1,0 +1,13 @@
+[Unit]
+Description=Run Cloudflare Heartbeat Monitor every 2 minutes
+Requires=heartbeat.service
+
+[Timer]
+# Run every 2 minutes
+OnBootSec=1min
+OnUnitActiveSec=2min
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target
+

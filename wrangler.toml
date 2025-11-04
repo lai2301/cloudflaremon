@@ -1,0 +1,18 @@
+name = "heartbeat-monitor"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+# KV Namespace for storing heartbeat logs
+[[kv_namespaces]]
+binding = "HEARTBEAT_LOGS"
+id = "your_kv_namespace_id"  # Replace with your actual KV namespace ID after creation
+
+# Cron trigger - checks for stale heartbeats every 5 minutes
+[triggers]
+crons = ["*/5 * * * *"]
+
+# Variables for configuration
+[vars]
+# Maximum number of log entries to keep per service
+MAX_LOG_ENTRIES = "100"
+
