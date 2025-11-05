@@ -19,6 +19,8 @@ export default {
       return handleGetLogs(env, url);
     } else if (url.pathname === '/api/status') {
       return handleGetStatus(env);
+    } else if (url.pathname === '/api/uptime') {
+      return handleGetUptime(env, url);
     } else if (url.pathname === '/api/services') {
       // List configured services
       return new Response(JSON.stringify(servicesConfig.services, null, 2), {
@@ -163,6 +165,9 @@ async function checkHeartbeatStaleness(env) {
   // Store summary
   await storeSummary(env, results, timestamp);
 
+  // Store daily uptime statistics
+  await storeDailyUptime(env, results, timestamp);
+
   return results;
 }
 
@@ -253,6 +258,85 @@ async function storeSummary(env, results, timestamp) {
     await env.HEARTBEAT_LOGS.put(summaryKey, JSON.stringify(history));
   } catch (error) {
     console.error('Error storing summary:', error);
+  }
+}
+
+/**
+ * Store daily uptime statistics
+ */
+async function storeDailyUptime(env, results, timestamp) {
+  const today = new Date(timestamp).toISOString().split('T')[0]; // YYYY-MM-DD format
+
+  for (const result of results) {
+    const uptimeKey = `uptime:${result.serviceId}:${today}`;
+    
+    try {
+      // Get existing data for today
+      const existingDataJson = await env.HEARTBEAT_LOGS.get(uptimeKey);
+      let dailyData = existingDataJson ? JSON.parse(existingDataJson) : {
+        date: today,
+        serviceId: result.serviceId,
+        serviceName: result.serviceName,
+        totalChecks: 0,
+        upChecks: 0,
+        downChecks: 0,
+        degradedChecks: 0,
+        unknownChecks: 0,
+        uptimePercentage: 0
+      };
+
+      // Increment counters
+      dailyData.totalChecks++;
+      if (result.status === 'up') {
+        dailyData.upChecks++;
+      } else if (result.status === 'down') {
+        dailyData.downChecks++;
+      } else if (result.status === 'degraded') {
+        dailyData.degradedChecks++;
+      } else {
+        dailyData.unknownChecks++;
+      }
+
+      // Calculate uptime percentage (exclude unknown from calculation)
+      const knownChecks = dailyData.totalChecks - dailyData.unknownChecks;
+      if (knownChecks > 0) {
+        dailyData.uptimePercentage = ((dailyData.upChecks + dailyData.degradedChecks * 0.5) / knownChecks * 100).toFixed(2);
+      }
+
+      dailyData.lastUpdate = timestamp;
+
+      // Store updated data
+      await env.HEARTBEAT_LOGS.put(uptimeKey, JSON.stringify(dailyData));
+
+      // Also update the service's uptime history index
+      await updateUptimeHistory(env, result.serviceId, today);
+    } catch (error) {
+      console.error(`Error storing daily uptime for ${result.serviceId}:`, error);
+    }
+  }
+}
+
+/**
+ * Update uptime history index for a service
+ */
+async function updateUptimeHistory(env, serviceId, date) {
+  try {
+    const historyKey = `uptime:${serviceId}:index`;
+    const historyJson = await env.HEARTBEAT_LOGS.get(historyKey);
+    let dates = historyJson ? JSON.parse(historyJson) : [];
+
+    // Add date if not already present
+    if (!dates.includes(date)) {
+      dates.push(date);
+      // Keep only last 90 days
+      dates.sort();
+      if (dates.length > 90) {
+        dates = dates.slice(-90);
+      }
+      await env.HEARTBEAT_LOGS.put(historyKey, JSON.stringify(dates));
+    }
+  } catch (error) {
+    console.error(`Error updating uptime history for ${serviceId}:`, error);
   }
 }
 
@@ -528,6 +612,11 @@ async function handleDashboard(env) {
         .uptime-day:hover {
             opacity: 0.8;
             cursor: pointer;
+            transform: scaleY(1.1);
+        }
+        
+        .uptime-day[title] {
+            white-space: pre-line;
         }
         
         .uptime-labels {
@@ -664,7 +753,7 @@ async function handleDashboard(env) {
         
         <footer>
             <div id="lastUpdate" style="margin-bottom: 12px;"></div>
-            <button class="refresh-btn" onclick="loadStatus()">
+            <button class="refresh-btn" onclick="refreshStatus()">
                 <span>↻</span>
                 <span>Refresh</span>
             </button>
@@ -672,6 +761,9 @@ async function handleDashboard(env) {
     </div>
     
     <script>
+        // Cache for uptime data
+        const uptimeCache = {};
+
         function formatDuration(ms) {
             const seconds = Math.floor(ms / 1000);
             const minutes = Math.floor(seconds / 60);
@@ -684,31 +776,58 @@ async function handleDashboard(env) {
             return \`\${seconds}s ago\`;
         }
 
-        function generateUptimeBar(status) {
-            // Generate 90 days of mock uptime data based on current status
-            const days = 90;
-            let html = '';
-            for (let i = 0; i < days; i++) {
-                // Mock data: mostly up, with occasional issues
-                let dayStatus = 'up';
-                if (status === 'down' && i >= days - 3) {
-                    dayStatus = 'down';
-                } else if (status === 'unknown') {
-                    dayStatus = 'unknown';
-                } else if (Math.random() > 0.97) {
-                    dayStatus = Math.random() > 0.5 ? 'degraded' : 'down';
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        function generateUptimeBar(uptimeData) {
+            if (!uptimeData || !uptimeData.days) {
+                // Fallback to empty bars if no data
+                let html = '';
+                for (let i = 0; i < 90; i++) {
+                    html += \`<div class="uptime-day unknown" title="No data"></div>\`;
                 }
-                html += \`<div class="uptime-day \${dayStatus}" title="Day \${days - i}"></div>\`;
+                return html;
             }
+
+            let html = '';
+            uptimeData.days.forEach(day => {
+                let dayStatus = 'unknown';
+                let tooltipText = \`\${formatDate(day.date)}: No data\`;
+                
+                if (day.totalChecks > 0) {
+                    const uptimePercent = parseFloat(day.uptimePercentage);
+                    if (uptimePercent >= 99) {
+                        dayStatus = 'up';
+                    } else if (uptimePercent >= 90) {
+                        dayStatus = 'degraded';
+                    } else if (uptimePercent >= 0) {
+                        dayStatus = 'down';
+                    }
+                    tooltipText = \`\${formatDate(day.date)}\\nUptime: \${day.uptimePercentage}%\\nChecks: \${day.totalChecks} (↑\${day.upChecks} ↓\${day.downChecks})\`;
+                }
+                
+                html += \`<div class="uptime-day \${dayStatus}" title="\${tooltipText}"></div>\`;
+            });
+            
             return html;
         }
 
-        function calculateUptime(status) {
-            // Mock uptime percentage
-            if (status === 'up') return '99.98%';
-            if (status === 'degraded') return '95.20%';
-            if (status === 'down') return '85.50%';
-            return 'N/A';
+        async function fetchUptimeData(serviceId) {
+            if (uptimeCache[serviceId]) {
+                return uptimeCache[serviceId];
+            }
+            
+            try {
+                const response = await fetch(\`/api/uptime?serviceId=\${serviceId}\`);
+                const data = await response.json();
+                uptimeCache[serviceId] = data;
+                return data;
+            } catch (error) {
+                console.error(\`Error fetching uptime for \${serviceId}:\`, error);
+                return null;
+            }
         }
         
         async function loadStatus() {
@@ -732,14 +851,24 @@ async function handleDashboard(env) {
                 const allUp = summary.servicesDown === 0 && summary.servicesDegraded === 0;
                 const hasIssues = summary.servicesDown > 0;
                 
+                // Get list of down services
+                const downServices = summary.results.filter(s => s.status === 'down');
+                const degradedServices = summary.results.filter(s => s.status === 'degraded');
+                
                 // Update overall status
                 const statusClass = hasIssues ? 'issues' : (summary.servicesDegraded > 0 ? 'degraded' : 'operational');
                 const statusTitle = hasIssues ? 'Some systems are down' : (summary.servicesDegraded > 0 ? 'Degraded performance' : 'All systems operational');
-                const statusDesc = hasIssues 
-                    ? \`\${summary.servicesDown} service(s) experiencing issues\`
-                    : (summary.servicesDegraded > 0 
-                        ? \`\${summary.servicesDegraded} service(s) degraded\`
-                        : 'All monitored services are running normally');
+                
+                let statusDesc = '';
+                if (hasIssues) {
+                    const downList = downServices.map(s => s.serviceName).join(', ');
+                    statusDesc = \`\${summary.servicesDown} service(s) down: \${downList}\`;
+                } else if (summary.servicesDegraded > 0) {
+                    const degradedList = degradedServices.map(s => s.serviceName).join(', ');
+                    statusDesc = \`\${summary.servicesDegraded} service(s) degraded: \${degradedList}\`;
+                } else {
+                    statusDesc = 'All monitored services are running normally';
+                }
                 
                 document.getElementById('overallStatus').innerHTML = \`
                     <div class="status-indicator \${statusClass}"></div>
@@ -783,11 +912,18 @@ async function handleDashboard(env) {
                     \` : ''}
                 \`;
                 
-                // Update services
-                const servicesHtml = summary.results.map(service => {
+                // Update services - fetch uptime data for each service
+                document.getElementById('services').innerHTML = '<div class="loading"><p>Loading uptime data...</p></div>';
+                
+                const servicesWithUptime = await Promise.all(summary.results.map(async (service) => {
+                    const uptimeData = await fetchUptimeData(service.serviceId);
+                    return { service, uptimeData };
+                }));
+                
+                const servicesHtml = servicesWithUptime.map(({ service, uptimeData }) => {
                     const icon = service.status === 'up' ? '✓' : (service.status === 'down' ? '✕' : '●');
                     const timeSince = service.lastSeen ? formatDuration(Date.now() - new Date(service.lastSeen).getTime()) : 'Never';
-                    const uptime = calculateUptime(service.status);
+                    const uptime = uptimeData && uptimeData.overallUptime > 0 ? \`\${uptimeData.overallUptime}%\` : 'N/A';
                     
                     return \`
                     <div class="service-item">
@@ -798,7 +934,7 @@ async function handleDashboard(env) {
                         </div>
                         <div class="uptime-bar-container">
                             <div class="uptime-bar">
-                                \${generateUptimeBar(service.status)}
+                                \${generateUptimeBar(uptimeData)}
                             </div>
                             <div class="uptime-labels">
                                 <span>90 days ago</span>
@@ -814,6 +950,12 @@ async function handleDashboard(env) {
                                 <span class="meta-label">Threshold:</span>
                                 <span>\${Math.floor(service.stalenessThreshold / 1000 / 60)}m</span>
                             </div>
+                            \${uptimeData && uptimeData.totalDays > 0 ? \`
+                            <div class="meta-item">
+                                <span class="meta-label">Tracked days:</span>
+                                <span>\${uptimeData.totalDays}/90</span>
+                            </div>
+                            \` : ''}
                         </div>
                     </div>
                     \`;
@@ -832,6 +974,13 @@ async function handleDashboard(env) {
                     </div>
                 \`;
             }
+        }
+        
+        // Clear cache and reload
+        function refreshStatus() {
+            // Clear uptime cache
+            Object.keys(uptimeCache).forEach(key => delete uptimeCache[key]);
+            loadStatus();
         }
         
         // Load status on page load
@@ -881,5 +1030,89 @@ async function handleGetStatus(env) {
   return new Response(JSON.stringify({ summary }, null, 2), {
     headers: { 'Content-Type': 'application/json' }
   });
+}
+
+/**
+ * Handle get uptime history API
+ */
+async function handleGetUptime(env, url) {
+  const serviceId = url.searchParams.get('serviceId');
+  
+  if (!serviceId) {
+    return new Response(JSON.stringify({ error: 'serviceId parameter required' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  try {
+    // Get the list of dates for this service
+    const historyKey = `uptime:${serviceId}:index`;
+    const historyJson = await env.HEARTBEAT_LOGS.get(historyKey);
+    const dates = historyJson ? JSON.parse(historyJson) : [];
+
+    // Fetch uptime data for all dates
+    const uptimeData = [];
+    for (const date of dates) {
+      const uptimeKey = `uptime:${serviceId}:${date}`;
+      const dataJson = await env.HEARTBEAT_LOGS.get(uptimeKey);
+      if (dataJson) {
+        uptimeData.push(JSON.parse(dataJson));
+      }
+    }
+
+    // Fill in missing days with null data up to 90 days
+    const today = new Date();
+    const last90Days = [];
+    for (let i = 89; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      
+      const existingData = uptimeData.find(d => d.date === dateStr);
+      if (existingData) {
+        last90Days.push(existingData);
+      } else {
+        last90Days.push({
+          date: dateStr,
+          serviceId: serviceId,
+          totalChecks: 0,
+          upChecks: 0,
+          downChecks: 0,
+          degradedChecks: 0,
+          unknownChecks: 0,
+          uptimePercentage: null,
+          status: 'no-data'
+        });
+      }
+    }
+
+    // Calculate overall uptime percentage for the period
+    const totalChecksAll = uptimeData.reduce((sum, d) => sum + d.totalChecks, 0);
+    const upChecksAll = uptimeData.reduce((sum, d) => sum + d.upChecks, 0);
+    const degradedChecksAll = uptimeData.reduce((sum, d) => sum + d.degradedChecks, 0);
+    const unknownChecksAll = uptimeData.reduce((sum, d) => sum + d.unknownChecks, 0);
+    const knownChecksAll = totalChecksAll - unknownChecksAll;
+    
+    let overallUptime = 0;
+    if (knownChecksAll > 0) {
+      overallUptime = ((upChecksAll + degradedChecksAll * 0.5) / knownChecksAll * 100).toFixed(2);
+    }
+
+    return new Response(JSON.stringify({
+      serviceId: serviceId,
+      days: last90Days,
+      overallUptime: overallUptime,
+      totalDays: last90Days.filter(d => d.totalChecks > 0).length
+    }, null, 2), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (error) {
+    console.error('Error fetching uptime data:', error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
 }
 
