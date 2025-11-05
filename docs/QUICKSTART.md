@@ -14,18 +14,61 @@ Get your Cloudflare Heartbeat Monitor running in 10 minutes!
 npm install
 ```
 
-## Step 2: Create KV Namespace (1 min)
+## Step 2: Create KV Namespace (Optional - Auto-Created!)
+
+**🎉 NEW: You can skip this step!**
+
+The GitHub Actions workflow will automatically create the KV namespace for you on first deployment.
+
+**But if you prefer to set it up beforehand:**
+
+### Option A: Let GitHub Actions Handle It (Easiest)
+
+Just skip to Step 3. The workflow will create everything automatically!
+
+### Option B: Create Locally with Terraform
+
+```bash
+cd terraform
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars with your Cloudflare credentials
+
+terraform init
+terraform apply
+# Type 'yes' when prompted
+
+cd ..
+```
+
+### Option C: Manual (Traditional)
 
 ```bash
 npx wrangler kv:namespace create "HEARTBEAT_LOGS"
 ```
 
-Copy the namespace ID from the output and paste it into `wrangler.toml`:
+**You'll see output like this:**
+```
+✨ Success!
+Add the following to your configuration file:
+{ binding = "HEARTBEAT_LOGS", id = "abc123def456ghi789jkl0" }
+```
 
+**Copy the ID and update `wrangler.toml`:**
+
+**Before:**
 ```toml
-[[kv_namespaces]]
-binding = "HEARTBEAT_LOGS"
-id = "your_namespace_id_here"  # Paste your ID here
+id = "YOUR_KV_NAMESPACE_ID_HERE"
+```
+
+**After:**
+```toml
+id = "abc123def456ghi789jkl0"  # ← Your actual ID
+```
+
+**Verify:**
+```bash
+# This should return nothing (placeholder should be gone)
+grep "YOUR_KV_NAMESPACE_ID_HERE" wrangler.toml
 ```
 
 ## Step 3: Configure Services (2 min)

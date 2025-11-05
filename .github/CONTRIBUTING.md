@@ -52,9 +52,10 @@ npx wrangler deploy --dry-run
 ### Documentation
 
 - Update README.md for user-facing changes
-- Update ARCHITECTURE.md for design changes
+- Update docs/ARCHITECTURE.md for design changes
 - Add comments to code for clarity
 - Include examples where helpful
+- Update docs/QUICKSTART.md if setup process changes
 
 ### Commit Messages
 
@@ -187,7 +188,7 @@ If you discover a security vulnerability:
 
 - Open a [Discussion](https://github.com/your-username/cloudflaremon/discussions)
 - Check existing [Issues](https://github.com/your-username/cloudflaremon/issues)
-- Review the [README](../README.md) and [ARCHITECTURE](../ARCHITECTURE.md)
+- Review the [README](../README.md) and [ARCHITECTURE](../docs/ARCHITECTURE.md)
 
 ## License
 

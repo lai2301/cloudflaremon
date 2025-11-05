@@ -35,9 +35,24 @@ jobs:
           fi
           echo "✅ services.json is valid"
 
+      - name: Check KV namespace configuration
+        run: |
+          echo "Checking KV namespace ID..."
+          if grep -q "YOUR_KV_NAMESPACE_ID_HERE" wrangler.toml; then
+            echo "❌ ERROR: KV namespace ID is not configured!"
+            echo ""
+            echo "You must create a KV namespace and update wrangler.toml:"
+            echo "  1. Run: npx wrangler kv:namespace create \"HEARTBEAT_LOGS\""
+            echo "  2. Copy the namespace ID from the output"
+            echo "  3. Update the 'id' field in wrangler.toml"
+            echo ""
+            exit 1
+          fi
+          echo "✅ KV namespace ID is configured"
+
       - name: Validate wrangler configuration
         run: |
-          echo "Validating wrangler.toml..."
+          echo "Validating wrangler.toml syntax..."
           npx wrangler deploy --dry-run
           echo "✅ Configuration is valid"
 

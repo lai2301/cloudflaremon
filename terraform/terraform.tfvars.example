@@ -1,0 +1,8 @@
+# Copy this file to terraform.tfvars and fill in your values
+# DO NOT commit terraform.tfvars to git (it's in .gitignore)
+
+cloudflare_api_token   = "your-cloudflare-api-token-here"
+cloudflare_account_id  = "your-cloudflare-account-id-here"
+worker_name            = "heartbeat-monitor"
+compatibility_date     = "2024-01-01"
+

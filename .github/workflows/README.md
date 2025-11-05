@@ -27,7 +27,7 @@ This directory contains automated CI/CD workflows for the Cloudflare Heartbeat M
 
 ## Workflows
 
-### 1. `deploy.yml` - Production Deployment
+### 1. `deploy.yml` - Production Deployment with Auto-Setup
 
 **File:** `.github/workflows/deploy.yml`
 
@@ -40,7 +40,17 @@ This directory contains automated CI/CD workflows for the Cloudflare Heartbeat M
 2. Setup Node.js 20 with npm cache
 3. Install dependencies (`npm ci`)
 4. Fetch Account ID (from secret or API)
-5. Deploy to Cloudflare Workers
+5. **Check if KV namespace needs creation**
+6. **If needed: Setup Terraform**
+7. **If needed: Create KV namespace with Terraform**
+8. **If needed: Commit updated wrangler.toml**
+9. Deploy to Cloudflare Workers
+
+**Smart Setup:**
+- ✨ Automatically creates KV namespace on first deployment
+- ✨ Uses Terraform to provision infrastructure
+- ✨ Commits updated `wrangler.toml` automatically
+- ✨ Skips setup on subsequent deployments (already configured)
 
 **Required Secrets:**
 - `CLOUDFLARE_API_TOKEN` ✅ Required
@@ -48,7 +58,9 @@ This directory contains automated CI/CD workflows for the Cloudflare Heartbeat M
 **Optional Secrets:**
 - `CLOUDFLARE_ACCOUNT_ID` (fetched from API if not provided)
 
-**Duration:** ~1-2 minutes
+**Duration:** 
+- First deployment: ~3-4 minutes (includes Terraform setup)
+- Subsequent deployments: ~1-2 minutes (skips Terraform)
 
 ---
 
@@ -269,6 +281,7 @@ All workflows run within GitHub Actions free tier:
 
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
 - [Cloudflare Wrangler Action](https://github.com/cloudflare/wrangler-action)
-- [Project README](../README.md)
-- [Deployment Guide](DEPLOYMENT.md)
+- [Project README](../../README.md)
+- [Deployment Guide](../../docs/DEPLOYMENT.md)
+- [All Documentation](../../docs/README.md)
 

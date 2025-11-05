@@ -7,9 +7,11 @@ on:
   workflow_dispatch:  # Allows manual trigger from GitHub Actions tab
 
 jobs:
-  deploy:
+  setup-and-deploy:
     runs-on: ubuntu-latest
-    name: Deploy Worker
+    name: Setup Infrastructure & Deploy
+    permissions:
+      contents: write  # To commit updated wrangler.toml
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -40,6 +42,58 @@ jobs:
             echo "Fetched Account ID from API."
           fi
           echo "account_id=$ACCOUNT_ID" >> $GITHUB_OUTPUT
+
+      - name: Check if KV namespace needs to be created
+        id: check_kv
+        run: |
+          if grep -q "YOUR_KV_NAMESPACE_ID_HERE" wrangler.toml; then
+            echo "needs_setup=true" >> $GITHUB_OUTPUT
+            echo "🔧 KV namespace not configured, will create with Terraform"
+          else
+            echo "needs_setup=false" >> $GITHUB_OUTPUT
+            echo "✅ KV namespace already configured"
+          fi
+
+      - name: Setup Terraform
+        if: steps.check_kv.outputs.needs_setup == 'true'
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~> 1.0"
+
+      - name: Create terraform.tfvars
+        if: steps.check_kv.outputs.needs_setup == 'true'
+        run: |
+          cat > terraform/terraform.tfvars << EOF
+          cloudflare_api_token   = "${{ secrets.CLOUDFLARE_API_TOKEN }}"
+          cloudflare_account_id  = "${{ steps.fetch_account_id.outputs.account_id }}"
+          worker_name            = "heartbeat-monitor"
+          compatibility_date     = "2024-01-01"
+          EOF
+
+      - name: Terraform Init
+        if: steps.check_kv.outputs.needs_setup == 'true'
+        run: terraform init
+        working-directory: terraform
+
+      - name: Terraform Apply
+        if: steps.check_kv.outputs.needs_setup == 'true'
+        run: terraform apply -auto-approve
+        working-directory: terraform
+
+      - name: Commit updated wrangler.toml
+        if: steps.check_kv.outputs.needs_setup == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          if git diff --quiet wrangler.toml; then
+            echo "No changes to commit"
+          else
+            git add wrangler.toml
+            git commit -m "chore: Configure KV namespace via Terraform [skip ci]"
+            git push
+            echo "✅ Updated wrangler.toml committed"
+          fi
 
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3

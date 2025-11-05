@@ -1,7 +1,0 @@
-# Example environment variables for local development
-# Copy this file to .dev.vars and fill in your values
-
-# These variables are defined in wrangler.toml for production
-# MAX_LOG_ENTRIES=100
-# REQUEST_TIMEOUT=10000
-

@@ -4,6 +4,8 @@
 
 A push-based Cloudflare Worker heartbeat monitoring solution for internal network services. Your internal services send heartbeats TO the Cloudflare Worker, eliminating the need to expose your services to the public internet.
 
+**📖 [View Full Documentation](docs/README.md)** | **🚀 [Quick Start Guide](docs/QUICKSTART.md)** | **🏗️ [Architecture](docs/ARCHITECTURE.md)**
+
 ## Features
 
 - 📤 **Push-Based Architecture**: Internal services send heartbeats to the worker (not vice versa)
@@ -44,24 +46,59 @@ npm install
 
 ### 3. Create KV Namespace
 
-Create a KV namespace for storing heartbeat logs:
+You have **two options** to create the KV namespace:
+
+#### Option A: Using Terraform (Recommended - Automated)
+
+```bash
+cd terraform
+
+# Copy and configure variables
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars with your Cloudflare API token and Account ID
+
+# Initialize Terraform
+terraform init
+
+# Create KV namespace and update wrangler.toml automatically
+terraform apply
+```
+
+✅ **Advantages:**
+- Fully automated
+- Automatically updates `wrangler.toml`
+- Reproducible and version-controlled
+- Great for teams
+
+📚 **See [terraform/README.md](terraform/README.md) for detailed Terraform instructions**
+
+#### Option B: Manual Creation with Wrangler CLI
 
 ```bash
 npx wrangler kv:namespace create "HEARTBEAT_LOGS"
 ```
 
-This will output a namespace ID. Copy this ID and update the `wrangler.toml` file:
+**Example output:**
+```
+🌀 Creating namespace with title "heartbeat-monitor-HEARTBEAT_LOGS"
+✨ Success!
+Add the following to your configuration file in your kv_namespaces array:
+{ binding = "HEARTBEAT_LOGS", id = "abc123def456ghi789jkl0" }
+```
+
+**IMPORTANT:** Copy the ID (e.g., `abc123def456ghi789jkl0`) and update `wrangler.toml`:
 
 ```toml
 [[kv_namespaces]]
 binding = "HEARTBEAT_LOGS"
-id = "your_actual_namespace_id_here"
+id = "abc123def456ghi789jkl0"  # ← Use your actual ID here!
 ```
 
-For production, also create a preview namespace:
-
+**Verify the change:**
 ```bash
-npx wrangler kv:namespace create "HEARTBEAT_LOGS" --preview
+# Make sure the placeholder is gone
+grep "YOUR_KV_NAMESPACE_ID_HERE" wrangler.toml
+# (This should return nothing)
 ```
 
 ### 4. Configure Your Services
@@ -117,7 +154,7 @@ Set up automated deployment with GitHub Actions:
 
 3. **Automatic deployment** will trigger on every push to `main`!
 
-See [`.github/DEPLOYMENT.md`](.github/DEPLOYMENT.md) for detailed setup instructions.
+See [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for detailed setup instructions.
 
 ## Usage
 
@@ -424,6 +461,18 @@ The push-based architecture is very cost-effective!
 - Heartbeat metadata is optional and controlled by you
 - All data stored in Cloudflare's encrypted KV storage
 
+## 📚 Documentation
+
+- **[Quick Start Guide](docs/QUICKSTART.md)** - Get started in 10 minutes
+- **[Architecture Overview](docs/ARCHITECTURE.md)** - System design and components
+- **[Deployment Guide](docs/DEPLOYMENT.md)** - GitHub Actions setup
+- **[Setup Checklist](docs/SETUP_CHECKLIST.md)** - Pre-deployment checklist
+- **[Permissions Guide](docs/PERMISSIONS.md)** - GitHub Actions permissions
+- **[Contributing Guide](.github/CONTRIBUTING.md)** - How to contribute
+- **[Terraform Guide](terraform/README.md)** - Infrastructure as code
+- **[Heartbeat Clients](examples/README.md)** - Client implementation examples
+- **[Workflows Documentation](.github/workflows/README.md)** - CI/CD details
+
 ## License
 
 MIT
@@ -431,8 +480,10 @@ MIT
 ## Support
 
 For issues or questions:
-- Check Cloudflare Workers documentation: https://developers.cloudflare.com/workers/
-- Cloudflare KV documentation: https://developers.cloudflare.com/kv/
+- Check the documentation above
+- [Cloudflare Workers Docs](https://developers.cloudflare.com/workers/)
+- [Cloudflare KV Docs](https://developers.cloudflare.com/kv/)
+- [Open an issue](https://github.com/your-username/cloudflaremon/issues)
 
 ---
 
