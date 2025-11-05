@@ -2,6 +2,12 @@
 
 Get your Cloudflare Heartbeat Monitor running in 10 minutes!
 
+## Prerequisites
+
+- Node.js v20 or higher ([Download](https://nodejs.org/))
+- A Cloudflare account
+- Git (optional, for version control)
+
 ## Step 1: Install Dependencies (1 min)
 
 ```bash

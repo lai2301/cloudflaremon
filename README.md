@@ -33,7 +33,7 @@ This is a **push-based** monitoring system:
 ### 1. Prerequisites
 
 - A Cloudflare account
-- Node.js and npm installed
+- Node.js v20 or higher and npm installed
 - Wrangler CLI (Cloudflare Workers CLI)
 
 ### 2. Install Dependencies

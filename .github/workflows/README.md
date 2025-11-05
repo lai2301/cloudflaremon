@@ -37,7 +37,7 @@ This directory contains automated CI/CD workflows for the Cloudflare Heartbeat M
 
 **Steps:**
 1. Checkout code
-2. Setup Node.js 18 with npm cache
+2. Setup Node.js 20 with npm cache
 3. Install dependencies (`npm ci`)
 4. Fetch Account ID (from secret or API)
 5. Deploy to Cloudflare Workers
@@ -61,7 +61,7 @@ This directory contains automated CI/CD workflows for the Cloudflare Heartbeat M
 
 **Steps:**
 1. Checkout code
-2. Setup Node.js 18 with npm cache
+2. Setup Node.js 20 with npm cache
 3. Install dependencies (`npm ci`)
 4. Validate `services.json` syntax
 5. Validate `wrangler.toml` (dry-run deploy)
@@ -140,6 +140,23 @@ npm install
 git add package-lock.json
 git commit -m "Add package-lock.json"
 git push
+```
+
+### "Wrangler requires at least Node.js v20.0.0"
+
+**Problem:** Workflow is using an older Node.js version
+
+**Solution:** Already fixed! Workflows now use Node.js v20.
+
+**If you see this locally:**
+```bash
+# Check your Node.js version
+node --version
+
+# If < v20, update Node.js:
+# - Download from: https://nodejs.org/
+# - Or use nvm: nvm install 20 && nvm use 20
+# - Or use volta: volta install node@20
 ```
 
 ### "Invalid API token"

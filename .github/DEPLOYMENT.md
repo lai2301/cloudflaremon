@@ -25,6 +25,9 @@ This repository includes automated deployment workflows for Cloudflare Workers u
 - Validates `wrangler.toml` configuration (dry-run)
 - Comments on PR with validation status
 
+**Permissions:**
+- Uses GitHub's built-in `GITHUB_TOKEN` with write access to PRs and issues
+
 ## Setup Instructions
 
 ### Step 1: Get Cloudflare API Token

@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Push-based Cloudflare Worker heartbeat monitor for internal services - no exposure required",
   "main": "src/index.js",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",

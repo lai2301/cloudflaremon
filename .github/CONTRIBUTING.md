@@ -15,6 +15,14 @@ Thank you for considering contributing to this project! 🎉
 
 ## Development Setup
 
+### Prerequisites
+
+- Node.js v20 or higher
+- npm (comes with Node.js)
+- Git
+
+### Setup Steps
+
 ```bash
 # Install dependencies
 npm install
