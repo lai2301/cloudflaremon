@@ -9,6 +9,7 @@ Complete documentation for the Cloudflare Heartbeat Monitor.
 ## Architecture & Design
 
 - **[Architecture Overview](ARCHITECTURE.md)** - System design, data flow, and component details
+- **[Security Guide](SECURITY.md)** - Rate limiting, authentication, DDoS protection, and security best practices
 
 ## Deployment
 
