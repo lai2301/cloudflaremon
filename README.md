@@ -448,7 +448,6 @@ The push-based architecture is very cost-effective!
 
 - **[Quick Start Guide](docs/QUICKSTART.md)** - Get started in 10 minutes
 - **[Architecture Overview](docs/ARCHITECTURE.md)** - System design and components
-- **[Security Guide](docs/SECURITY.md)** - Rate limiting, authentication, DDoS protection
 - **[Deployment Guide](docs/DEPLOYMENT.md)** - GitHub Actions setup
 - **[Setup Checklist](docs/SETUP_CHECKLIST.md)** - Pre-deployment checklist
 - **[Permissions Guide](docs/PERMISSIONS.md)** - GitHub Actions permissions

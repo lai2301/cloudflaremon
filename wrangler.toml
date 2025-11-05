@@ -16,11 +16,3 @@ crons = ["*/5 * * * *"]
 [vars]
 # Maximum number of log entries to keep per service
 MAX_LOG_ENTRIES = "100"
-
-# Optional: Dashboard password for basic authentication
-# Uncomment and set a strong password to enable dashboard auth
-# DASHBOARD_PASSWORD = "your-secure-password-here"
-# 
-# Or use secrets (recommended):
-# Run: npx wrangler secret put DASHBOARD_PASSWORD
-

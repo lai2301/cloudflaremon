@@ -9,25 +9,9 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
-    // Rate limiting
-    const rateLimitResult = await checkRateLimit(request, env);
-    if (!rateLimitResult.allowed) {
-      return new Response(JSON.stringify({ 
-        error: 'Rate limit exceeded',
-        message: 'Too many requests. Please try again later.',
-        retryAfter: rateLimitResult.retryAfter 
-      }), {
-        status: 429,
-        headers: { 
-          'Content-Type': 'application/json',
-          'Retry-After': rateLimitResult.retryAfter.toString()
-        }
-      });
-    }
-
     // Route handling
     if (url.pathname === '/') {
-      return handleDashboard(env, request);
+      return handleDashboard(env);
     } else if (url.pathname === '/api/heartbeat' && request.method === 'POST') {
       // Receive heartbeat from internal services
       return handleHeartbeat(request, env);
@@ -53,57 +37,6 @@ export default {
     ctx.waitUntil(checkHeartbeatStaleness(env));
   }
 };
-
-/**
- * Rate limiting using KV
- */
-async function checkRateLimit(request, env) {
-  // Skip rate limiting for heartbeat endpoint (already protected by API keys)
-  const url = new URL(request.url);
-  if (url.pathname === '/api/heartbeat') {
-    return { allowed: true };
-  }
-
-  // Get client IP
-  const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
-  const rateLimitKey = `ratelimit:${clientIP}`;
-  
-  // Rate limit: 100 requests per minute per IP
-  const limit = 100;
-  const window = 60; // seconds
-  
-  try {
-    const now = Date.now();
-    const rateLimitData = await env.HEARTBEAT_LOGS.get(rateLimitKey);
-    
-    let requests = [];
-    if (rateLimitData) {
-      requests = JSON.parse(rateLimitData);
-      // Remove old requests outside the window
-      requests = requests.filter(timestamp => now - timestamp < window * 1000);
-    }
-    
-    if (requests.length >= limit) {
-      const oldestRequest = Math.min(...requests);
-      const retryAfter = Math.ceil((oldestRequest + window * 1000 - now) / 1000);
-      return { allowed: false, retryAfter: retryAfter };
-    }
-    
-    // Add current request
-    requests.push(now);
-    
-    // Store updated rate limit data (expires after window)
-    await env.HEARTBEAT_LOGS.put(rateLimitKey, JSON.stringify(requests), {
-      expirationTtl: window * 2
-    });
-    
-    return { allowed: true };
-  } catch (error) {
-    console.error('Rate limit check error:', error);
-    // Allow request if rate limiting fails (fail open)
-    return { allowed: true };
-  }
-}
 
 /**
  * Handle incoming heartbeat from internal service
@@ -326,20 +259,7 @@ async function storeSummary(env, results, timestamp) {
 /**
  * Handle dashboard page
  */
-async function handleDashboard(env, request) {
-  // Optional: Dashboard authentication
-  // Uncomment the following lines to enable basic authentication for the dashboard
-  /*
-  const authResult = await checkDashboardAuth(request, env);
-  if (!authResult.authorized) {
-    return new Response('Unauthorized', {
-      status: 401,
-      headers: {
-        'WWW-Authenticate': 'Basic realm="Heartbeat Monitor Dashboard"'
-      }
-    });
-  }
-  */
+async function handleDashboard(env) {
   const html = `
 <!DOCTYPE html>
 <html lang="en">
@@ -668,34 +588,6 @@ async function handleGetLogs(env, url) {
   return new Response(JSON.stringify(logs, null, 2), {
     headers: { 'Content-Type': 'application/json' }
   });
-}
-
-/**
- * Check dashboard authentication (optional)
- */
-async function checkDashboardAuth(request, env) {
-  // Check if DASHBOARD_PASSWORD is set in env
-  if (!env.DASHBOARD_PASSWORD) {
-    // No password configured, allow access
-    return { authorized: true };
-  }
-  
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader || !authHeader.startsWith('Basic ')) {
-    return { authorized: false };
-  }
-  
-  // Decode base64 credentials
-  const base64Credentials = authHeader.slice(6);
-  const credentials = atob(base64Credentials);
-  const [username, password] = credentials.split(':');
-  
-  // Simple password check (username is ignored)
-  if (password === env.DASHBOARD_PASSWORD) {
-    return { authorized: true, username: username };
-  }
-  
-  return { authorized: false };
 }
 
 /**
