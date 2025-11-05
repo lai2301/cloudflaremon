@@ -1,0 +1,56 @@
+name: Validate Pull Request
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    name: Validate Configuration
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate services.json
+        run: |
+          echo "Validating services.json..."
+          if ! jq empty services.json 2>/dev/null; then
+            echo "❌ services.json is not valid JSON"
+            exit 1
+          fi
+          echo "✅ services.json is valid"
+
+      - name: Validate wrangler configuration
+        run: |
+          echo "Validating wrangler.toml..."
+          npx wrangler deploy --dry-run
+          echo "✅ Configuration is valid"
+
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        if: success()
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '✅ Configuration validated successfully! Ready to merge and deploy.'
+            })
+

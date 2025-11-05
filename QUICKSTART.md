@@ -44,11 +44,21 @@ Edit `services.json`:
 
 ## Step 4: Deploy Worker (1 min)
 
+### Option A: Deploy Manually
+
 ```bash
 npm run deploy
 ```
 
 Note the worker URL from the output (e.g., `https://heartbeat-monitor.your-subdomain.workers.dev`)
+
+### Option B: Deploy via GitHub Actions
+
+1. Add secrets to GitHub: `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`
+2. Push to GitHub: `git push origin main`
+3. Deployment happens automatically!
+
+See [`.github/DEPLOYMENT.md`](.github/DEPLOYMENT.md) for full instructions.
 
 ## Step 5: Set Up Heartbeat Client (5 min)
 
