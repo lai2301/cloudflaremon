@@ -725,7 +725,7 @@ async function handleDashboard(env) {
                     const date = new Date(today);
                     date.setDate(date.getDate() - i);
                     const dateStr = date.toISOString().split('T')[0];
-                    const tooltipText = \`\${formatDate(dateStr)}\\nNo data available\`;
+                    const tooltipText = formatDate(dateStr) + '\n' + 'No data available';
                     html += \`<div class="uptime-day unknown" title="\${tooltipText}"></div>\`;
                 }
                 return html;
@@ -734,7 +734,7 @@ async function handleDashboard(env) {
             let html = '';
             uptimeData.days.forEach(day => {
                 let dayStatus = 'unknown';
-                let tooltipText = \`\${formatDate(day.date)}\\nNo data available\`;
+                let tooltipText = formatDate(day.date) + '\n' + 'No data available';
                 
                 if (day.totalChecks > 0) {
                     const uptimePercent = parseFloat(day.uptimePercentage);
@@ -745,7 +745,9 @@ async function handleDashboard(env) {
                     } else if (uptimePercent >= 0) {
                         dayStatus = 'down';
                     }
-                    tooltipText = \`\${formatDate(day.date)}\\nUptime: \${day.uptimePercentage}%\\nChecks: \${day.totalChecks} (↑\${day.upChecks} ↓\${day.downChecks})\`;
+                    tooltipText = formatDate(day.date) + '\n' + 
+                                  'Uptime: ' + day.uptimePercentage + '%' + '\n' +
+                                  'Checks: ' + day.totalChecks + ' (↑' + day.upChecks + ' ↓' + day.downChecks + ')';
                 }
                 
                 html += \`<div class="uptime-day \${dayStatus}" title="\${tooltipText}"></div>\`;
