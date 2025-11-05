@@ -6,33 +6,35 @@ Before pushing to GitHub and triggering deployment, verify these steps:
 
 ### 1. KV Namespace Created and Configured
 
-**Status:** ⬜ Not Done | ⬜ Done
+**Status:** ✅ Auto-Created (No Action Required!)
 
-**Option A: Using Terraform (Recommended)**
-```bash
-cd terraform
-cp terraform.tfvars.example terraform.tfvars
-# Edit terraform.tfvars with your credentials
-terraform init
-terraform apply
-cd ..
-```
+**🎉 Fully Automated!**
 
-**Option B: Manual with Wrangler CLI**
+The GitHub Actions deployment workflow automatically creates the KV namespace using Terraform on first deployment.
+
+**You can skip this entirely!** Just push your code and the workflow handles it.
+
+<details>
+<summary>💡 Optional: Manual creation for local testing (click to expand)</summary>
+
+Only needed if you want to test locally before pushing to GitHub:
+
 ```bash
-# Create the namespace
+# Option 1: Let GitHub Actions handle it (Recommended)
+# Just skip this and push to GitHub!
+
+# Option 2: Manual with Wrangler CLI (for local testing)
 npx wrangler kv:namespace create "HEARTBEAT_LOGS"
-
-# Verify wrangler.toml has a real ID (not placeholder)
-grep "YOUR_KV_NAMESPACE_ID_HERE" wrangler.toml
-# ↑ Should return NOTHING (empty) if configured correctly
+# Then update wrangler.toml with the ID from output
 ```
 
-**What to check:**
-- [ ] Used Terraform OR manually created with Wrangler
-- [ ] `wrangler.toml` has a real KV namespace ID
-- [ ] Placeholder `YOUR_KV_NAMESPACE_ID_HERE` is removed
-- [ ] ID looks like: `abc123def456...` (alphanumeric string)
+</details>
+
+**What will happen automatically:**
+- ✅ Terraform creates KV namespace on first deployment
+- ✅ `wrangler.toml` gets updated automatically
+- ✅ Changes committed back to repo
+- ✅ Worker deploys successfully
 
 ---
 

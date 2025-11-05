@@ -77,19 +77,33 @@ You have two options:
 - Value: Your Account ID from Step 2
 - Note: If not provided, it will be fetched automatically using the API
 
-### Step 4: Push to GitHub (No Manual Setup Needed!)
+### Step 4: Push to GitHub (Fully Automated!)
 
-**🎉 NEW: Fully Automated Setup**
+**🎉 ZERO Manual Setup Required!**
 
-You can now push directly without manually creating the KV namespace! The GitHub Actions workflow will:
+Just push your code and the automation handles everything:
 
-1. ✅ Detect that KV namespace isn't configured
-2. ✅ Automatically run Terraform to create it
-3. ✅ Update `wrangler.toml` with the namespace ID
-4. ✅ Commit the changes
-5. ✅ Deploy the worker
+```bash
+git add .
+git commit -m "Initial deployment"
+git push origin main
+```
 
-Just push:
+**What happens automatically:**
+
+1. ✅ Deployment workflow detects it's first time
+2. ✅ Terraform provisions KV namespace  
+3. ✅ `wrangler.toml` is updated with namespace ID
+4. ✅ Changes are committed back to the repo
+5. ✅ Worker deploys successfully
+
+**No need to:**
+- ❌ Create KV namespace manually
+- ❌ Run Terraform locally
+- ❌ Update wrangler.toml yourself
+- ❌ Install anything except Git
+
+Everything is automated in GitHub Actions!
 
 ### Step 5: Commit and Push
 

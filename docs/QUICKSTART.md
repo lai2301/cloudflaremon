@@ -14,17 +14,24 @@ Get your Cloudflare Heartbeat Monitor running in 10 minutes!
 npm install
 ```
 
-## Step 2: Create KV Namespace (Optional - Auto-Created!)
+## Step 2: Skip KV Namespace Setup! (Auto-Created!)
 
-**🎉 NEW: You can skip this step!**
+**🎉 You can completely skip this step!**
 
-The GitHub Actions workflow will automatically create the KV namespace for you on first deployment.
+The GitHub Actions workflow automatically creates the KV namespace on first deployment using Terraform.
 
-**But if you prefer to set it up beforehand:**
+**Just move to Step 3 and push your code. That's it!**
 
-### Option A: Let GitHub Actions Handle It (Easiest)
+<details>
+<summary>💡 Optional: Create KV namespace locally (click to expand)</summary>
 
-Just skip to Step 3. The workflow will create everything automatically!
+Only do this if you want to test locally before pushing to GitHub:
+
+### Option A: Let GitHub Actions Handle It (Recommended)
+
+Skip to Step 3. The workflow creates everything automatically when you push!
+
+### Option B: Create Manually (For Local Testing)
 
 ### Option B: Create Locally with Terraform
 

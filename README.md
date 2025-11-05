@@ -44,62 +44,45 @@ This is a **push-based** monitoring system:
 npm install
 ```
 
-### 3. Create KV Namespace
+### 3. Deploy (KV Namespace Auto-Created!)
 
-You have **two options** to create the KV namespace:
+**No need to create KV namespace manually!** The GitHub Actions workflow handles this automatically using Terraform.
 
-#### Option A: Using Terraform (Recommended - Automated)
+#### Option A: GitHub Actions (Recommended - Zero Setup)
+
+Just push your code:
 
 ```bash
-cd terraform
-
-# Copy and configure variables
-cp terraform.tfvars.example terraform.tfvars
-# Edit terraform.tfvars with your Cloudflare API token and Account ID
-
-# Initialize Terraform
-terraform init
-
-# Create KV namespace and update wrangler.toml automatically
-terraform apply
+git add .
+git commit -m "Initial deployment"
+git push origin main
 ```
 
-✅ **Advantages:**
-- Fully automated
-- Automatically updates `wrangler.toml`
-- Reproducible and version-controlled
-- Great for teams
+The workflow will:
+1. ✅ Create KV namespace via Terraform
+2. ✅ Update `wrangler.toml` automatically  
+3. ✅ Commit the changes
+4. ✅ Deploy the worker
 
-📚 **See [terraform/README.md](terraform/README.md) for detailed Terraform instructions**
+**That's it!** No manual KV namespace creation needed.
 
-#### Option B: Manual Creation with Wrangler CLI
+<details>
+<summary>💡 Option B: Manual Local Setup (for testing before GitHub)</summary>
+
+Only needed if you want to test locally first:
 
 ```bash
+# Create KV namespace
 npx wrangler kv:namespace create "HEARTBEAT_LOGS"
+
+# Copy the ID from output and update wrangler.toml
+# Replace YOUR_KV_NAMESPACE_ID_HERE with the actual ID
+
+# Deploy manually
+npm run deploy
 ```
 
-**Example output:**
-```
-🌀 Creating namespace with title "heartbeat-monitor-HEARTBEAT_LOGS"
-✨ Success!
-Add the following to your configuration file in your kv_namespaces array:
-{ binding = "HEARTBEAT_LOGS", id = "abc123def456ghi789jkl0" }
-```
-
-**IMPORTANT:** Copy the ID (e.g., `abc123def456ghi789jkl0`) and update `wrangler.toml`:
-
-```toml
-[[kv_namespaces]]
-binding = "HEARTBEAT_LOGS"
-id = "abc123def456ghi789jkl0"  # ← Use your actual ID here!
-```
-
-**Verify the change:**
-```bash
-# Make sure the placeholder is gone
-grep "YOUR_KV_NAMESPACE_ID_HERE" wrangler.toml
-# (This should return nothing)
-```
+</details>
 
 ### 4. Configure Your Services
 
