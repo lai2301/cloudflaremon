@@ -775,6 +775,9 @@ async function handleDashboard(env) {
         async function loadStatus() {
             try {
                 const response = await fetch('/api/status');
+                if (!response.ok) {
+                    throw new Error(\`HTTP error! status: \${response.status}\`);
+                }
                 const data = await response.json();
                 
                 if (!data.summary) {
@@ -785,7 +788,8 @@ async function handleDashboard(env) {
                             <div class="status-description">Waiting for first status check...</div>
                         </div>
                     \`;
-                    document.getElementById('services').innerHTML = '<div class="loading"><p>No services data yet</p></div>';
+                    document.getElementById('services').innerHTML = '<div class="loading"><p>No services data yet. Wait for the cron job to run.</p></div>';
+                    document.getElementById('statsGrid').style.display = 'none';
                     return;
                 }
 
@@ -858,49 +862,59 @@ async function handleDashboard(env) {
                 document.getElementById('services').innerHTML = '<div class="loading"><p>Loading uptime data...</p></div>';
                 
                 const servicesWithUptime = await Promise.all(summary.results.map(async (service) => {
-                    const uptimeData = await fetchUptimeData(service.serviceId);
-                    return { service, uptimeData };
+                    try {
+                        const uptimeData = await fetchUptimeData(service.serviceId);
+                        return { service, uptimeData };
+                    } catch (error) {
+                        console.error(\`Error fetching uptime for \${service.serviceId}:\`, error);
+                        return { service, uptimeData: null };
+                    }
                 }));
                 
                 const servicesHtml = servicesWithUptime.map(({ service, uptimeData }) => {
-                    const icon = service.status === 'up' ? '✓' : (service.status === 'down' ? '✕' : '●');
-                    const timeSince = service.lastSeen ? formatDuration(Date.now() - new Date(service.lastSeen).getTime()) : 'Never';
-                    const uptime = uptimeData && uptimeData.overallUptime > 0 ? \`\${uptimeData.overallUptime}%\` : 'N/A';
-                    
-                    return \`
-                    <div class="service-item">
-                        <div class="service-main">
-                            <div class="service-status-icon \${service.status}">\${icon}</div>
-                            <div class="service-name">\${service.serviceName}</div>
-                            <div class="service-uptime">\${uptime}</div>
+                    try {
+                        const icon = service.status === 'up' ? '✓' : (service.status === 'down' ? '✕' : '●');
+                        const timeSince = service.lastSeen ? formatDuration(Date.now() - new Date(service.lastSeen).getTime()) : 'Never';
+                        const uptime = uptimeData && uptimeData.overallUptime > 0 ? \`\${uptimeData.overallUptime}%\` : 'N/A';
+                        
+                        return \`
+                        <div class="service-item">
+                            <div class="service-main">
+                                <div class="service-status-icon \${service.status}">\${icon}</div>
+                                <div class="service-name">\${service.serviceName}</div>
+                                <div class="service-uptime">\${uptime}</div>
+                            </div>
+                            <div class="uptime-bar-container">
+                                <div class="uptime-bar">
+                                    \${generateUptimeBar(uptimeData)}
+                                </div>
+                                <div class="uptime-labels">
+                                    <span>90 days ago</span>
+                                    <span>Today</span>
+                                </div>
+                            </div>
+                            <div class="service-meta">
+                                <div class="meta-item">
+                                    <span class="meta-label">Last check:</span>
+                                    <span>\${timeSince}</span>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="meta-label">Threshold:</span>
+                                    <span>\${Math.floor(service.stalenessThreshold / 1000 / 60)}m</span>
+                                </div>
+                                \${uptimeData && uptimeData.totalDays > 0 ? \`
+                                <div class="meta-item">
+                                    <span class="meta-label">Tracked days:</span>
+                                    <span>\${uptimeData.totalDays}/90</span>
+                                </div>
+                                \` : ''}
+                            </div>
                         </div>
-                        <div class="uptime-bar-container">
-                            <div class="uptime-bar">
-                                \${generateUptimeBar(uptimeData)}
-                            </div>
-                            <div class="uptime-labels">
-                                <span>90 days ago</span>
-                                <span>Today</span>
-                            </div>
-                        </div>
-                        <div class="service-meta">
-                            <div class="meta-item">
-                                <span class="meta-label">Last check:</span>
-                                <span>\${timeSince}</span>
-                            </div>
-                            <div class="meta-item">
-                                <span class="meta-label">Threshold:</span>
-                                <span>\${Math.floor(service.stalenessThreshold / 1000 / 60)}m</span>
-                            </div>
-                            \${uptimeData && uptimeData.totalDays > 0 ? \`
-                            <div class="meta-item">
-                                <span class="meta-label">Tracked days:</span>
-                                <span>\${uptimeData.totalDays}/90</span>
-                            </div>
-                            \` : ''}
-                        </div>
-                    </div>
-                    \`;
+                        \`;
+                    } catch (error) {
+                        console.error('Error rendering service:', service.serviceName, error);
+                        return \`<div class="service-item"><div class="service-name">Error loading \${service.serviceName}</div></div>\`;
+                    }
                 }).join('');
                 
                 document.getElementById('services').innerHTML = servicesHtml;
@@ -912,7 +926,13 @@ async function handleDashboard(env) {
                     <div class="status-indicator issues"></div>
                     <div class="status-text">
                         <div class="status-title">Error loading data</div>
-                        <div class="status-description">Failed to fetch status information</div>
+                        <div class="status-description">Failed to fetch status information. Check console for details.</div>
+                    </div>
+                \`;
+                document.getElementById('services').innerHTML = \`
+                    <div class="loading">
+                        <p>Error: \${error.message}</p>
+                        <p>Check browser console for more details</p>
                     </div>
                 \`;
             }
