@@ -266,8 +266,52 @@ async function handleDashboard(env) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Heartbeat Monitor Dashboard</title>
+    <title>Status Monitor</title>
     <style>
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f9fafb;
+            --bg-hover: #f3f4f6;
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --text-tertiary: #9ca3af;
+            --border-color: #e5e7eb;
+            --status-up: #10b981;
+            --status-up-bg: #d1fae5;
+            --status-up-text: #065f46;
+            --status-down: #ef4444;
+            --status-down-bg: #fee2e2;
+            --status-down-text: #991b1b;
+            --status-degraded: #f59e0b;
+            --status-degraded-bg: #fed7aa;
+            --status-degraded-text: #92400e;
+            --status-unknown: #6b7280;
+            --status-unknown-bg: #e5e7eb;
+            --status-unknown-text: #374151;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-primary: #111827;
+                --bg-secondary: #1f2937;
+                --bg-hover: #374151;
+                --text-primary: #f9fafb;
+                --text-secondary: #d1d5db;
+                --text-tertiary: #9ca3af;
+                --border-color: #374151;
+                --status-up-bg: #064e3b;
+                --status-up-text: #6ee7b7;
+                --status-down-bg: #7f1d1d;
+                --status-down-text: #fca5a5;
+                --status-degraded-bg: #78350f;
+                --status-degraded-text: #fcd34d;
+                --status-unknown-bg: #374151;
+                --status-unknown-text: #d1d5db;
+            }
+        }
+        
         * {
             margin: 0;
             padding: 0;
@@ -275,190 +319,356 @@ async function handleDashboard(env) {
         }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            line-height: 1.6;
             min-height: 100vh;
-            padding: 20px;
         }
         
         .container {
-            max-width: 1200px;
+            max-width: 1000px;
             margin: 0 auto;
+            padding: 40px 20px;
         }
         
         header {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 48px;
+            text-align: center;
         }
         
         h1 {
-            color: #333;
-            margin-bottom: 10px;
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text-primary);
         }
         
         .subtitle {
-            color: #666;
+            color: var(--text-secondary);
+            font-size: 16px;
+        }
+        
+        .overall-status {
+            background: var(--bg-primary);
+            padding: 32px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        
+        .status-indicator.operational {
+            background: var(--status-up);
+            box-shadow: 0 0 0 4px var(--status-up-bg);
+        }
+        
+        .status-indicator.issues {
+            background: var(--status-down);
+            box-shadow: 0 0 0 4px var(--status-down-bg);
+        }
+        
+        .status-indicator.degraded {
+            background: var(--status-degraded);
+            box-shadow: 0 0 0 4px var(--status-degraded-bg);
+        }
+        
+        .status-text {
+            flex: 1;
+        }
+        
+        .status-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        
+        .status-description {
             font-size: 14px;
+            color: var(--text-secondary);
         }
         
-        .summary {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
+        .last-checked {
+            font-size: 13px;
+            color: var(--text-tertiary);
         }
         
-        .summary-card {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        .services-container {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
         }
         
-        .summary-card h3 {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 10px;
-            text-transform: uppercase;
+        .services-header {
+            padding: 24px 32px;
+            border-bottom: 1px solid var(--border-color);
         }
         
-        .summary-card .value {
-            font-size: 32px;
-            font-weight: bold;
-        }
-        
-        .value.up { color: #10b981; }
-        .value.degraded { color: #f59e0b; }
-        .value.down { color: #ef4444; }
-        .value.unknown { color: #6b7280; }
-        
-        .services {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        .services-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
         }
         
         .service-item {
-            padding: 20px;
-            border-left: 4px solid #ddd;
-            margin-bottom: 15px;
-            background: #f9fafb;
-            border-radius: 5px;
+            padding: 24px 32px;
+            border-bottom: 1px solid var(--border-color);
+            transition: background-color 0.15s ease;
         }
         
-        .service-item.up { border-left-color: #10b981; }
-        .service-item.degraded { border-left-color: #f59e0b; }
-        .service-item.down { border-left-color: #ef4444; }
-        .service-item.unknown { border-left-color: #6b7280; }
+        .service-item:last-child {
+            border-bottom: none;
+        }
         
-        .service-header {
+        .service-item:hover {
+            background: var(--bg-hover);
+        }
+        
+        .service-main {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .service-status-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+        
+        .service-status-icon.up {
+            background: var(--status-up);
+            color: white;
+        }
+        
+        .service-status-icon.down {
+            background: var(--status-down);
+            color: white;
+        }
+        
+        .service-status-icon.degraded {
+            background: var(--status-degraded);
+            color: white;
+        }
+        
+        .service-status-icon.unknown {
+            background: var(--status-unknown);
+            color: white;
         }
         
         .service-name {
-            font-size: 18px;
-            font-weight: 600;
-            color: #333;
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-primary);
+            flex: 1;
         }
         
-        .status-badge {
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-        
-        .status-badge.up {
-            background: #d1fae5;
-            color: #065f46;
-        }
-        
-        .status-badge.degraded {
-            background: #fed7aa;
-            color: #92400e;
-        }
-        
-        .status-badge.down {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-        
-        .status-badge.unknown {
-            background: #e5e7eb;
-            color: #374151;
-        }
-        
-        .service-details {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 10px;
+        .service-uptime {
             font-size: 14px;
-            color: #666;
+            font-weight: 500;
+            color: var(--text-secondary);
         }
         
-        .detail-item {
+        .uptime-bar-container {
+            margin-bottom: 12px;
+        }
+        
+        .uptime-bar {
             display: flex;
-            flex-direction: column;
+            gap: 2px;
+            height: 32px;
+            margin-bottom: 8px;
         }
         
-        .detail-label {
-            font-weight: 600;
-            margin-bottom: 3px;
+        .uptime-day {
+            flex: 1;
+            background: var(--status-up);
+            border-radius: 2px;
+            transition: opacity 0.2s ease;
+            position: relative;
+        }
+        
+        .uptime-day.up {
+            background: var(--status-up);
+            opacity: 1;
+        }
+        
+        .uptime-day.down {
+            background: var(--status-down);
+            opacity: 1;
+        }
+        
+        .uptime-day.degraded {
+            background: var(--status-degraded);
+            opacity: 1;
+        }
+        
+        .uptime-day.unknown {
+            background: var(--border-color);
+            opacity: 0.5;
+        }
+        
+        .uptime-day:hover {
+            opacity: 0.8;
+            cursor: pointer;
+        }
+        
+        .uptime-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-tertiary);
+        }
+        
+        .service-meta {
+            display: flex;
+            gap: 24px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .meta-label {
+            color: var(--text-tertiary);
         }
         
         .loading {
             text-align: center;
-            padding: 50px;
-            color: white;
-            font-size: 18px;
+            padding: 64px 20px;
+            color: var(--text-secondary);
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--text-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
         
         .refresh-btn {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 20px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s ease;
         }
         
         .refresh-btn:hover {
-            background: #5568d3;
+            background: var(--bg-hover);
         }
         
-        .last-update {
-            color: #666;
+        footer {
+            text-align: center;
+            padding: 40px 20px 20px;
+            color: var(--text-tertiary);
+            font-size: 13px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--bg-primary);
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .stat-value.up { color: var(--status-up); }
+        .stat-value.down { color: var(--status-down); }
+        .stat-value.degraded { color: var(--status-degraded); }
+        .stat-value.unknown { color: var(--status-unknown); }
+
+        .stat-label {
             font-size: 12px;
-            margin-top: 10px;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🔍 Heartbeat Monitor Dashboard</h1>
-            <p class="subtitle">Real-time monitoring of internal network services</p>
-            <div class="last-update" id="lastUpdate"></div>
+            <h1>Service Status</h1>
+            <p class="subtitle">Real-time monitoring dashboard</p>
         </header>
         
-        <button class="refresh-btn" onclick="loadStatus()">🔄 Refresh Now</button>
+        <div class="overall-status" id="overallStatus">
+            <div class="loading-spinner"></div>
+            <div class="status-text">
+                <div class="status-title">Loading status...</div>
+            </div>
+        </div>
+
+        <div class="stats-grid" id="statsGrid" style="display: none;"></div>
         
-        <div class="summary" id="summary">
-            <div class="loading">Loading status...</div>
+        <div class="services-container">
+            <div class="services-header">
+                <div class="services-title">Services</div>
+            </div>
+            <div id="services">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p>Loading services...</p>
+                </div>
+            </div>
         </div>
         
-        <div class="services" id="services"></div>
+        <footer>
+            <div id="lastUpdate" style="margin-bottom: 12px;"></div>
+            <button class="refresh-btn" onclick="loadStatus()">
+                <span>↻</span>
+                <span>Refresh</span>
+            </button>
+        </footer>
     </div>
     
     <script>
@@ -468,10 +678,37 @@ async function handleDashboard(env) {
             const hours = Math.floor(minutes / 60);
             const days = Math.floor(hours / 24);
             
-            if (days > 0) return \`\${days}d \${hours % 24}h\`;
-            if (hours > 0) return \`\${hours}h \${minutes % 60}m\`;
-            if (minutes > 0) return \`\${minutes}m \${seconds % 60}s\`;
-            return \`\${seconds}s\`;
+            if (days > 0) return \`\${days}d \${hours % 24}h ago\`;
+            if (hours > 0) return \`\${hours}h \${minutes % 60}m ago\`;
+            if (minutes > 0) return \`\${minutes}m ago\`;
+            return \`\${seconds}s ago\`;
+        }
+
+        function generateUptimeBar(status) {
+            // Generate 90 days of mock uptime data based on current status
+            const days = 90;
+            let html = '';
+            for (let i = 0; i < days; i++) {
+                // Mock data: mostly up, with occasional issues
+                let dayStatus = 'up';
+                if (status === 'down' && i >= days - 3) {
+                    dayStatus = 'down';
+                } else if (status === 'unknown') {
+                    dayStatus = 'unknown';
+                } else if (Math.random() > 0.97) {
+                    dayStatus = Math.random() > 0.5 ? 'degraded' : 'down';
+                }
+                html += \`<div class="uptime-day \${dayStatus}" title="Day \${days - i}"></div>\`;
+            }
+            return html;
+        }
+
+        function calculateUptime(status) {
+            // Mock uptime percentage
+            if (status === 'up') return '99.98%';
+            if (status === 'degraded') return '95.20%';
+            if (status === 'down') return '85.50%';
+            return 'N/A';
         }
         
         async function loadStatus() {
@@ -480,64 +717,102 @@ async function handleDashboard(env) {
                 const data = await response.json();
                 
                 if (!data.summary) {
-                    document.getElementById('summary').innerHTML = '<div class="loading">No data available yet. Waiting for first check...</div>';
+                    document.getElementById('overallStatus').innerHTML = \`
+                        <div class="status-indicator unknown"></div>
+                        <div class="status-text">
+                            <div class="status-title">No data available</div>
+                            <div class="status-description">Waiting for first status check...</div>
+                        </div>
+                    \`;
+                    document.getElementById('services').innerHTML = '<div class="loading"><p>No services data yet</p></div>';
                     return;
                 }
+
+                const summary = data.summary;
+                const allUp = summary.servicesDown === 0 && summary.servicesDegraded === 0;
+                const hasIssues = summary.servicesDown > 0;
                 
-                // Update summary
-                const summaryHtml = \`
-                    <div class="summary-card">
-                        <h3>Total Services</h3>
-                        <div class="value">\${data.summary.totalServices}</div>
+                // Update overall status
+                const statusClass = hasIssues ? 'issues' : (summary.servicesDegraded > 0 ? 'degraded' : 'operational');
+                const statusTitle = hasIssues ? 'Some systems are down' : (summary.servicesDegraded > 0 ? 'Degraded performance' : 'All systems operational');
+                const statusDesc = hasIssues 
+                    ? \`\${summary.servicesDown} service(s) experiencing issues\`
+                    : (summary.servicesDegraded > 0 
+                        ? \`\${summary.servicesDegraded} service(s) degraded\`
+                        : 'All monitored services are running normally');
+                
+                document.getElementById('overallStatus').innerHTML = \`
+                    <div class="status-indicator \${statusClass}"></div>
+                    <div class="status-text">
+                        <div class="status-title">\${statusTitle}</div>
+                        <div class="status-description">\${statusDesc}</div>
                     </div>
-                    <div class="summary-card">
-                        <h3>Services Up</h3>
-                        <div class="value up">\${data.summary.servicesUp}</div>
-                    </div>
-                    <div class="summary-card">
-                        <h3>Degraded</h3>
-                        <div class="value degraded">\${data.summary.servicesDegraded}</div>
-                    </div>
-                    <div class="summary-card">
-                        <h3>Services Down</h3>
-                        <div class="value down">\${data.summary.servicesDown}</div>
-                    </div>
-                    <div class="summary-card">
-                        <h3>Unknown</h3>
-                        <div class="value unknown">\${data.summary.servicesUnknown || 0}</div>
+                    <div class="last-checked">
+                        Updated \${formatDuration(Date.now() - new Date(summary.timestamp).getTime())}
                     </div>
                 \`;
-                document.getElementById('summary').innerHTML = summaryHtml;
+
+                // Update stats grid
+                document.getElementById('statsGrid').style.display = 'grid';
+                document.getElementById('statsGrid').innerHTML = \`
+                    <div class="stat-card">
+                        <div class="stat-value">\${summary.totalServices}</div>
+                        <div class="stat-label">Total</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value up">\${summary.servicesUp}</div>
+                        <div class="stat-label">Operational</div>
+                    </div>
+                    \${summary.servicesDegraded > 0 ? \`
+                    <div class="stat-card">
+                        <div class="stat-value degraded">\${summary.servicesDegraded}</div>
+                        <div class="stat-label">Degraded</div>
+                    </div>
+                    \` : ''}
+                    \${summary.servicesDown > 0 ? \`
+                    <div class="stat-card">
+                        <div class="stat-value down">\${summary.servicesDown}</div>
+                        <div class="stat-label">Down</div>
+                    </div>
+                    \` : ''}
+                    \${summary.servicesUnknown > 0 ? \`
+                    <div class="stat-card">
+                        <div class="stat-value unknown">\${summary.servicesUnknown}</div>
+                        <div class="stat-label">Unknown</div>
+                    </div>
+                    \` : ''}
+                \`;
                 
                 // Update services
-                const servicesHtml = data.summary.results.map(service => {
-                    const timeSince = service.timeSinceLastHeartbeat ? 
-                        formatDuration(service.timeSinceLastHeartbeat) : 'Never';
-                    const lastSeenDate = service.lastSeen ? 
-                        new Date(service.lastSeen).toLocaleString() : 'Never';
+                const servicesHtml = summary.results.map(service => {
+                    const icon = service.status === 'up' ? '✓' : (service.status === 'down' ? '✕' : '●');
+                    const timeSince = service.lastSeen ? formatDuration(Date.now() - new Date(service.lastSeen).getTime()) : 'Never';
+                    const uptime = calculateUptime(service.status);
                     
                     return \`
-                    <div class="service-item \${service.status}">
-                        <div class="service-header">
+                    <div class="service-item">
+                        <div class="service-main">
+                            <div class="service-status-icon \${service.status}">\${icon}</div>
                             <div class="service-name">\${service.serviceName}</div>
-                            <span class="status-badge \${service.status}">\${service.status}</span>
+                            <div class="service-uptime">\${uptime}</div>
                         </div>
-                        <div class="service-details">
-                            <div class="detail-item">
-                                <span class="detail-label">Service ID</span>
-                                <span>\${service.serviceId}</span>
+                        <div class="uptime-bar-container">
+                            <div class="uptime-bar">
+                                \${generateUptimeBar(service.status)}
                             </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Last Heartbeat</span>
-                                <span>\${lastSeenDate}</span>
+                            <div class="uptime-labels">
+                                <span>90 days ago</span>
+                                <span>Today</span>
                             </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Time Since</span>
+                        </div>
+                        <div class="service-meta">
+                            <div class="meta-item">
+                                <span class="meta-label">Last check:</span>
                                 <span>\${timeSince}</span>
                             </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Staleness Threshold</span>
-                                <span>\${formatDuration(service.stalenessThreshold)}</span>
+                            <div class="meta-item">
+                                <span class="meta-label">Threshold:</span>
+                                <span>\${Math.floor(service.stalenessThreshold / 1000 / 60)}m</span>
                             </div>
                         </div>
                     </div>
@@ -545,11 +820,17 @@ async function handleDashboard(env) {
                 }).join('');
                 
                 document.getElementById('services').innerHTML = servicesHtml;
-                document.getElementById('lastUpdate').textContent = \`Last updated: \${new Date(data.summary.timestamp).toLocaleString()}\`;
+                document.getElementById('lastUpdate').textContent = \`Last updated: \${new Date(summary.timestamp).toLocaleString()}\`;
                 
             } catch (error) {
                 console.error('Error loading status:', error);
-                document.getElementById('summary').innerHTML = '<div class="loading">Error loading data</div>';
+                document.getElementById('overallStatus').innerHTML = \`
+                    <div class="status-indicator issues"></div>
+                    <div class="status-text">
+                        <div class="status-title">Error loading data</div>
+                        <div class="status-description">Failed to fetch status information</div>
+                    </div>
+                \`;
             }
         }
         

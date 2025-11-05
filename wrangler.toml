@@ -12,7 +12,7 @@ id = "4bbad78883da446399f2cd8677b989ea"
 
 # Cron trigger - checks for stale heartbeats every 5 minutes
 [triggers]
-crons = ["*/5 * * * *"]
+crons = ["*/10 * * * *"]
 
 # Variables for configuration
 [vars]
