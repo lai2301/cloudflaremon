@@ -102,18 +102,33 @@ jobs:
           accountId: ${{ steps.fetch_account_id.outputs.account_id }}
 
       - name: Configure Worker Secrets
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ steps.fetch_account_id.outputs.account_id }}
+          API_KEYS_SECRET: ${{ secrets.API_KEYS }}
+          DISCORD_WEBHOOK: ${{ secrets.NOTIFICATION_DISCORD_WEBHOOK_WEBHOOKURL }}
+          SLACK_WEBHOOK: ${{ secrets.NOTIFICATION_SLACK_WEBHOOK_WEBHOOKURL }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.NOTIFICATION_TELEGRAM_BOT_BOTTOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.NOTIFICATION_TELEGRAM_BOT_CHATID }}
+          MAILGUN_API_KEY: ${{ secrets.NOTIFICATION_EMAIL_VIA_MAILGUN_APIKEY }}
+          MAILGUN_DOMAIN: ${{ secrets.NOTIFICATION_EMAIL_VIA_MAILGUN_DOMAIN }}
+          CUSTOM_WEBHOOK_URL: ${{ secrets.NOTIFICATION_CUSTOM_WEBHOOK_URL }}
+          CUSTOM_WEBHOOK_TOKEN: ${{ secrets.NOTIFICATION_CUSTOM_WEBHOOK_AUTHTOKEN }}
+          PUSHOVER_USER_KEY: ${{ secrets.NOTIFICATION_PUSHOVER_USERKEY }}
+          PUSHOVER_API_TOKEN: ${{ secrets.NOTIFICATION_PUSHOVER_APITOKEN }}
+          PAGERDUTY_ROUTING_KEY: ${{ secrets.NOTIFICATION_PAGERDUTY_ROUTINGKEY }}
         run: |
           echo "🔐 Configuring worker secrets..."
           
           # API Keys for heartbeat authentication
-          if [[ -n "${{ secrets.API_KEYS }}" ]]; then
+          if [[ -n "$API_KEYS_SECRET" ]]; then
             # Decode from base64 if it's base64 encoded, otherwise use as-is
-            if echo "${{ secrets.API_KEYS }}" | base64 -d &>/dev/null; then
+            if echo "$API_KEYS_SECRET" | base64 -d &>/dev/null; then
               echo "Detected base64-encoded API_KEYS"
-              echo "${{ secrets.API_KEYS }}" | base64 -d | npx wrangler secret put API_KEYS
+              echo "$API_KEYS_SECRET" | base64 -d | npx wrangler secret put API_KEYS
             else
               # Use printf to avoid echo adding newlines, and proper quoting
-              printf '%s' "${{ secrets.API_KEYS }}" | npx wrangler secret put API_KEYS
+              printf '%s' "$API_KEYS_SECRET" | npx wrangler secret put API_KEYS
             fi
             echo "✅ API_KEYS configured"
           else
@@ -124,69 +139,66 @@ jobs:
           echo "🔔 Configuring notification secrets..."
           
           # Discord
-          if [[ -n "${{ secrets.NOTIFICATION_DISCORD_WEBHOOK_WEBHOOKURL }}" ]]; then
-            printf '%s' "${{ secrets.NOTIFICATION_DISCORD_WEBHOOK_WEBHOOKURL }}" | npx wrangler secret put NOTIFICATION_DISCORD_WEBHOOK_WEBHOOKURL
+          if [[ -n "$DISCORD_WEBHOOK" ]]; then
+            printf '%s' "$DISCORD_WEBHOOK" | npx wrangler secret put NOTIFICATION_DISCORD_WEBHOOK_WEBHOOKURL
             echo "✅ Discord webhook configured"
           fi
           
           # Slack
-          if [[ -n "${{ secrets.NOTIFICATION_SLACK_WEBHOOK_WEBHOOKURL }}" ]]; then
-            printf '%s' "${{ secrets.NOTIFICATION_SLACK_WEBHOOK_WEBHOOKURL }}" | npx wrangler secret put NOTIFICATION_SLACK_WEBHOOK_WEBHOOKURL
+          if [[ -n "$SLACK_WEBHOOK" ]]; then
+            printf '%s' "$SLACK_WEBHOOK" | npx wrangler secret put NOTIFICATION_SLACK_WEBHOOK_WEBHOOKURL
             echo "✅ Slack webhook configured"
           fi
           
           # Telegram
-          if [[ -n "${{ secrets.NOTIFICATION_TELEGRAM_BOT_BOTTOKEN }}" ]]; then
-            printf '%s' "${{ secrets.NOTIFICATION_TELEGRAM_BOT_BOTTOKEN }}" | npx wrangler secret put NOTIFICATION_TELEGRAM_BOT_BOTTOKEN
+          if [[ -n "$TELEGRAM_BOT_TOKEN" ]]; then
+            printf '%s' "$TELEGRAM_BOT_TOKEN" | npx wrangler secret put NOTIFICATION_TELEGRAM_BOT_BOTTOKEN
             echo "✅ Telegram bot token configured"
           fi
           
-          if [[ -n "${{ secrets.NOTIFICATION_TELEGRAM_BOT_CHATID }}" ]]; then
-            printf '%s' "${{ secrets.NOTIFICATION_TELEGRAM_BOT_CHATID }}" | npx wrangler secret put NOTIFICATION_TELEGRAM_BOT_CHATID
+          if [[ -n "$TELEGRAM_CHAT_ID" ]]; then
+            printf '%s' "$TELEGRAM_CHAT_ID" | npx wrangler secret put NOTIFICATION_TELEGRAM_BOT_CHATID
             echo "✅ Telegram chat ID configured"
           fi
           
           # Email (Mailgun)
-          if [[ -n "${{ secrets.NOTIFICATION_EMAIL_VIA_MAILGUN_APIKEY }}" ]]; then
-            printf '%s' "${{ secrets.NOTIFICATION_EMAIL_VIA_MAILGUN_APIKEY }}" | npx wrangler secret put NOTIFICATION_EMAIL_VIA_MAILGUN_APIKEY
+          if [[ -n "$MAILGUN_API_KEY" ]]; then
+            printf '%s' "$MAILGUN_API_KEY" | npx wrangler secret put NOTIFICATION_EMAIL_VIA_MAILGUN_APIKEY
             echo "✅ Mailgun API key configured"
           fi
           
-          if [[ -n "${{ secrets.NOTIFICATION_EMAIL_VIA_MAILGUN_DOMAIN }}" ]]; then
-            printf '%s' "${{ secrets.NOTIFICATION_EMAIL_VIA_MAILGUN_DOMAIN }}" | npx wrangler secret put NOTIFICATION_EMAIL_VIA_MAILGUN_DOMAIN
+          if [[ -n "$MAILGUN_DOMAIN" ]]; then
+            printf '%s' "$MAILGUN_DOMAIN" | npx wrangler secret put NOTIFICATION_EMAIL_VIA_MAILGUN_DOMAIN
             echo "✅ Mailgun domain configured"
           fi
           
           # Custom Webhook
-          if [[ -n "${{ secrets.NOTIFICATION_CUSTOM_WEBHOOK_URL }}" ]]; then
-            printf '%s' "${{ secrets.NOTIFICATION_CUSTOM_WEBHOOK_URL }}" | npx wrangler secret put NOTIFICATION_CUSTOM_WEBHOOK_URL
+          if [[ -n "$CUSTOM_WEBHOOK_URL" ]]; then
+            printf '%s' "$CUSTOM_WEBHOOK_URL" | npx wrangler secret put NOTIFICATION_CUSTOM_WEBHOOK_URL
             echo "✅ Custom webhook URL configured"
           fi
           
-          if [[ -n "${{ secrets.NOTIFICATION_CUSTOM_WEBHOOK_AUTHTOKEN }}" ]]; then
-            printf '%s' "${{ secrets.NOTIFICATION_CUSTOM_WEBHOOK_AUTHTOKEN }}" | npx wrangler secret put NOTIFICATION_CUSTOM_WEBHOOK_AUTHTOKEN
+          if [[ -n "$CUSTOM_WEBHOOK_TOKEN" ]]; then
+            printf '%s' "$CUSTOM_WEBHOOK_TOKEN" | npx wrangler secret put NOTIFICATION_CUSTOM_WEBHOOK_AUTHTOKEN
             echo "✅ Custom webhook auth token configured"
           fi
           
           # Pushover
-          if [[ -n "${{ secrets.NOTIFICATION_PUSHOVER_USERKEY }}" ]]; then
-            printf '%s' "${{ secrets.NOTIFICATION_PUSHOVER_USERKEY }}" | npx wrangler secret put NOTIFICATION_PUSHOVER_USERKEY
+          if [[ -n "$PUSHOVER_USER_KEY" ]]; then
+            printf '%s' "$PUSHOVER_USER_KEY" | npx wrangler secret put NOTIFICATION_PUSHOVER_USERKEY
             echo "✅ Pushover user key configured"
           fi
           
-          if [[ -n "${{ secrets.NOTIFICATION_PUSHOVER_APITOKEN }}" ]]; then
-            printf '%s' "${{ secrets.NOTIFICATION_PUSHOVER_APITOKEN }}" | npx wrangler secret put NOTIFICATION_PUSHOVER_APITOKEN
+          if [[ -n "$PUSHOVER_API_TOKEN" ]]; then
+            printf '%s' "$PUSHOVER_API_TOKEN" | npx wrangler secret put NOTIFICATION_PUSHOVER_APITOKEN
             echo "✅ Pushover API token configured"
           fi
           
           # PagerDuty
-          if [[ -n "${{ secrets.NOTIFICATION_PAGERDUTY_ROUTINGKEY }}" ]]; then
-            printf '%s' "${{ secrets.NOTIFICATION_PAGERDUTY_ROUTINGKEY }}" | npx wrangler secret put NOTIFICATION_PAGERDUTY_ROUTINGKEY
+          if [[ -n "$PAGERDUTY_ROUTING_KEY" ]]; then
+            printf '%s' "$PAGERDUTY_ROUTING_KEY" | npx wrangler secret put NOTIFICATION_PAGERDUTY_ROUTINGKEY
             echo "✅ PagerDuty routing key configured"
           fi
           
           echo "✨ Notification secrets configuration complete"
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ steps.fetch_account_id.outputs.account_id }}
 
