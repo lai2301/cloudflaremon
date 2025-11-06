@@ -4,7 +4,7 @@
 
 A push-based Cloudflare Worker heartbeat monitoring solution for internal network services. Your internal services send heartbeats TO the Cloudflare Worker, eliminating the need to expose your services to the public internet.
 
-**📖 [View Full Documentation](docs/README.md)** | **🚀 [Quick Start Guide](docs/QUICKSTART.md)** | **🏗️ [Architecture](docs/ARCHITECTURE.md)** | **🔒 [Security Guide](docs/SECURITY.md)** | **🔔 [Notifications](docs/NOTIFICATIONS.md)**
+**📖 [View Full Documentation](docs/README.md)** | **🚀 [Quick Start Guide](docs/QUICKSTART.md)** | **🏗️ [Architecture](docs/ARCHITECTURE.md)** | **🔒 [Security Guide](docs/SECURITY.md)** | **🔔 [Notifications](docs/NOTIFICATIONS.md)** | **🌐 [External Alerts](docs/EXTERNAL_ALERTS.md)**
 
 ## Features
 
@@ -16,6 +16,7 @@ A push-based Cloudflare Worker heartbeat monitoring solution for internal networ
 - 🔐 **API Key Authentication**: Secure heartbeat endpoints with unified JSON secret
 - ⏱️ **Staleness Detection**: Automatically detects when services stop sending heartbeats
 - 🔔 **Multi-Channel Notifications**: Discord, Slack, Telegram, Email, PagerDuty, Pushover & more
+- 🌐 **External Alert Integration**: Receive alerts from Prometheus Alertmanager, Grafana, and other tools
 - 🎨 **Modern UI**: Uptimeflare-inspired design with dark mode support
 - 📦 **Multiple Client Examples**: Bash, Python, Node.js, systemd, cron, Docker
 
@@ -347,6 +348,49 @@ GET /api/services
 
 Returns the list of configured services from `services.json`.
 
+#### External Alert Integration (POST)
+```bash
+curl -X POST https://your-worker.workers.dev/api/alert \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "High Memory Usage",
+    "message": "Memory usage exceeded 90%",
+    "severity": "critical",
+    "source": "alertmanager"
+  }'
+```
+
+**NEW!** Receive alerts from external monitoring tools like Prometheus Alertmanager, Grafana, and more. This endpoint automatically detects the alert format and routes it through your configured notification channels.
+
+**Supported Formats:**
+- Prometheus Alertmanager webhooks
+- Grafana webhook notifications
+- Generic format (title, message, severity)
+
+**Request Body (Generic):**
+- `title` (required): Alert title
+- `message` (required): Alert description
+- `severity` (optional): "critical", "error", "warning", or "info" (default: "warning")
+- `source` (optional): Alert source identifier (default: "external")
+- `labels` (optional): Additional key-value metadata
+- `annotations` (optional): Additional annotations
+
+**📖 See [External Alert Integration Guide](docs/EXTERNAL_ALERTS.md) for detailed integration examples with Alertmanager, Grafana, and custom scripts.**
+
+**Security:** The `/api/alert` endpoint supports optional API key authentication. Set `ALERT_API_KEY` as a Cloudflare secret to require authentication:
+
+```bash
+# Generate a strong API key
+openssl rand -base64 32
+
+# Set it as a secret
+npx wrangler secret put ALERT_API_KEY
+
+# Or add to GitHub Secrets and it will be auto-configured on deploy
+```
+
+If `ALERT_API_KEY` is not configured, the endpoint is public. See [Security Considerations](docs/EXTERNAL_ALERTS.md#security-considerations) for alternative protection methods.
+
 ### Scheduled Staleness Checks
 
 The worker automatically checks for stale heartbeats based on the cron schedule in `wrangler.toml`:
@@ -562,6 +606,7 @@ npx wrangler secret put API_KEYS
 - **[Architecture Overview](docs/ARCHITECTURE.md)** - System design and components
 - **[Security Guide](docs/SECURITY.md)** - API key management and best practices 🔒
 - **[Notification Guide](docs/NOTIFICATIONS.md)** - Multi-channel alerting setup 🔔
+- **[External Alerts Integration](docs/EXTERNAL_ALERTS.md)** - Receive alerts from Alertmanager, Grafana, etc. 🌐
 - **[Notification Templates](docs/NOTIFICATION_TEMPLATES.md)** - Customize notification messages 🎨
 - **[Notification Credentials](docs/NOTIFICATION_CREDENTIALS.md)** - Secure credential storage 🔐
 - **[GitHub Actions Setup](docs/GITHUB_ACTIONS_SETUP.md)** - Automated deployment & secrets 🤖

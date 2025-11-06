@@ -1,0 +1,107 @@
+{
+  "_comment": "Grafana Webhook Contact Point Configuration",
+  "_instructions": [
+    "1. Go to Grafana → Alerting → Contact points",
+    "2. Click 'New contact point'",
+    "3. Select 'Webhook' as the type",
+    "4. Copy the settings below"
+  ],
+  
+  "contactPoint": {
+    "name": "Cloudflare Monitor",
+    "type": "webhook",
+    "settings": {
+      "url": "https://your-worker.workers.dev/api/alert",
+      "httpMethod": "POST",
+      "maxAlerts": 0
+    }
+  },
+  
+  "_grafana_alert_rule_example": {
+    "name": "High Memory Usage",
+    "folder": "System Alerts",
+    "interval": "1m",
+    "for": "5m",
+    "condition": "B",
+    "annotations": {
+      "description": "Memory usage is {{ $values.B.Value }}%",
+      "summary": "High memory usage on {{ $labels.instance }}"
+    },
+    "labels": {
+      "severity": "warning",
+      "team": "infrastructure"
+    },
+    "queries": [
+      {
+        "refId": "A",
+        "datasourceUid": "prometheus-uid",
+        "model": {
+          "expr": "(node_memory_Active_bytes / node_memory_MemTotal_bytes) * 100",
+          "refId": "A"
+        }
+      }
+    ],
+    "conditions": [
+      {
+        "refId": "B",
+        "query": {
+          "params": ["A"]
+        },
+        "evaluator": {
+          "type": "gt",
+          "params": [85]
+        }
+      }
+    ],
+    "noDataState": "NoData",
+    "execErrState": "Alerting"
+  },
+  
+  "_instructions_terraform": [
+    "If using Terraform/Grafana provider, use this configuration:",
+    "",
+    "resource \"grafana_contact_point\" \"cloudflare_monitor\" {",
+    "  name = \"Cloudflare Monitor\"",
+    "",
+    "  webhook {",
+    "    url         = \"https://your-worker.workers.dev/api/alert\"",
+    "    http_method = \"POST\"",
+    "  }",
+    "}",
+    "",
+    "resource \"grafana_notification_policy\" \"default\" {",
+    "  contact_point = grafana_contact_point.cloudflare_monitor.name",
+    "  group_by      = [\"alertname\", \"grafana_folder\"]",
+    "  group_wait    = \"30s\"",
+    "  group_interval = \"5m\"",
+    "  repeat_interval = \"12h\"",
+    "}"
+  ],
+  
+  "_webhook_payload_example": {
+    "_comment": "This is what Grafana sends to your worker",
+    "dashboardId": 1,
+    "evalMatches": [
+      {
+        "value": 95.5,
+        "metric": "memory_usage_percent",
+        "tags": {
+          "host": "web-server-01"
+        }
+      }
+    ],
+    "imageUrl": "https://grafana.example.com/render/...",
+    "message": "Memory usage is critically high",
+    "orgId": 1,
+    "panelId": 2,
+    "ruleId": 1,
+    "ruleName": "High Memory Alert",
+    "ruleUrl": "https://grafana.example.com/alerting/1",
+    "state": "alerting",
+    "tags": {
+      "severity": "critical"
+    },
+    "title": "High Memory Usage on web-server-01"
+  }
+}
+

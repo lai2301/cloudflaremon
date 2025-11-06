@@ -106,6 +106,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ steps.fetch_account_id.outputs.account_id }}
           API_KEYS_SECRET: ${{ secrets.API_KEYS }}
+          ALERT_API_KEY_SECRET: ${{ secrets.ALERT_API_KEY }}
           DISCORD_WEBHOOK: ${{ secrets.NOTIFICATION_DISCORD_WEBHOOK_WEBHOOKURL }}
           SLACK_WEBHOOK: ${{ secrets.NOTIFICATION_SLACK_WEBHOOK_WEBHOOKURL }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.NOTIFICATION_TELEGRAM_BOT_BOTTOKEN }}
@@ -133,6 +134,14 @@ jobs:
             echo "✅ API_KEYS configured"
           else
             echo "⚠️  API_KEYS not set - heartbeat authentication may not work"
+          fi
+          
+          # Alert API Key for external alert endpoint authentication (optional)
+          if [[ -n "$ALERT_API_KEY_SECRET" ]]; then
+            printf '%s' "$ALERT_API_KEY_SECRET" | npx wrangler secret put ALERT_API_KEY
+            echo "✅ ALERT_API_KEY configured - /api/alert endpoint is now protected"
+          else
+            echo "ℹ️  ALERT_API_KEY not set - /api/alert endpoint is public"
           fi
           
           echo ""

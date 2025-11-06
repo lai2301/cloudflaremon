@@ -28,6 +28,9 @@ export default {
     } else if (url.pathname === '/api/test-notification' && request.method === 'POST') {
       // Test notification system
       return handleTestNotification(env, request);
+    } else if (url.pathname === '/api/alert' && request.method === 'POST') {
+      // Receive external alerts (Alertmanager, Grafana, etc.)
+      return handleCustomAlert(env, request);
     }
 
     return new Response('Not Found', { status: 404 });
@@ -312,6 +315,134 @@ async function handleTestNotification(env, request) {
       headers: { 'Content-Type': 'application/json' }
     });
   }
+}
+
+/**
+ * Handle custom alert from external tools (Alertmanager, Grafana, etc.)
+ */
+async function handleCustomAlert(env, request) {
+  // Optional authentication - if ALERT_API_KEY is set, require it
+  if (env.ALERT_API_KEY) {
+    const authHeader = request.headers.get('Authorization');
+    const providedKey = authHeader?.replace('Bearer ', '');
+    
+    if (!providedKey || providedKey !== env.ALERT_API_KEY) {
+      return new Response(JSON.stringify({
+        success: false,
+        message: 'Unauthorized - Invalid or missing API key'
+      }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }
+  
+  try {
+    const body = await request.json();
+    
+    // Detect alert source and parse accordingly
+    let alertData;
+    
+    if (body.alerts && Array.isArray(body.alerts)) {
+      // Alertmanager format
+      alertData = parseAlertmanagerPayload(body);
+    } else if (body.evalMatches || body.message) {
+      // Grafana format
+      alertData = parseGrafanaPayload(body);
+    } else if (body.title && body.message) {
+      // Generic format
+      alertData = {
+        title: body.title,
+        message: body.message,
+        severity: body.severity || 'warning',
+        source: body.source || 'external',
+        labels: body.labels || {},
+        annotations: body.annotations || {}
+      };
+    } else {
+      return new Response(JSON.stringify({
+        success: false,
+        message: 'Unsupported alert format. Use Alertmanager, Grafana, or generic format.'
+      }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Send notifications using the custom alert handler
+    const { sendCustomAlert } = await import('./notifications.js');
+    await sendCustomAlert(env, alertData);
+
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'Alert processed and notifications sent',
+      alertTitle: alertData.title
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+  } catch (error) {
+    console.error('Custom alert error:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      message: error.message
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+/**
+ * Parse Alertmanager webhook payload
+ */
+function parseAlertmanagerPayload(body) {
+  const alerts = body.alerts || [];
+  const firingAlerts = alerts.filter(a => a.status === 'firing');
+  const resolvedAlerts = alerts.filter(a => a.status === 'resolved');
+  
+  // Use first alert for details
+  const alert = alerts[0] || {};
+  const labels = alert.labels || {};
+  const annotations = alert.annotations || {};
+  
+  return {
+    title: annotations.summary || labels.alertname || 'Alert',
+    message: annotations.description || annotations.message || 'No description',
+    severity: labels.severity || 'warning',
+    source: 'alertmanager',
+    status: firingAlerts.length > 0 ? 'firing' : 'resolved',
+    count: {
+      firing: firingAlerts.length,
+      resolved: resolvedAlerts.length
+    },
+    labels: labels,
+    annotations: annotations,
+    generatorURL: alert.generatorURL
+  };
+}
+
+/**
+ * Parse Grafana webhook payload
+ */
+function parseGrafanaPayload(body) {
+  return {
+    title: body.title || body.ruleName || 'Grafana Alert',
+    message: body.message || 'No message',
+    severity: body.state === 'alerting' ? 'critical' : body.state === 'ok' ? 'info' : 'warning',
+    source: 'grafana',
+    status: body.state || 'unknown',
+    labels: {
+      ruleName: body.ruleName,
+      ruleUrl: body.ruleUrl
+    },
+    annotations: {
+      imageUrl: body.imageUrl,
+      message: body.message
+    },
+    evalMatches: body.evalMatches || []
+  };
 }
 
 /**

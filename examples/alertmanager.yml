@@ -1,0 +1,177 @@
+# Alertmanager Configuration Example
+# This file shows how to configure Prometheus Alertmanager to send alerts
+# to your Cloudflare Monitor via the /api/alert endpoint
+
+global:
+  # Resolve timeout - how long to wait before marking an alert as resolved
+  resolve_timeout: 5m
+
+# Route configuration
+route:
+  # Group alerts by these labels
+  group_by: ['alertname', 'cluster', 'service']
+  
+  # How long to wait before sending first notification for a group
+  group_wait: 10s
+  
+  # How long to wait before sending notification about new alerts added to group
+  group_interval: 10s
+  
+  # How long to wait before re-sending a notification (for ongoing alerts)
+  repeat_interval: 12h
+  
+  # Default receiver for all alerts
+  receiver: 'cloudflare-monitor'
+  
+  # Child routes (optional) - route specific alerts to different destinations
+  routes:
+    # Critical alerts
+    - match:
+        severity: critical
+      receiver: 'cloudflare-monitor-critical'
+      repeat_interval: 5m  # More frequent for critical
+    
+    # Warning alerts  
+    - match:
+        severity: warning
+      receiver: 'cloudflare-monitor'
+      repeat_interval: 1h
+
+# Receivers configuration
+receivers:
+  # Default receiver - all alerts
+  - name: 'cloudflare-monitor'
+    webhook_configs:
+      - url: 'https://your-worker.workers.dev/api/alert'
+        send_resolved: true  # Also send when alerts are resolved
+        http_config:
+          # Optional: Add API key authentication if ALERT_API_KEY is configured
+          authorization:
+            type: Bearer
+            credentials: YOUR_ALERT_API_KEY  # Replace with your actual key
+          follow_redirects: true
+  
+  # Critical alerts receiver (you can use the same endpoint)
+  - name: 'cloudflare-monitor-critical'
+    webhook_configs:
+      - url: 'https://your-worker.workers.dev/api/alert'
+        send_resolved: true
+        http_config:
+          authorization:
+            type: Bearer
+            credentials: YOUR_ALERT_API_KEY
+          follow_redirects: true
+
+# Inhibit rules - prevent sending notifications for certain alerts
+# when other alerts are already firing
+inhibit_rules:
+  # If a critical alert is firing, inhibit warning alerts for the same service
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'instance', 'service']
+
+---
+
+# Example Prometheus Alert Rules
+# Save this as /etc/prometheus/rules/alerts.yml
+
+groups:
+  - name: system_alerts
+    interval: 30s
+    rules:
+      # High CPU usage
+      - alert: HighCPU
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is {{ $value }}% on {{ $labels.instance }}"
+      
+      # Critical CPU usage
+      - alert: CriticalCPU
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 95
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is {{ $value }}% on {{ $labels.instance }}"
+      
+      # High memory usage
+      - alert: HighMemory
+        expr: (node_memory_Active_bytes / node_memory_MemTotal_bytes) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is {{ $value }}% on {{ $labels.instance }}"
+      
+      # Critical memory usage
+      - alert: CriticalMemory
+        expr: (node_memory_Active_bytes / node_memory_MemTotal_bytes) * 100 > 95
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical memory usage on {{ $labels.instance }}"
+          description: "Memory usage is {{ $value }}% on {{ $labels.instance }}"
+      
+      # Disk space warning
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes{fstype!="tmpfs"} / node_filesystem_size_bytes) * 100 < 15
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Disk space low on {{ $labels.instance }}"
+          description: "Only {{ $value }}% disk space remaining on {{ $labels.mountpoint }}"
+      
+      # Service down
+      - alert: ServiceDown
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "{{ $labels.job }} on {{ $labels.instance }} has been down for more than 2 minutes"
+      
+      # High HTTP error rate
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High HTTP error rate on {{ $labels.instance }}"
+          description: "Error rate is {{ $value }} errors/sec"
+
+---
+
+# To use this configuration:
+# 1. Save alertmanager.yml to /etc/alertmanager/alertmanager.yml
+# 2. Update 'https://your-worker.workers.dev' with your actual worker URL
+# 3. Save alert rules to /etc/prometheus/rules/alerts.yml
+# 4. Update prometheus.yml to load the rules:
+#
+#    rule_files:
+#      - "/etc/prometheus/rules/*.yml"
+#
+#    alerting:
+#      alertmanagers:
+#        - static_configs:
+#            - targets:
+#                - localhost:9093
+#
+# 5. Restart Alertmanager and Prometheus:
+#    sudo systemctl restart alertmanager
+#    sudo systemctl restart prometheus
+#
+# 6. Test with the provided test script:
+#    ./examples/test-external-alert.sh https://your-worker.workers.dev
+

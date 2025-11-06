@@ -56,7 +56,31 @@ This directory contains example heartbeat client implementations in various lang
   - Easy deployment with Docker
   - Can run alongside other containers
 
+### External Alert Integration
+
+- **`test-external-alert.sh`**: Test script for external alerts (Bash)
+  - Comprehensive test suite for all alert formats
+  - Tests Alertmanager, Grafana, and generic formats
+  - Useful for verifying integration before production
+
+- **`test-external-alert.py`**: Test script for external alerts (Python)
+  - Same comprehensive tests as bash script
+  - Better error handling and JSON formatting
+  - Cross-platform compatible
+
+- **`alertmanager.yml`**: Prometheus Alertmanager configuration
+  - Complete example configuration
+  - Includes routing rules and receivers
+  - Example alert rules for common scenarios
+
+- **`grafana-webhook.json`**: Grafana webhook configuration
+  - Contact point setup instructions
+  - Example alert rules
+  - Terraform configuration example
+
 ## Testing
+
+### Heartbeat Clients
 
 Test your heartbeat client before scheduling:
 
@@ -75,6 +99,30 @@ Expected output:
 ```
 [timestamp] Heartbeat sent successfully
 ```
+
+### External Alert Integration
+
+Test external alert endpoint before integrating with Alertmanager/Grafana:
+
+```bash
+# Bash script (comprehensive test suite)
+./test-external-alert.sh https://your-worker.workers.dev
+
+# Python script (comprehensive test suite)
+python3 test-external-alert.py https://your-worker.workers.dev
+
+# Quick manual test
+curl -X POST https://your-worker.workers.dev/api/alert \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Test Alert",
+    "message": "Testing external alert integration",
+    "severity": "warning",
+    "source": "manual-test"
+  }'
+```
+
+**See [External Alert Integration Guide](../docs/EXTERNAL_ALERTS.md) for Alertmanager and Grafana setup.**
 
 ## Scheduling Recommendations
 
