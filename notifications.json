@@ -63,6 +63,44 @@
     "repeatAlertMinutes": 60,
     "includeMetadata": true,
     "timezone": "UTC"
+  },
+  "templates": {
+    "discord": {
+      "title": "{{emoji}} Service {{eventType}}: {{serviceName}}",
+      "description": "Service **{{serviceName}}** is now **{{eventType}}**",
+      "fields": [
+        {"name": "Service ID", "value": "{{serviceId}}", "inline": true},
+        {"name": "Status", "value": "{{eventType}}", "inline": true},
+        {"name": "Last Seen", "value": "{{lastSeen}}", "inline": false},
+        {"name": "Timestamp", "value": "{{timestamp}}", "inline": false}
+      ],
+      "footer": "Cloudflare Heartbeat Monitor"
+    },
+    "slack": {
+      "text": "{{emoji}} Service Alert: {{serviceName}}",
+      "fields": [
+        {"title": "Service", "value": "{{serviceName}}", "short": true},
+        {"title": "Status", "value": "{{eventType}}", "short": true},
+        {"title": "Service ID", "value": "{{serviceId}}", "short": true},
+        {"title": "Last Seen", "value": "{{lastSeen}}", "short": true}
+      ],
+      "footer": "Cloudflare Heartbeat Monitor"
+    },
+    "telegram": {
+      "message": "{{emoji}} *Service {{eventType}}*\n\n*Service:* {{serviceName}}\n*Status:* {{eventType}}\n*Last Seen:* {{lastSeen}}\n*Time:* {{timestamp}}"
+    },
+    "email": {
+      "subject": "[{{eventType}}] {{serviceName}} - Heartbeat Monitor Alert",
+      "body": "Service: {{serviceName}}\nStatus: {{eventType}}\nService ID: {{serviceId}}\nLast Seen: {{lastSeen}}\nTimestamp: {{timestamp}}"
+    },
+    "pushover": {
+      "title": "Heartbeat Monitor Alert",
+      "message": "Service {{serviceName}} is {{eventType}}"
+    },
+    "pagerduty": {
+      "summary": "Service {{serviceName}} is {{eventType}}",
+      "severity": "critical"
+    }
   }
 }
 

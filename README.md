@@ -189,6 +189,7 @@ npx wrangler secret put NOTIFICATION_DISCORD_ALERTS_WEBHOOKURL
 
 **📖 Documentation:**
 - **[Notification Setup Guide](docs/NOTIFICATIONS.md)** - Detailed setup for each channel
+- **[Template Customization](docs/NOTIFICATION_TEMPLATES.md)** 🎨 - Customize notification messages
 - **[Credential Management](docs/NOTIFICATION_CREDENTIALS.md)** 🔒 - How to securely store API keys and tokens
 
 ### 7. Deploy the Worker
@@ -561,6 +562,7 @@ npx wrangler secret put API_KEYS
 - **[Architecture Overview](docs/ARCHITECTURE.md)** - System design and components
 - **[Security Guide](docs/SECURITY.md)** - API key management and best practices 🔒
 - **[Notification Guide](docs/NOTIFICATIONS.md)** - Multi-channel alerting setup 🔔
+- **[Notification Templates](docs/NOTIFICATION_TEMPLATES.md)** - Customize notification messages 🎨
 - **[Notification Credentials](docs/NOTIFICATION_CREDENTIALS.md)** - Secure credential storage 🔐
 - **[GitHub Actions Setup](docs/GITHUB_ACTIONS_SETUP.md)** - Automated deployment & secrets 🤖
 - **[Deployment Guide](docs/DEPLOYMENT.md)** - Manual deployment guide

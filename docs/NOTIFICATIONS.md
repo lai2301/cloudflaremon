@@ -675,8 +675,37 @@ A: Currently no, but it's a planned feature. Use custom webhook for now.
 **Q: Do notifications work in local development?**
 A: Yes, but cron jobs don't run locally. Test by deploying to Cloudflare.
 
+## Customizing Notification Templates
+
+You can customize the message format for each notification channel! Edit the `templates` section in `notifications.json`:
+
+```json
+{
+  "templates": {
+    "discord": {
+      "title": "{{emoji}} Service {{eventType}}: {{serviceName}}",
+      "description": "Custom message here: {{serviceName}} is {{eventType}}",
+      "fields": [
+        {"name": "Custom Field", "value": "{{serviceId}}", "inline": true}
+      ]
+    }
+  }
+}
+```
+
+**Available variables:**
+- `{{emoji}}` - Status emoji (🔴/🟢/🟡)
+- `{{eventType}}` - Event type (DOWN/UP/DEGRADED)
+- `{{serviceName}}` - Service name
+- `{{serviceId}}` - Service ID
+- `{{lastSeen}}` - Last heartbeat time
+- `{{timestamp}}` - Current timestamp
+
+**📖 [Full Template Customization Guide](NOTIFICATION_TEMPLATES.md)** - Examples and best practices
+
 ## Related Documentation
 
+- **[Template Customization](NOTIFICATION_TEMPLATES.md)** 🎨 - Customize notification messages
 - **[Credential Management](NOTIFICATION_CREDENTIALS.md)** 🔒 - How to securely store notification credentials
 - **[Quick Reference](NOTIFICATIONS_QUICK_REFERENCE.md)** - Common configurations and troubleshooting
 - **[Security Guide](SECURITY.md)** - API key management
