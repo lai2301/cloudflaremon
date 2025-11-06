@@ -4,18 +4,19 @@
 
 A push-based Cloudflare Worker heartbeat monitoring solution for internal network services. Your internal services send heartbeats TO the Cloudflare Worker, eliminating the need to expose your services to the public internet.
 
-**📖 [View Full Documentation](docs/README.md)** | **🚀 [Quick Start Guide](docs/QUICKSTART.md)** | **🏗️ [Architecture](docs/ARCHITECTURE.md)** | **🔒 [Security Guide](docs/SECURITY.md)**
+**📖 [View Full Documentation](docs/README.md)** | **🚀 [Quick Start Guide](docs/QUICKSTART.md)** | **🏗️ [Architecture](docs/ARCHITECTURE.md)** | **🔒 [Security Guide](docs/SECURITY.md)** | **🔔 [Notifications](docs/NOTIFICATIONS.md)**
 
 ## Features
 
 - 📤 **Push-Based Architecture**: Internal services send heartbeats to the worker (not vice versa)
 - 🔒 **Zero Exposure**: No need to expose internal services publicly
-- 📊 **Beautiful Dashboard**: Web-based UI to view service status in real-time
-- 💾 **KV Storage**: All heartbeat logs stored in Cloudflare KV for historical tracking
+- 📊 **Beautiful Dashboard**: Web-based UI to view service status in real-time with 90-day uptime history
+- 💾 **Ultra-Efficient Storage**: Single KV entry for all monitoring data
 - ⚡ **Fast & Reliable**: Leverages Cloudflare's global network
-- 🔐 **API Key Authentication**: Secure heartbeat endpoints with per-service API keys
+- 🔐 **API Key Authentication**: Secure heartbeat endpoints with unified JSON secret
 - ⏱️ **Staleness Detection**: Automatically detects when services stop sending heartbeats
-- 🎨 **Modern UI**: Clean, responsive dashboard with auto-refresh
+- 🔔 **Multi-Channel Notifications**: Discord, Slack, Telegram, Email, PagerDuty, Pushover & more
+- 🎨 **Modern UI**: Uptimeflare-inspired design with dark mode support
 - 📦 **Multiple Client Examples**: Bash, Python, Node.js, systemd, cron, Docker
 
 ## How It Works
@@ -95,7 +96,12 @@ Edit `services.json` to add your services to monitor:
       "id": "my-service",
       "name": "My API Service",
       "enabled": true,
-      "stalenessThreshold": 300
+      "stalenessThreshold": 300,
+      "notifications": {
+        "enabled": true,
+        "channels": ["discord", "slack"],
+        "events": ["down", "up"]
+      }
     }
   ]
 }
@@ -107,6 +113,10 @@ Edit `services.json` to add your services to monitor:
 - `name`: Display name for the service
 - `enabled`: Whether to monitor this service (true/false)
 - `stalenessThreshold`: Time in seconds before considering a service "down" if no heartbeat received (default: 300)
+- `notifications` (optional): Per-service notification settings
+  - `enabled`: Enable/disable notifications for this service (default: true)
+  - `channels`: Array of channel types to notify (e.g., `["discord", "slack"]`). If empty/omitted, uses all enabled channels
+  - `events`: Array of events to notify on (e.g., `["down", "up"]`). If empty/omitted, uses channel's configured events
 
 ### 5. 🔒 Configure API Keys (Recommended)
 
@@ -127,7 +137,61 @@ npx wrangler secret put API_KEYS
 
 **📖 See [Security Guide](docs/SECURITY.md) for detailed setup instructions**
 
-### 6. Deploy the Worker
+### 6. 🔔 Configure Notifications (Optional)
+
+Enable alerts when services go down or recover. 
+
+#### Step 1: Edit `notifications.json`
+
+```json
+{
+  "enabled": true,
+  "channels": [
+    {
+      "type": "discord",
+      "name": "Discord Alerts",
+      "enabled": true,
+      "config": {},
+      "events": ["down", "up"]
+    }
+  ],
+  "settings": {
+    "cooldownMinutes": 5
+  }
+}
+```
+
+**Note**: Keep `config: {}` empty - credentials are stored as environment variables for security.
+
+#### Step 2: Set Credentials as Environment Variables
+
+```bash
+# Set Discord webhook URL as a secret
+npx wrangler secret put NOTIFICATION_DISCORD_ALERTS_WEBHOOKURL
+# Then paste your webhook URL when prompted
+```
+
+**Environment Variable Naming**: `NOTIFICATION_{CHANNEL_NAME}_{CREDENTIAL_KEY}`
+
+**Supported Channels:**
+- 🎮 **Discord** - Rich embedded messages with color coding
+- 💬 **Slack** - Formatted attachments and real-time updates
+- 📱 **Telegram** - Instant mobile notifications via bot
+- 📧 **Email** - Via Mailgun API (multiple recipients)
+- 🔗 **Custom Webhook** - Send to any HTTP endpoint with custom headers
+- 📲 **Pushover** - Mobile push notifications with priorities
+- 🚨 **PagerDuty** - Incident management with auto-resolve
+
+**Event Types:**
+- `down` - Service stopped sending heartbeats
+- `up` - Service recovered and is operational
+- `degraded` - Service is partially operational
+
+**📖 Documentation:**
+- **[Notification Setup Guide](docs/NOTIFICATIONS.md)** - Detailed setup for each channel
+- **[Credential Management](docs/NOTIFICATION_CREDENTIALS.md)** 🔒 - How to securely store API keys and tokens
+
+### 7. Deploy the Worker
 
 #### Option A: Deploy Manually
 
@@ -141,9 +205,17 @@ Your worker will be deployed to Cloudflare's network!
 
 Set up automated deployment with GitHub Actions:
 
-1. **Add secrets to your GitHub repository:**
+1. **Add required secrets to your GitHub repository:**
+   
+   **Required:**
    - `CLOUDFLARE_API_TOKEN` - Get from Cloudflare Dashboard → API Tokens
-   - `CLOUDFLARE_ACCOUNT_ID` - Get from Cloudflare Dashboard → Workers
+   - `API_KEYS` - JSON object with service API keys: `{"service-1":"key1","service-2":"key2"}`
+   
+   **Optional (for notifications):**
+   - `NOTIFICATION_DISCORD_WEBHOOK_WEBHOOKURL` - Discord webhook URL
+   - `NOTIFICATION_SLACK_WEBHOOK_WEBHOOKURL` - Slack webhook URL
+   - `NOTIFICATION_TELEGRAM_BOT_BOTTOKEN` & `NOTIFICATION_TELEGRAM_BOT_CHATID` - Telegram credentials
+   - See [Notification Credentials Guide](docs/NOTIFICATION_CREDENTIALS.md) for complete list
 
 2. **Push to GitHub:**
    ```bash
@@ -153,6 +225,9 @@ Set up automated deployment with GitHub Actions:
    ```
 
 3. **Automatic deployment** will trigger on every push to `main`!
+   - Worker is deployed
+   - All secrets are automatically configured
+   - Notifications are ready to use
 
 See [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for detailed setup instructions.
 
@@ -485,7 +560,10 @@ npx wrangler secret put API_KEYS
 - **[Quick Start Guide](docs/QUICKSTART.md)** - Get started in 10 minutes
 - **[Architecture Overview](docs/ARCHITECTURE.md)** - System design and components
 - **[Security Guide](docs/SECURITY.md)** - API key management and best practices 🔒
-- **[Deployment Guide](docs/DEPLOYMENT.md)** - GitHub Actions setup
+- **[Notification Guide](docs/NOTIFICATIONS.md)** - Multi-channel alerting setup 🔔
+- **[Notification Credentials](docs/NOTIFICATION_CREDENTIALS.md)** - Secure credential storage 🔐
+- **[GitHub Actions Setup](docs/GITHUB_ACTIONS_SETUP.md)** - Automated deployment & secrets 🤖
+- **[Deployment Guide](docs/DEPLOYMENT.md)** - Manual deployment guide
 - **[Setup Checklist](docs/SETUP_CHECKLIST.md)** - Pre-deployment checklist
 - **[Permissions Guide](docs/PERMISSIONS.md)** - GitHub Actions permissions
 - **[Contributing Guide](.github/CONTRIBUTING.md)** - How to contribute

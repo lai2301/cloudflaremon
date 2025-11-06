@@ -1,4 +1,5 @@
 import servicesConfig from '../services.json';
+import { checkAndSendNotifications, testNotification } from './notifications.js';
 
 /**
  * Cloudflare Worker Heartbeat Monitor (Push-based)
@@ -24,6 +25,9 @@ export default {
       return new Response(JSON.stringify(servicesConfig.services, null, 2), {
         headers: { 'Content-Type': 'application/json' }
       });
+    } else if (url.pathname === '/api/test-notification' && request.method === 'POST') {
+      // Test notification system
+      return handleTestNotification(env, request);
     }
 
     return new Response('Not Found', { status: 404 });
@@ -187,6 +191,9 @@ async function checkHeartbeatStaleness(env) {
   // Update summary and uptime in the single store
   await updateMonitorData(env, monitorData, results, timestamp);
 
+  // Check for status changes and send notifications
+  await checkAndSendNotifications(env, results, monitorData, servicesConfig);
+
   return results;
 }
 
@@ -272,6 +279,38 @@ async function updateMonitorData(env, monitorData, results, timestamp) {
     await env.HEARTBEAT_LOGS.put('monitor:data', JSON.stringify(monitorData));
   } catch (error) {
     console.error('Error updating monitor data:', error);
+  }
+}
+
+/**
+ * Handle test notification request
+ */
+async function handleTestNotification(env, request) {
+  try {
+    const body = await request.json();
+    const { channelType, eventType = 'down' } = body;
+
+    const result = await testNotification(env, channelType, eventType);
+
+    return new Response(JSON.stringify({ 
+      success: true, 
+      message: `Test ${eventType} notification sent to ${result.channel}`,
+      ...result
+    }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+  } catch (error) {
+    console.error('Test notification error:', error);
+    const status = error.message.includes('not found') ? 404 : 
+                   error.message.includes('disabled') ? 400 : 500;
+    return new Response(JSON.stringify({ 
+      success: false, 
+      message: error.message 
+    }), {
+      status: status,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }
 

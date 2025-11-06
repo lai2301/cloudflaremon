@@ -1,0 +1,75 @@
+{
+  "enabled": true,
+  "channels": [
+    {
+      "type": "discord",
+      "name": "Discord Production Alerts",
+      "enabled": false,
+      "config": {},
+      "_comment": "Set NOTIFICATION_DISCORD_PRODUCTION_ALERTS_WEBHOOKURL environment variable",
+      "events": ["down", "up", "degraded"]
+    },
+    {
+      "type": "slack",
+      "name": "Slack Team Channel",
+      "enabled": false,
+      "config": {},
+      "_comment": "Set NOTIFICATION_SLACK_TEAM_CHANNEL_WEBHOOKURL environment variable",
+      "events": ["down", "up"]
+    },
+    {
+      "type": "telegram",
+      "name": "Telegram Mobile Alerts",
+      "enabled": false,
+      "config": {},
+      "_comment": "Set NOTIFICATION_TELEGRAM_MOBILE_ALERTS_BOTTOKEN and NOTIFICATION_TELEGRAM_MOBILE_ALERTS_CHATID environment variables",
+      "events": ["down", "up", "degraded"]
+    },
+    {
+      "type": "email",
+      "name": "Email Notifications",
+      "enabled": false,
+      "config": {
+        "provider": "mailgun",
+        "from": "alerts@yourdomain.com",
+        "to": ["admin@yourdomain.com", "oncall@yourdomain.com"]
+      },
+      "_comment": "Set NOTIFICATION_EMAIL_NOTIFICATIONS_APIKEY and NOTIFICATION_EMAIL_NOTIFICATIONS_DOMAIN environment variables",
+      "events": ["down", "up"]
+    },
+    {
+      "type": "webhook",
+      "name": "Custom Webhook Integration",
+      "enabled": false,
+      "config": {
+        "method": "POST",
+        "headers": {}
+      },
+      "_comment": "Set NOTIFICATION_CUSTOM_WEBHOOK_INTEGRATION_URL and NOTIFICATION_CUSTOM_WEBHOOK_INTEGRATION_AUTHTOKEN environment variables",
+      "events": ["down", "up", "degraded"]
+    },
+    {
+      "type": "pushover",
+      "name": "Pushover Mobile Push",
+      "enabled": false,
+      "config": {},
+      "_comment": "Set NOTIFICATION_PUSHOVER_MOBILE_PUSH_USERKEY and NOTIFICATION_PUSHOVER_MOBILE_PUSH_APITOKEN environment variables",
+      "events": ["down", "up"]
+    },
+    {
+      "type": "pagerduty",
+      "name": "PagerDuty On-Call",
+      "enabled": false,
+      "config": {},
+      "_comment": "Set NOTIFICATION_PAGERDUTY_ON_CALL_ROUTINGKEY environment variable",
+      "events": ["down", "up"]
+    }
+  ],
+  "settings": {
+    "cooldownMinutes": 5,
+    "repeatAlertMinutes": 60,
+    "includeMetadata": true,
+    "timezone": "UTC"
+  }
+}
+
