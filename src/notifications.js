@@ -6,6 +6,59 @@
 import notificationsConfig from '../notifications.json';
 
 /**
+ * Render a template string with variables
+ */
+function renderTemplate(template, variables) {
+  if (!template) return template;
+  
+  let rendered = template;
+  for (const [key, value] of Object.entries(variables)) {
+    const regex = new RegExp(`{{${key}}}`, 'g');
+    rendered = rendered.replace(regex, value || '');
+  }
+  return rendered;
+}
+
+/**
+ * Get emoji for event type
+ */
+function getEmoji(eventType) {
+  const emojis = {
+    down: '🔴',
+    up: '🟢',
+    degraded: '🟡'
+  };
+  return emojis[eventType] || '⚪';
+}
+
+/**
+ * Get color for event type
+ */
+function getColor(eventType) {
+  const colors = {
+    down: { discord: 15158332, slack: 'danger' },  // Red
+    up: { discord: 3066993, slack: 'good' },       // Green
+    degraded: { discord: 15844367, slack: 'warning' } // Orange
+  };
+  return colors[eventType] || { discord: 8421504, slack: '#808080' }; // Gray
+}
+
+/**
+ * Prepare template variables
+ */
+function prepareVariables(eventType, serviceData) {
+  return {
+    emoji: getEmoji(eventType),
+    eventType: eventType.toUpperCase(),
+    serviceName: serviceData.serviceName || serviceData.serviceId,
+    serviceId: serviceData.serviceId,
+    lastSeen: serviceData.lastSeen || 'Never',
+    timestamp: new Date(serviceData.timestamp).toLocaleString(),
+    timestampISO: new Date().toISOString()
+  };
+}
+
+/**
  * Check for status changes and send notifications
  */
 export async function checkAndSendNotifications(env, currentResults, monitorData, servicesConfig) {
@@ -169,21 +222,29 @@ async function sendDiscordNotification(env, channel, eventType, serviceData) {
     return;
   }
 
-  const color = eventType === 'down' ? 15158332 : eventType === 'up' ? 3066993 : 15844367; // Red, Green, Orange
-  const emoji = eventType === 'down' ? '🔴' : eventType === 'up' ? '🟢' : '🟡';
+  const variables = prepareVariables(eventType, serviceData);
+  const colors = getColor(eventType);
+  const template = notificationsConfig.templates?.discord || {};
   
+  // Render template fields
+  const fields = (template.fields || []).map(field => ({
+    name: renderTemplate(field.name, variables),
+    value: renderTemplate(field.value, variables),
+    inline: field.inline
+  }));
+
   const embed = {
-    title: `${emoji} Service ${eventType.toUpperCase()}: ${serviceData.serviceName}`,
-    description: `Service **${serviceData.serviceName}** is now **${eventType}**`,
-    color: color,
-    fields: [
+    title: renderTemplate(template.title, variables) || `${variables.emoji} Service ${variables.eventType}: ${variables.serviceName}`,
+    description: renderTemplate(template.description, variables) || `Service **${variables.serviceName}** is now **${eventType}**`,
+    color: colors.discord,
+    fields: fields.length > 0 ? fields : [
       { name: 'Service ID', value: serviceData.serviceId, inline: true },
-      { name: 'Status', value: eventType.toUpperCase(), inline: true },
-      { name: 'Last Seen', value: serviceData.lastSeen || 'Never', inline: false },
-      { name: 'Timestamp', value: new Date(serviceData.timestamp).toLocaleString(), inline: false }
+      { name: 'Status', value: variables.eventType, inline: true },
+      { name: 'Last Seen', value: variables.lastSeen, inline: false },
+      { name: 'Timestamp', value: variables.timestamp, inline: false }
     ],
-    footer: { text: 'Cloudflare Heartbeat Monitor' },
-    timestamp: new Date().toISOString()
+    footer: { text: template.footer || 'Cloudflare Heartbeat Monitor' },
+    timestamp: variables.timestampISO
   };
 
   await fetch(webhookUrl, {
@@ -203,20 +264,37 @@ async function sendSlackNotification(env, channel, eventType, serviceData) {
     return;
   }
 
-  const color = eventType === 'down' ? 'danger' : eventType === 'up' ? 'good' : 'warning';
-  const emoji = eventType === 'down' ? ':red_circle:' : eventType === 'up' ? ':large_green_circle:' : ':large_orange_circle:';
+  const variables = prepareVariables(eventType, serviceData);
+  const colors = getColor(eventType);
+  const template = notificationsConfig.templates?.slack || {};
+  
+  // Convert emoji to Slack format
+  const slackEmoji = {
+    '🔴': ':red_circle:',
+    '🟢': ':large_green_circle:',
+    '🟡': ':large_orange_circle:'
+  }[variables.emoji] || ':white_circle:';
+  
+  variables.emoji = slackEmoji;
+  
+  // Render template fields
+  const fields = (template.fields || []).map(field => ({
+    title: renderTemplate(field.title, variables),
+    value: renderTemplate(field.value, variables),
+    short: field.short
+  }));
   
   const payload = {
-    text: `${emoji} Service Alert: ${serviceData.serviceName}`,
+    text: renderTemplate(template.text, variables) || `${slackEmoji} Service Alert: ${variables.serviceName}`,
     attachments: [{
-      color: color,
-      fields: [
-        { title: 'Service', value: serviceData.serviceName, short: true },
-        { title: 'Status', value: eventType.toUpperCase(), short: true },
+      color: colors.slack,
+      fields: fields.length > 0 ? fields : [
+        { title: 'Service', value: variables.serviceName, short: true },
+        { title: 'Status', value: variables.eventType, short: true },
         { title: 'Service ID', value: serviceData.serviceId, short: true },
-        { title: 'Last Seen', value: serviceData.lastSeen || 'Never', short: true }
+        { title: 'Last Seen', value: variables.lastSeen, short: true }
       ],
-      footer: 'Cloudflare Heartbeat Monitor',
+      footer: template.footer || 'Cloudflare Heartbeat Monitor',
       ts: Math.floor(Date.now() / 1000)
     }]
   };
@@ -240,12 +318,15 @@ async function sendTelegramNotification(env, channel, eventType, serviceData) {
     return;
   }
 
-  const emoji = eventType === 'down' ? '🔴' : eventType === 'up' ? '🟢' : '🟡';
-  const message = `${emoji} *Service ${eventType.toUpperCase()}*\n\n` +
-    `*Service:* ${serviceData.serviceName}\n` +
-    `*Status:* ${eventType.toUpperCase()}\n` +
-    `*Last Seen:* ${serviceData.lastSeen || 'Never'}\n` +
-    `*Time:* ${new Date(serviceData.timestamp).toLocaleString()}`;
+  const variables = prepareVariables(eventType, serviceData);
+  const template = notificationsConfig.templates?.telegram || {};
+  
+  const message = renderTemplate(template.message, variables) || 
+    `${variables.emoji} *Service ${variables.eventType}*\n\n` +
+    `*Service:* ${variables.serviceName}\n` +
+    `*Status:* ${variables.eventType}\n` +
+    `*Last Seen:* ${variables.lastSeen}\n` +
+    `*Time:* ${variables.timestamp}`;
 
   const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
   await fetch(url, {
@@ -279,12 +360,17 @@ async function sendEmailNotification(env, channel, eventType, serviceData) {
     return;
   }
 
-  const subject = `[${eventType.toUpperCase()}] ${serviceData.serviceName} - Heartbeat Monitor Alert`;
-  const text = `Service: ${serviceData.serviceName}\n` +
-    `Status: ${eventType.toUpperCase()}\n` +
+  const variables = prepareVariables(eventType, serviceData);
+  const template = notificationsConfig.templates?.email || {};
+
+  const subject = renderTemplate(template.subject, variables) || 
+    `[${variables.eventType}] ${variables.serviceName} - Heartbeat Monitor Alert`;
+  const text = renderTemplate(template.body, variables) ||
+    `Service: ${variables.serviceName}\n` +
+    `Status: ${variables.eventType}\n` +
     `Service ID: ${serviceData.serviceId}\n` +
-    `Last Seen: ${serviceData.lastSeen || 'Never'}\n` +
-    `Timestamp: ${new Date(serviceData.timestamp).toLocaleString()}`;
+    `Last Seen: ${variables.lastSeen}\n` +
+    `Timestamp: ${variables.timestamp}`;
 
   const formData = new FormData();
   formData.append('from', from);
@@ -354,14 +440,20 @@ async function sendPushoverNotification(env, channel, eventType, serviceData) {
     return;
   }
 
+  const variables = prepareVariables(eventType, serviceData);
+  const template = notificationsConfig.templates?.pushover || {};
+
   const priority = eventType === 'down' ? 1 : 0;
-  const message = `Service ${serviceData.serviceName} is ${eventType.toUpperCase()}`;
+  const message = renderTemplate(template.message, variables) || 
+    `Service ${variables.serviceName} is ${variables.eventType}`;
+  const title = renderTemplate(template.title, variables) || 
+    'Heartbeat Monitor Alert';
   
   const formData = new FormData();
   formData.append('token', apiToken);
   formData.append('user', userKey);
   formData.append('message', message);
-  formData.append('title', 'Heartbeat Monitor Alert');
+  formData.append('title', title);
   formData.append('priority', priority);
 
   await fetch('https://api.pushover.net/1/messages.json', {
@@ -380,18 +472,25 @@ async function sendPagerDutyNotification(env, channel, eventType, serviceData) {
     return;
   }
 
+  const variables = prepareVariables(eventType, serviceData);
+  const template = notificationsConfig.templates?.pagerduty || {};
+
+  const summary = renderTemplate(template.summary, variables) || 
+    `Service ${variables.serviceName} is ${eventType}`;
+  const severity = template.severity || (eventType === 'down' ? 'critical' : 'info');
+
   const event = {
     routing_key: routingKey,
     event_action: eventType === 'down' ? 'trigger' : 'resolve',
     dedup_key: `heartbeat-${serviceData.serviceId}`,
     payload: {
-      summary: `Service ${serviceData.serviceName} is ${eventType}`,
-      severity: eventType === 'down' ? 'critical' : 'info',
+      summary: summary,
+      severity: severity,
       source: 'cloudflare-heartbeat-monitor',
       custom_details: {
         service_id: serviceData.serviceId,
         service_name: serviceData.serviceName,
-        last_seen: serviceData.lastSeen,
+        last_seen: variables.lastSeen,
         status: eventType
       }
     }
