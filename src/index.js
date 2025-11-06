@@ -512,16 +512,18 @@ async function handleDashboard(env) {
         .uptime-bar {
             display: flex;
             gap: 2px;
-            height: 32px;
+            height: 40px;
             margin-bottom: 8px;
         }
         
         .uptime-day {
             flex: 1;
+            min-width: 3px;
             background: var(--status-up);
             border-radius: 2px;
-            transition: opacity 0.2s ease;
+            transition: all 0.2s ease;
             position: relative;
+            cursor: help;
         }
         
         .uptime-day.up {
@@ -545,13 +547,30 @@ async function handleDashboard(env) {
         }
         
         .uptime-day:hover {
-            opacity: 0.8;
-            cursor: pointer;
-            transform: scaleY(1.1);
+            opacity: 0.9;
+            transform: scaleY(1.15);
+            z-index: 10;
         }
         
-        .uptime-day[title] {
-            white-space: pre-line;
+        /* Custom tooltip */
+        .custom-tooltip {
+            position: fixed;
+            background: var(--text-primary);
+            color: var(--bg-primary);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            line-height: 1.4;
+            pointer-events: none;
+            z-index: 1000;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            transition: opacity 0.1s ease;
+        }
+        
+        .custom-tooltip.show {
+            opacity: 1;
         }
         
         .uptime-labels {
@@ -716,6 +735,44 @@ async function handleDashboard(env) {
             return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
         }
 
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Custom tooltip functionality
+        let tooltipElement = null;
+        
+        function initTooltip() {
+            if (!tooltipElement) {
+                tooltipElement = document.createElement('div');
+                tooltipElement.className = 'custom-tooltip';
+                document.body.appendChild(tooltipElement);
+            }
+        }
+        
+        function showTooltip(text, event) {
+            if (!tooltipElement) initTooltip();
+            tooltipElement.textContent = text;
+            tooltipElement.classList.add('show');
+            updateTooltipPosition(event);
+        }
+        
+        function hideTooltip() {
+            if (tooltipElement) {
+                tooltipElement.classList.remove('show');
+            }
+        }
+        
+        function updateTooltipPosition(event) {
+            if (!tooltipElement) return;
+            const x = event.clientX + 10;
+            const y = event.clientY + 10;
+            tooltipElement.style.left = x + 'px';
+            tooltipElement.style.top = y + 'px';
+        }
+
         function generateUptimeBar(uptimeData) {
             if (!uptimeData || !uptimeData.days || uptimeData.days.length === 0) {
                 // Fallback: generate 90 days with dates but no data
@@ -726,7 +783,7 @@ async function handleDashboard(env) {
                     date.setDate(date.getDate() - i);
                     const dateStr = date.toISOString().split('T')[0];
                     const tooltipText = formatDate(dateStr) + ' - No data available';
-                    html += \`<div class="uptime-day unknown" title="\${tooltipText}"></div>\`;
+                    html += '<div class="uptime-day unknown" data-tooltip="' + escapeHtml(tooltipText) + '"></div>';
                 }
                 return html;
             }
@@ -748,10 +805,33 @@ async function handleDashboard(env) {
                     tooltipText = formatDate(day.date) + ' | Uptime: ' + day.uptimePercentage + '% | Checks: ' + day.totalChecks + ' (up:' + day.upChecks + ' down:' + day.downChecks + ')';
                 }
                 
-                html += \`<div class="uptime-day \${dayStatus}" title="\${tooltipText}"></div>\`;
+                html += '<div class="uptime-day ' + dayStatus + '" data-tooltip="' + escapeHtml(tooltipText) + '"></div>';
             });
             
             return html;
+        }
+        
+        function attachTooltipListeners() {
+            document.addEventListener('mouseover', function(e) {
+                if (e.target.classList.contains('uptime-day')) {
+                    const tooltipText = e.target.getAttribute('data-tooltip');
+                    if (tooltipText) {
+                        showTooltip(tooltipText, e);
+                    }
+                }
+            });
+            
+            document.addEventListener('mousemove', function(e) {
+                if (e.target.classList.contains('uptime-day')) {
+                    updateTooltipPosition(e);
+                }
+            });
+            
+            document.addEventListener('mouseout', function(e) {
+                if (e.target.classList.contains('uptime-day')) {
+                    hideTooltip();
+                }
+            });
         }
 
         async function fetchUptimeData(serviceId) {
@@ -942,6 +1022,10 @@ async function handleDashboard(env) {
             Object.keys(uptimeCache).forEach(key => delete uptimeCache[key]);
             loadStatus();
         }
+        
+        // Initialize tooltip system
+        initTooltip();
+        attachTooltipListeners();
         
         // Load status on page load
         loadStatus();
