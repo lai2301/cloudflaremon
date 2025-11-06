@@ -1,0 +1,68 @@
+{
+  "enabled": true,
+  "channels": [
+    {
+      "type": "discord",
+      "name": "Discord Webhook",
+      "enabled": false,
+      "config": {},
+      "events": ["down", "up", "degraded"]
+    },
+    {
+      "type": "slack",
+      "name": "Slack Webhook",
+      "enabled": false,
+      "config": {},
+      "events": ["down", "up"]
+    },
+    {
+      "type": "telegram",
+      "name": "Telegram Bot",
+      "enabled": true,
+      "config": {},
+      "events": ["down", "up", "degraded"]
+    },
+    {
+      "type": "email",
+      "name": "Email via Mailgun",
+      "enabled": false,
+      "config": {
+        "provider": "mailgun",
+        "from": "alerts@yourdomain.com",
+        "to": ["admin@yourdomain.com"]
+      },
+      "events": ["down", "up"]
+    },
+    {
+      "type": "webhook",
+      "name": "Custom Webhook",
+      "enabled": false,
+      "config": {
+        "method": "POST",
+        "headers": {}
+      },
+      "events": ["down", "up", "degraded"]
+    },
+    {
+      "type": "pushover",
+      "name": "Pushover",
+      "enabled": false,
+      "config": {},
+      "events": ["down", "up"]
+    },
+    {
+      "type": "pagerduty",
+      "name": "PagerDuty",
+      "enabled": false,
+      "config": {},
+      "events": ["down", "up"]
+    }
+  ],
+  "settings": {
+    "cooldownMinutes": 5,
+    "repeatAlertMinutes": 60,
+    "includeMetadata": true,
+    "timezone": "UTC"
+  }
+}
+

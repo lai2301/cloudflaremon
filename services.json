@@ -4,13 +4,23 @@
       "id": "service-1",
       "name": "Internal API",
       "enabled": true,
-      "stalenessThreshold": 300
+      "stalenessThreshold": 300,
+      "notifications": {
+        "enabled": true,
+        "channels": ["telegram"],
+        "events": ["down", "up", "degraded"]
+      }
     },
     {
       "id": "service-2",
       "name": "Database Service",
       "enabled": true,
-      "stalenessThreshold": 300
+      "stalenessThreshold": 300,
+      "notifications": {
+        "enabled": false,
+        "channels": ["discord", "pagerduty"],
+        "events": ["down", "up", "degraded"]
+      }
     }
   ]
 }

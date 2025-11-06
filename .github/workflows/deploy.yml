@@ -101,3 +101,85 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ steps.fetch_account_id.outputs.account_id }}
 
+      - name: Configure Worker Secrets
+        run: |
+          echo "🔐 Configuring worker secrets..."
+          
+          # API Keys for heartbeat authentication
+          if [[ -n "${{ secrets.API_KEYS }}" ]]; then
+            echo "${{ secrets.API_KEYS }}" | npx wrangler secret put API_KEYS
+            echo "✅ API_KEYS configured"
+          else
+            echo "⚠️  API_KEYS not set - heartbeat authentication may not work"
+          fi
+          
+          echo ""
+          echo "🔔 Configuring notification secrets..."
+          
+          # Discord
+          if [[ -n "${{ secrets.NOTIFICATION_DISCORD_WEBHOOK_WEBHOOKURL }}" ]]; then
+            echo "${{ secrets.NOTIFICATION_DISCORD_WEBHOOK_WEBHOOKURL }}" | npx wrangler secret put NOTIFICATION_DISCORD_WEBHOOK_WEBHOOKURL
+            echo "✅ Discord webhook configured"
+          fi
+          
+          # Slack
+          if [[ -n "${{ secrets.NOTIFICATION_SLACK_WEBHOOK_WEBHOOKURL }}" ]]; then
+            echo "${{ secrets.NOTIFICATION_SLACK_WEBHOOK_WEBHOOKURL }}" | npx wrangler secret put NOTIFICATION_SLACK_WEBHOOK_WEBHOOKURL
+            echo "✅ Slack webhook configured"
+          fi
+          
+          # Telegram
+          if [[ -n "${{ secrets.NOTIFICATION_TELEGRAM_BOT_BOTTOKEN }}" ]]; then
+            echo "${{ secrets.NOTIFICATION_TELEGRAM_BOT_BOTTOKEN }}" | npx wrangler secret put NOTIFICATION_TELEGRAM_BOT_BOTTOKEN
+            echo "✅ Telegram bot token configured"
+          fi
+          
+          if [[ -n "${{ secrets.NOTIFICATION_TELEGRAM_BOT_CHATID }}" ]]; then
+            echo "${{ secrets.NOTIFICATION_TELEGRAM_BOT_CHATID }}" | npx wrangler secret put NOTIFICATION_TELEGRAM_BOT_CHATID
+            echo "✅ Telegram chat ID configured"
+          fi
+          
+          # Email (Mailgun)
+          if [[ -n "${{ secrets.NOTIFICATION_EMAIL_VIA_MAILGUN_APIKEY }}" ]]; then
+            echo "${{ secrets.NOTIFICATION_EMAIL_VIA_MAILGUN_APIKEY }}" | npx wrangler secret put NOTIFICATION_EMAIL_VIA_MAILGUN_APIKEY
+            echo "✅ Mailgun API key configured"
+          fi
+          
+          if [[ -n "${{ secrets.NOTIFICATION_EMAIL_VIA_MAILGUN_DOMAIN }}" ]]; then
+            echo "${{ secrets.NOTIFICATION_EMAIL_VIA_MAILGUN_DOMAIN }}" | npx wrangler secret put NOTIFICATION_EMAIL_VIA_MAILGUN_DOMAIN
+            echo "✅ Mailgun domain configured"
+          fi
+          
+          # Custom Webhook
+          if [[ -n "${{ secrets.NOTIFICATION_CUSTOM_WEBHOOK_URL }}" ]]; then
+            echo "${{ secrets.NOTIFICATION_CUSTOM_WEBHOOK_URL }}" | npx wrangler secret put NOTIFICATION_CUSTOM_WEBHOOK_URL
+            echo "✅ Custom webhook URL configured"
+          fi
+          
+          if [[ -n "${{ secrets.NOTIFICATION_CUSTOM_WEBHOOK_AUTHTOKEN }}" ]]; then
+            echo "${{ secrets.NOTIFICATION_CUSTOM_WEBHOOK_AUTHTOKEN }}" | npx wrangler secret put NOTIFICATION_CUSTOM_WEBHOOK_AUTHTOKEN
+            echo "✅ Custom webhook auth token configured"
+          fi
+          
+          # Pushover
+          if [[ -n "${{ secrets.NOTIFICATION_PUSHOVER_USERKEY }}" ]]; then
+            echo "${{ secrets.NOTIFICATION_PUSHOVER_USERKEY }}" | npx wrangler secret put NOTIFICATION_PUSHOVER_USERKEY
+            echo "✅ Pushover user key configured"
+          fi
+          
+          if [[ -n "${{ secrets.NOTIFICATION_PUSHOVER_APITOKEN }}" ]]; then
+            echo "${{ secrets.NOTIFICATION_PUSHOVER_APITOKEN }}" | npx wrangler secret put NOTIFICATION_PUSHOVER_APITOKEN
+            echo "✅ Pushover API token configured"
+          fi
+          
+          # PagerDuty
+          if [[ -n "${{ secrets.NOTIFICATION_PAGERDUTY_ROUTINGKEY }}" ]]; then
+            echo "${{ secrets.NOTIFICATION_PAGERDUTY_ROUTINGKEY }}" | npx wrangler secret put NOTIFICATION_PAGERDUTY_ROUTINGKEY
+            echo "✅ PagerDuty routing key configured"
+          fi
+          
+          echo "✨ Notification secrets configuration complete"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ steps.fetch_account_id.outputs.account_id }}
+
