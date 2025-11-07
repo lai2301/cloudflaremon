@@ -68,6 +68,32 @@
     "showUptimePercentage": true,
     "show90DayHistory": true
   },
+  "uptimeThresholds": [
+    {
+      "name": "excellent",
+      "min": 99.5,
+      "color": "#10b981",
+      "label": "Excellent"
+    },
+    {
+      "name": "good",
+      "min": 99.0,
+      "color": "#3b82f6",
+      "label": "Good"
+    },
+    {
+      "name": "fair",
+      "min": 95.0,
+      "color": "#f59e0b",
+      "label": "Fair"
+    },
+    {
+      "name": "poor",
+      "min": 0,
+      "color": "#ef4444",
+      "label": "Poor"
+    }
+  ],
   "customCss": "",
   "customHtml": {
     "headerExtra": "",

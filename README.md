@@ -17,7 +17,8 @@ A push-based Cloudflare Worker heartbeat monitoring solution for internal networ
 - ⏱️ **Staleness Detection**: Automatically detects when services stop sending heartbeats
 - 🔔 **Multi-Channel Notifications**: Discord, Slack, Telegram, Email, PagerDuty, Pushover & more
 - 🌐 **External Alert Integration**: Receive alerts from Prometheus Alertmanager, Grafana, and other tools
-- 🎨 **Modern UI**: Uptimeflare-inspired design with dark mode support
+- 🎨 **Modern UI**: Uptimeflare-inspired design with dark mode support and customizable themes
+- 🎯 **Color-Coded Uptime**: Configurable thresholds with visual indicators (excellent/good/fair/poor)
 - 📦 **Multiple Client Examples**: Bash, Python, Node.js, systemd, cron, Docker
 
 ## How It Works
@@ -101,11 +102,17 @@ Edit `ui.json` to customize the dashboard appearance:
   "branding": {
     "pageTitle": "Status Dashboard",
     "favicon": "https://your-cdn.com/favicon.ico"
-  }
+  },
+  "uptimeThresholds": [
+    { "name": "excellent", "min": 99.5, "color": "#10b981", "label": "Excellent" },
+    { "name": "good", "min": 99.0, "color": "#3b82f6", "label": "Good" },
+    { "name": "fair", "min": 95.0, "color": "#f59e0b", "label": "Fair" },
+    { "name": "poor", "min": 0, "color": "#ef4444", "label": "Poor" }
+  ]
 }
 ```
 
-**📖 See [UI Customization Guide](docs/UI_CUSTOMIZATION.md) for full customization options.**
+**📖 See [UI Customization Guide](docs/UI_CUSTOMIZATION.md) for full customization options including themes, colors, and uptime thresholds.**
 
 ### 5. Configure Your Services
 

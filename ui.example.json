@@ -103,6 +103,38 @@
     "_show90DayHistory_comment": "Currently always shown, reserved for future toggle"
   },
   
+  "uptimeThresholds": [
+    {
+      "name": "excellent",
+      "_name_comment": "CSS class name (will be uptime-excellent). Use lowercase, no spaces.",
+      "min": 99.5,
+      "_min_comment": "Minimum uptime percentage for this level",
+      "color": "#10b981",
+      "_color_comment": "Hex color code for this threshold level",
+      "label": "Excellent",
+      "_label_comment": "Human-readable label (reserved for future use)"
+    },
+    {
+      "name": "good",
+      "min": 99.0,
+      "color": "#3b82f6",
+      "label": "Good"
+    },
+    {
+      "name": "fair",
+      "min": 95.0,
+      "color": "#f59e0b",
+      "label": "Fair"
+    },
+    {
+      "name": "poor",
+      "min": 0,
+      "color": "#ef4444",
+      "label": "Poor"
+    }
+  ],
+  "_uptimeThresholds_comment": "Array of uptime thresholds. Add/remove levels as needed. System evaluates from highest to lowest min value.",
+  
   "customCss": "",
   "_customCss_comment": "Add custom CSS here to override default styles. Example: '.logo { max-width: 200px; }'",
   
@@ -144,6 +176,46 @@
       "customHtml": {
         "headerExtra": "<div style='background: #fef3c7; padding: 12px; border-radius: 8px; margin-top: 16px;'>⚠️ Scheduled maintenance on Sunday at 2 AM UTC</div>"
       }
+    },
+    
+    "_example_5_level_thresholds": {
+      "_comment": "Example with 5 threshold levels for more granular uptime tracking",
+      "uptimeThresholds": [
+        { "name": "perfect", "min": 99.9, "color": "#059669", "label": "Perfect" },
+        { "name": "excellent", "min": 99.5, "color": "#10b981", "label": "Excellent" },
+        { "name": "good", "min": 99.0, "color": "#3b82f6", "label": "Good" },
+        { "name": "fair", "min": 95.0, "color": "#f59e0b", "label": "Fair" },
+        { "name": "poor", "min": 0, "color": "#ef4444", "label": "Poor" }
+      ]
+    },
+    
+    "_example_3_level_thresholds": {
+      "_comment": "Example with 3 simple threshold levels",
+      "uptimeThresholds": [
+        { "name": "healthy", "min": 99.0, "color": "#10b981", "label": "Healthy" },
+        { "name": "degraded", "min": 95.0, "color": "#f59e0b", "label": "Degraded" },
+        { "name": "critical", "min": 0, "color": "#ef4444", "label": "Critical" }
+      ]
+    },
+    
+    "_example_strict_thresholds": {
+      "_comment": "Example with very strict thresholds for mission-critical systems",
+      "uptimeThresholds": [
+        { "name": "excellent", "min": 99.99, "color": "#10b981", "label": "Excellent" },
+        { "name": "acceptable", "min": 99.95, "color": "#3b82f6", "label": "Acceptable" },
+        { "name": "needs-attention", "min": 99.90, "color": "#f59e0b", "label": "Needs Attention" },
+        { "name": "critical", "min": 0, "color": "#ef4444", "label": "Critical" }
+      ]
+    },
+    
+    "_example_custom_brand_colors": {
+      "_comment": "Example with custom brand colors for thresholds",
+      "uptimeThresholds": [
+        { "name": "excellent", "min": 99.5, "color": "#8b5cf6", "label": "Excellent" },
+        { "name": "good", "min": 99.0, "color": "#06b6d4", "label": "Good" },
+        { "name": "fair", "min": 95.0, "color": "#f97316", "label": "Fair" },
+        { "name": "poor", "min": 0, "color": "#dc2626", "label": "Poor" }
+      ]
     }
   }
 }

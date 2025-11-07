@@ -8,6 +8,8 @@ Customize the dashboard appearance using `ui.json`.
 - [Configuration File](#configuration-file)
 - [Header Customization](#header-customization)
 - [Branding](#branding)
+- [Theme & Colors](#theme--colors)
+- [Uptime Thresholds](#uptime-thresholds)
 - [Footer](#footer)
 - [Features](#features)
 - [Custom CSS](#custom-css)
@@ -271,6 +273,151 @@ Customize colors for both light and dark modes:
 ```
 
 ⚠️ **Note:** `primaryColor` and `accentColor` are reserved for future features. Use `customCss` to override colors now.
+
+## Uptime Thresholds
+
+Customize how uptime percentages are displayed with color-coded thresholds. You can define any number of threshold levels with custom names, percentages, and colors.
+
+### Basic Configuration
+
+```json
+{
+  "uptimeThresholds": [
+    {
+      "name": "excellent",
+      "min": 99.5,
+      "color": "#10b981",
+      "label": "Excellent"
+    },
+    {
+      "name": "good",
+      "min": 99.0,
+      "color": "#3b82f6",
+      "label": "Good"
+    },
+    {
+      "name": "fair",
+      "min": 95.0,
+      "color": "#f59e0b",
+      "label": "Fair"
+    },
+    {
+      "name": "poor",
+      "min": 0,
+      "color": "#ef4444",
+      "label": "Poor"
+    }
+  ]
+}
+```
+
+### Threshold Properties
+
+Each threshold object has:
+- **name**: CSS class identifier (lowercase, no spaces) - will be `uptime-{name}`
+- **min**: Minimum uptime percentage for this level
+- **color**: Hex color code for the badge
+- **label**: Human-readable label (reserved for future use)
+
+### How It Works
+
+1. System evaluates thresholds from highest `min` value to lowest
+2. The first threshold where `uptime >= min` is selected
+3. The corresponding CSS class and color are applied
+4. Always include a threshold with `min: 0` as the catch-all
+
+### Visual Appearance
+
+The thresholds apply visual styling to:
+- Background color with transparency
+- Text color
+- Border with semi-transparent accent
+
+**Example output:**
+```
+✓ API Service         [99.8%]  ← Green "excellent" badge
+✓ Web Server         [99.2%]  ← Blue "good" badge
+⚠ Database           [96.5%]  ← Orange "fair" badge
+✕ Cache Server       [92.1%]  ← Red "poor" badge
+```
+
+### Example: 5 Levels (Granular Tracking)
+
+For more detailed uptime tracking:
+
+```json
+{
+  "uptimeThresholds": [
+    { "name": "perfect", "min": 99.9, "color": "#059669", "label": "Perfect" },
+    { "name": "excellent", "min": 99.5, "color": "#10b981", "label": "Excellent" },
+    { "name": "good", "min": 99.0, "color": "#3b82f6", "label": "Good" },
+    { "name": "fair", "min": 95.0, "color": "#f59e0b", "label": "Fair" },
+    { "name": "poor", "min": 0, "color": "#ef4444", "label": "Poor" }
+  ]
+}
+```
+
+### Example: 3 Levels (Simplified)
+
+For a simpler status system:
+
+```json
+{
+  "uptimeThresholds": [
+    { "name": "healthy", "min": 99.0, "color": "#10b981", "label": "Healthy" },
+    { "name": "degraded", "min": 95.0, "color": "#f59e0b", "label": "Degraded" },
+    { "name": "critical", "min": 0, "color": "#ef4444", "label": "Critical" }
+  ]
+}
+```
+
+### Example: Strict Thresholds
+
+For mission-critical systems requiring four-nines uptime:
+
+```json
+{
+  "uptimeThresholds": [
+    { "name": "excellent", "min": 99.99, "color": "#10b981", "label": "Excellent" },
+    { "name": "acceptable", "min": 99.95, "color": "#3b82f6", "label": "Acceptable" },
+    { "name": "needs-attention", "min": 99.90, "color": "#f59e0b", "label": "Needs Attention" },
+    { "name": "critical", "min": 0, "color": "#ef4444", "label": "Critical" }
+  ]
+}
+```
+
+### Example: Custom Brand Colors
+
+Match your company's brand colors:
+
+```json
+{
+  "uptimeThresholds": [
+    { "name": "excellent", "min": 99.5, "color": "#8b5cf6", "label": "Excellent" },
+    { "name": "good", "min": 99.0, "color": "#06b6d4", "label": "Good" },
+    { "name": "fair", "min": 95.0, "color": "#f97316", "label": "Fair" },
+    { "name": "poor", "min": 0, "color": "#dc2626", "label": "Poor" }
+  ]
+}
+```
+
+### Color Recommendations
+
+Choose colors that provide good contrast and accessibility:
+
+- **Greens**: #10b981, #059669, #22c55e, #16a34a (healthy, excellent)
+- **Blues**: #3b82f6, #2563eb, #0891b2, #06b6d4 (good, acceptable)
+- **Oranges**: #f59e0b, #d97706, #f97316, #ea580c (fair, warning)
+- **Reds**: #ef4444, #dc2626, #f87171, #b91c1c (poor, critical)
+- **Purples**: #8b5cf6, #7c3aed, #a855f7 (custom branding)
+
+### Best Practices
+
+1. **Always include a catch-all**: Add a threshold with `min: 0` as the lowest level
+2. **Use meaningful names**: Choose names that clearly indicate the status level
+3. **Logical ordering**: Define thresholds from highest to lowest (though the system sorts them automatically)
+4. **Consistent spacing**: Use consistent percentage gaps between levels (e.g., 0.5% or 1.0%)
+5. **Test visibility**: Ensure colors are distinguishable in both light and dark modes
 
 ## Footer
 

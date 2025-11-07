@@ -769,9 +769,19 @@ async function handleDashboard(env) {
         
         .service-uptime {
             font-size: 14px;
-            font-weight: 500;
+            font-weight: 600;
             color: var(--text-secondary);
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: all 0.2s;
         }
+        
+        ${uiConfig.uptimeThresholds.map(threshold => `
+        .service-uptime.uptime-${threshold.name} {
+            color: ${threshold.color};
+            background: ${threshold.color}15;
+            border: 1px solid ${threshold.color}40;
+        }`).join('\n')}
         
         .uptime-bar-container {
             margin-bottom: 12px;
@@ -1385,12 +1395,25 @@ async function handleDashboard(env) {
                         const timeSince = service.lastSeen ? formatDuration(Date.now() - new Date(service.lastSeen).getTime()) : 'Never';
                         const uptime = uptimeData && uptimeData.overallUptime > 0 ? \`\${uptimeData.overallUptime}%\` : 'N/A';
                         
+                        // Calculate uptime threshold class
+                        let uptimeClass = '';
+                        if (uptimeData && uptimeData.overallUptime > 0) {
+                            const percentage = uptimeData.overallUptime;
+                            const thresholds = ${JSON.stringify(uiConfig.uptimeThresholds)};
+                            // Sort thresholds by min value descending and find the first match
+                            const sortedThresholds = [...thresholds].sort((a, b) => b.min - a.min);
+                            const matchedThreshold = sortedThresholds.find(t => percentage >= t.min);
+                            if (matchedThreshold) {
+                                uptimeClass = \`uptime-\${matchedThreshold.name}\`;
+                            }
+                        }
+                        
                         return \`
                         <div class="service-item">
                             <div class="service-main">
                                 <div class="service-status-icon \${service.status}">\${icon}</div>
                                 <div class="service-name">\${service.serviceName}</div>
-                                <div class="service-uptime">\${uptime}</div>
+                                <div class="service-uptime \${uptimeClass}">\${uptime}</div>
                             </div>
                             <div class="uptime-bar-container">
                                 <div class="uptime-bar-wrapper">
