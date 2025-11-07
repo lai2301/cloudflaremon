@@ -72,7 +72,12 @@ export default {
     } else if (url.pathname === '/api/services') {
       // List configured services
       return new Response(JSON.stringify(processedServices, null, 2), {
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type'
+        }
       });
     } else if (url.pathname === '/api/test-notification' && request.method === 'POST') {
       // Test notification system
@@ -2243,7 +2248,12 @@ async function handleGetStatus(env) {
   const summary = monitorData.summary || null;
 
   return new Response(JSON.stringify({ summary }, null, 2), {
-    headers: { 'Content-Type': 'application/json' }
+    headers: { 
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type'
+    }
   });
 }
 
@@ -2256,7 +2266,12 @@ async function handleGetUptime(env, url) {
   if (!serviceId) {
     return new Response(JSON.stringify({ error: 'serviceId parameter required' }), {
       status: 400,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type'
+      }
     });
   }
 
@@ -2315,13 +2330,23 @@ async function handleGetUptime(env, url) {
       totalDays: historicalDays.filter(d => d.totalChecks > 0).length,
       retentionDays: retentionDays
     }, null, 2), {
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type'
+      }
     });
   } catch (error) {
     console.error('Error fetching uptime data:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type'
+      }
     });
   }
 }
