@@ -1,0 +1,51 @@
+{
+  "header": {
+    "title": "Service Monitor",
+    "subtitle": "Real-time service health monitoring",
+    "logoUrl": "",
+    "logoAlt": "Service Monitor",
+    "showLogo": false,
+    "links": [
+      {
+        "text": "Home",
+        "url": "/"
+      },
+      {
+        "text": "Documentation",
+        "url": "https://github.com/your-username/cloudflaremon"
+      }
+    ]
+  },
+  "branding": {
+    "pageTitle": "Service Monitor Dashboard",
+    "favicon": "https://via.placeholder.com/32x32?text=SM",
+    "primaryColor": "#3b82f6",
+    "accentColor": "#10b981"
+  },
+  "footer": {
+    "text": "Powered by Cloudflare Workers",
+    "links": [
+      {
+        "text": "Documentation",
+        "url": "https://github.com/your-username/cloudflaremon"
+      },
+      {
+        "text": "Status",
+        "url": "/"
+      }
+    ]
+  },
+  "features": {
+    "showRefreshButton": true,
+    "showLastUpdated": true,
+    "autoRefreshSeconds": 30,
+    "showUptimePercentage": true,
+    "show90DayHistory": true
+  },
+  "customCss": "",
+  "customHtml": {
+    "headerExtra": "",
+    "footerExtra": ""
+  }
+}
+

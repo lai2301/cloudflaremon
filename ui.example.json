@@ -1,0 +1,118 @@
+{
+  "_comment": "UI Configuration for Dashboard Customization",
+  
+  "header": {
+    "title": "Service Monitor",
+    "subtitle": "Real-time service health monitoring",
+    "logoUrl": "",
+    "_logoUrl_comment": "URL to your logo image (optional). Leave empty to hide logo.",
+    "logoAlt": "Service Monitor",
+    "showLogo": false,
+    "_showLogo_comment": "Set to true to display the logo. Make sure logoUrl is set.",
+    
+    "links": [
+      {
+        "text": "Home",
+        "url": "/"
+      },
+      {
+        "text": "Documentation",
+        "url": "https://github.com/your-username/cloudflaremon"
+      }
+    ],
+    "_links_comment": "Array of links to display in header navigation. Can be empty []."
+  },
+  
+  "branding": {
+    "pageTitle": "Service Monitor Dashboard",
+    "_pageTitle_comment": "Browser tab title",
+    
+    "favicon": "https://via.placeholder.com/32x32?text=SM",
+    "_favicon_comment": "URL to favicon (32x32 recommended)",
+    
+    "primaryColor": "#3b82f6",
+    "_primaryColor_comment": "Currently not used in CSS, reserved for future features",
+    
+    "accentColor": "#10b981",
+    "_accentColor_comment": "Currently not used in CSS, reserved for future features"
+  },
+  
+  "footer": {
+    "text": "Powered by Cloudflare Workers",
+    "_text_comment": "Main footer text",
+    
+    "links": [
+      {
+        "text": "Documentation",
+        "url": "https://github.com/your-username/cloudflaremon"
+      },
+      {
+        "text": "Status",
+        "url": "/"
+      }
+    ],
+    "_links_comment": "Array of links to display in footer. Can be empty []."
+  },
+  
+  "features": {
+    "showRefreshButton": true,
+    "_showRefreshButton_comment": "Currently always shown, reserved for future toggle",
+    
+    "showLastUpdated": true,
+    "_showLastUpdated_comment": "Currently always shown, reserved for future toggle",
+    
+    "autoRefreshSeconds": 30,
+    "_autoRefreshSeconds_comment": "Auto-refresh interval in seconds. Set to 0 to disable.",
+    
+    "showUptimePercentage": true,
+    "_showUptimePercentage_comment": "Currently always shown, reserved for future toggle",
+    
+    "show90DayHistory": true,
+    "_show90DayHistory_comment": "Currently always shown, reserved for future toggle"
+  },
+  
+  "customCss": "",
+  "_customCss_comment": "Add custom CSS here to override default styles. Example: '.logo { max-width: 200px; }'",
+  
+  "customHtml": {
+    "headerExtra": "",
+    "_headerExtra_comment": "Additional HTML to inject after the header subtitle",
+    
+    "footerExtra": "",
+    "_footerExtra_comment": "Additional HTML to inject at the end of footer"
+  },
+  
+  "_examples": {
+    "_example_with_logo": {
+      "header": {
+        "title": "Acme Corp Status",
+        "subtitle": "All systems operational",
+        "logoUrl": "https://your-cdn.com/logo.png",
+        "logoAlt": "Acme Corp",
+        "showLogo": true
+      }
+    },
+    
+    "_example_custom_css": {
+      "customCss": ".logo { max-width: 200px; border-radius: 50%; } h1 { color: #e11d48; }"
+    },
+    
+    "_example_custom_footer": {
+      "footer": {
+        "text": "© 2025 Your Company",
+        "links": [
+          { "text": "Privacy Policy", "url": "/privacy" },
+          { "text": "Terms of Service", "url": "/terms" },
+          { "text": "Contact", "url": "mailto:support@example.com" }
+        ]
+      }
+    },
+    
+    "_example_announcements": {
+      "customHtml": {
+        "headerExtra": "<div style='background: #fef3c7; padding: 12px; border-radius: 8px; margin-top: 16px;'>⚠️ Scheduled maintenance on Sunday at 2 AM UTC</div>"
+      }
+    }
+  }
+}
+

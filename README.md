@@ -86,7 +86,28 @@ npm run deploy
 
 </details>
 
-### 4. Configure Your Services
+### 4. Customize Dashboard (Optional)
+
+Edit `ui.json` to customize the dashboard appearance:
+
+```json
+{
+  "header": {
+    "title": "Your Company Status",
+    "subtitle": "Real-time monitoring",
+    "logoUrl": "https://your-cdn.com/logo.png",
+    "showLogo": true
+  },
+  "branding": {
+    "pageTitle": "Status Dashboard",
+    "favicon": "https://your-cdn.com/favicon.ico"
+  }
+}
+```
+
+**📖 See [UI Customization Guide](docs/UI_CUSTOMIZATION.md) for full customization options.**
+
+### 5. Configure Your Services
 
 Edit `services.json` to add your services to monitor:
 
@@ -119,7 +140,7 @@ Edit `services.json` to add your services to monitor:
   - `channels`: Array of channel types to notify (e.g., `["discord", "slack"]`). If empty/omitted, uses all enabled channels
   - `events`: Array of events to notify on (e.g., `["down", "up"]`). If empty/omitted, uses channel's configured events
 
-### 5. 🔒 Configure API Keys (Recommended)
+### 6. 🔒 Configure API Keys (Recommended)
 
 **IMPORTANT:** Never store API keys in your repository! Use **one secret** containing all keys.
 
@@ -138,7 +159,7 @@ npx wrangler secret put API_KEYS
 
 **📖 See [Security Guide](docs/SECURITY.md) for detailed setup instructions**
 
-### 6. 🔔 Configure Notifications (Optional)
+### 7. 🔔 Configure Notifications (Optional)
 
 Enable alerts when services go down or recover. 
 
@@ -193,7 +214,7 @@ npx wrangler secret put NOTIFICATION_DISCORD_ALERTS_WEBHOOKURL
 - **[Template Customization](docs/NOTIFICATION_TEMPLATES.md)** 🎨 - Customize notification messages
 - **[Credential Management](docs/NOTIFICATION_CREDENTIALS.md)** 🔒 - How to securely store API keys and tokens
 
-### 7. Deploy the Worker
+### 8. Deploy the Worker
 
 #### Option A: Deploy Manually
 
@@ -619,9 +640,10 @@ npx wrangler secret put API_KEYS
 - **[Quick Start Guide](docs/QUICKSTART.md)** - Get started in 10 minutes
 - **[Architecture Overview](docs/ARCHITECTURE.md)** - System design and components
 - **[Security Guide](docs/SECURITY.md)** - API key management and best practices 🔒
+- **[UI Customization](docs/UI_CUSTOMIZATION.md)** - Customize dashboard appearance 🎨
 - **[Notification Guide](docs/NOTIFICATIONS.md)** - Multi-channel alerting setup 🔔
 - **[External Alerts Integration](docs/EXTERNAL_ALERTS.md)** - Receive alerts from Alertmanager, Grafana, etc. 🌐
-- **[Notification Templates](docs/NOTIFICATION_TEMPLATES.md)** - Customize notification messages 🎨
+- **[Notification Templates](docs/NOTIFICATION_TEMPLATES.md)** - Customize notification messages 📝
 - **[Notification Credentials](docs/NOTIFICATION_CREDENTIALS.md)** - Secure credential storage 🔐
 - **[GitHub Actions Setup](docs/GITHUB_ACTIONS_SETUP.md)** - Automated deployment & secrets 🤖
 - **[Deployment Guide](docs/DEPLOYMENT.md)** - Manual deployment guide

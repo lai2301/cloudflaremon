@@ -1,4 +1,5 @@
 import servicesConfig from '../services.json';
+import uiConfig from '../ui.json';
 import { checkAndSendNotifications, testNotification } from './notifications.js';
 
 /**
@@ -492,7 +493,8 @@ async function handleDashboard(env) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Status Monitor</title>
+    <title>${uiConfig.branding.pageTitle}</title>
+    <link rel="icon" href="${uiConfig.branding.favicon}">
     <style>
         :root {
             --bg-primary: #ffffff;
@@ -561,6 +563,40 @@ async function handleDashboard(env) {
         header {
             margin-bottom: 48px;
             text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .logo {
+            max-width: 120px;
+            max-height: 80px;
+            margin-bottom: 16px;
+        }
+        
+        .header-links {
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 32px;
+        }
+        
+        .header-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.2s;
+            padding: 8px 16px;
+            border-radius: 6px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+        }
+        
+        .header-links a:hover {
+            color: var(--text-primary);
+            border-color: var(--text-tertiary);
         }
         
         h1 {
@@ -573,6 +609,7 @@ async function handleDashboard(env) {
         .subtitle {
             color: var(--text-secondary);
             font-size: 16px;
+            margin-bottom: 0;
         }
         
         .overall-status {
@@ -882,13 +919,54 @@ async function handleDashboard(env) {
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
+        
+        footer {
+            margin-top: 80px;
+            padding-top: 32px;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+        }
+        
+        footer p {
+            color: var(--text-tertiary);
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+        
+        .footer-links {
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+        
+        .footer-links a:hover {
+            color: var(--text-primary);
+        }
+        
+        /* Custom CSS from config */
+        ${uiConfig.customCss}
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Service Status</h1>
-            <p class="subtitle">Real-time monitoring dashboard</p>
+            ${uiConfig.header.showLogo && uiConfig.header.logoUrl ? `<img src="${uiConfig.header.logoUrl}" alt="${uiConfig.header.logoAlt}" class="logo" />` : ''}
+            ${uiConfig.header.links && uiConfig.header.links.length > 0 ? `
+            <div class="header-links">
+                ${uiConfig.header.links.map(link => `<a href="${link.url}" target="${link.url.startsWith('http') ? '_blank' : '_self'}" rel="${link.url.startsWith('http') ? 'noopener noreferrer' : ''}">${link.text}</a>`).join('')}
+            </div>
+            ` : ''}
+            <h1>${uiConfig.header.title}</h1>
+            <p class="subtitle">${uiConfig.header.subtitle}</p>
+            ${uiConfig.customHtml.headerExtra}
         </header>
         
         <div class="overall-status" id="overallStatus">
@@ -1237,9 +1315,19 @@ async function handleDashboard(env) {
         // Load status on page load
         loadStatus();
         
-        // Auto-refresh every 30 seconds
-        setInterval(loadStatus, 30000);
+        // Auto-refresh based on config
+        ${uiConfig.features.autoRefreshSeconds > 0 ? `setInterval(loadStatus, ${uiConfig.features.autoRefreshSeconds * 1000});` : ''}
     </script>
+    
+    <footer>
+        <p>${uiConfig.footer.text}</p>
+        ${uiConfig.footer.links && uiConfig.footer.links.length > 0 ? `
+        <div class="footer-links">
+            ${uiConfig.footer.links.map(link => `<a href="${link.url}" target="${link.url.startsWith('http') ? '_blank' : '_self'}" rel="${link.url.startsWith('http') ? 'noopener noreferrer' : ''}">${link.text}</a>`).join('')}
+        </div>
+        ` : ''}
+        ${uiConfig.customHtml.footerExtra}
+    </footer>
 </body>
 </html>
   `;
