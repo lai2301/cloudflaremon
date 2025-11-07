@@ -209,8 +209,61 @@ A simple format for custom integrations.
 - `source` (string): Alert source identifier (default: "external")
 - `labels` (object): Key-value pairs with additional context
 - `annotations` (object): Additional metadata
+- `channels` (array): Specific notification channels to use (e.g., `["discord", "slack"]`)
+
+**Channel Routing:**
+
+By default, alerts are routed to all enabled channels based on severity. You can override this by specifying channels:
+
+```json
+{
+  "title": "Critical Database Issue",
+  "message": "Primary database is down",
+  "severity": "critical",
+  "channels": ["pagerduty", "discord"]
+}
+```
+
+This will send the alert **only** to PagerDuty and Discord, regardless of the global configuration.
 
 ## Integration Examples
+
+### Channel Routing Examples
+
+**Route critical alerts to PagerDuty only:**
+```bash
+curl -X POST https://your-worker.workers.dev/api/alert \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Production Database Down",
+    "message": "Cannot connect to primary database",
+    "severity": "critical",
+    "channels": ["pagerduty"]
+  }'
+```
+
+**Route warnings to Slack and Discord:**
+```bash
+curl -X POST https://your-worker.workers.dev/api/alert \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "High Memory Usage",
+    "message": "Memory usage at 85%",
+    "severity": "warning",
+    "channels": ["slack", "discord"]
+  }'
+```
+
+**Send to all enabled channels (default behavior):**
+```bash
+curl -X POST https://your-worker.workers.dev/api/alert \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "System Alert",
+    "message": "Something needs attention",
+    "severity": "warning"
+  }'
+```
 
 ### Alertmanager
 
@@ -236,9 +289,42 @@ receivers:
           follow_redirects: true
 ```
 
+**Routing to Specific Channels in Alertmanager:**
+
+Add a `channels` label or annotation to your alert rules:
+
+```yaml
+# Example alert rules with channel routing
+groups:
+  - name: critical_alerts
+    rules:
+      - alert: DatabaseDown
+        expr: up{job="database"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          channels: "pagerduty,discord"  # Route to PagerDuty and Discord only
+        annotations:
+          summary: "Database is down"
+          description: "Database {{ $labels.instance }} is not responding"
+      
+      - alert: HighMemory
+        expr: memory_usage > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value }}%"
+          channels: "slack"  # Route to Slack only
+```
+
+**Note:** Use a comma-separated string like `"discord,slack,pagerduty"`. The `channels` can be in either `labels` or `annotations`.
+
 **Test with curl:**
 
 ```bash
+# Default routing (based on severity)
 curl -X POST https://your-worker.workers.dev/api/alert \
   -H "Content-Type: application/json" \
   -d '{
@@ -257,6 +343,27 @@ curl -X POST https://your-worker.workers.dev/api/alert \
       }
     }]
   }'
+
+# With specific channels
+curl -X POST https://your-worker.workers.dev/api/alert \
+  -H "Content-Type: application/json" \
+  -d '{
+    "receiver": "cloudflare-monitor",
+    "status": "firing",
+    "alerts": [{
+      "status": "firing",
+      "labels": {
+        "alertname": "CriticalError",
+        "severity": "critical",
+        "instance": "prod-01",
+        "channels": "pagerduty,discord"
+      },
+      "annotations": {
+        "summary": "Critical system error",
+        "description": "System experiencing critical errors"
+      }
+    }]
+  }'
 ```
 
 ### Grafana
@@ -268,7 +375,16 @@ curl -X POST https://your-worker.workers.dev/api/alert \
 5. Set HTTP Method to `POST`
 6. Click **Test** to verify
 
-**Example Alert Rule:**
+**Routing to Specific Channels in Grafana:**
+
+Add a `channels` tag to your alert rule:
+
+1. In Grafana, go to your alert rule
+2. Add a custom tag:
+   - Key: `channels`
+   - Value: `discord,slack` (comma-separated channel names)
+
+**Example Alert Rule (YAML format):**
 
 ```yaml
 groups:
@@ -283,7 +399,19 @@ groups:
         annotations:
           summary: "High memory usage on {{ $labels.instance }}"
           description: "Memory usage is {{ $value }}%"
+      
+      - alert: CriticalDatabaseError
+        expr: db_errors_total > 100
+        for: 1m
+        labels:
+          severity: critical
+          channels: "pagerduty,discord"  # Route to PagerDuty and Discord only
+        annotations:
+          summary: "Critical database errors detected"
+          description: "Error count: {{ $value }}"
 ```
+
+**Note:** In Grafana's UI, add `channels` as a custom tag (not label) with comma-separated channel names.
 
 ### Generic Integration (curl example)
 
@@ -292,7 +420,7 @@ For custom applications or scripts:
 ```bash
 #!/bin/bash
 
-# Send custom alert
+# Send custom alert (default routing)
 curl -X POST https://your-worker.workers.dev/api/alert \
   -H "Content-Type: application/json" \
   -d '{
@@ -306,6 +434,17 @@ curl -X POST https://your-worker.workers.dev/api/alert \
       "backup_type": "daily"
     }
   }'
+
+# Send to specific channels
+curl -X POST https://your-worker.workers.dev/api/alert \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Deployment Complete",
+    "message": "Version 2.0.0 deployed successfully",
+    "severity": "info",
+    "source": "ci-cd",
+    "channels": ["slack", "discord"]
+  }'
 ```
 
 ### Python Example
@@ -314,8 +453,17 @@ curl -X POST https://your-worker.workers.dev/api/alert \
 import requests
 import json
 
-def send_alert(title, message, severity='warning', source='python-app', **labels):
-    """Send custom alert to Cloudflare Monitor"""
+def send_alert(title, message, severity='warning', source='python-app', channels=None, **labels):
+    """Send custom alert to Cloudflare Monitor
+    
+    Args:
+        title: Alert title
+        message: Alert message
+        severity: One of 'critical', 'error', 'warning', 'info'
+        source: Source identifier
+        channels: Optional list of channel names to route to (e.g. ['discord', 'slack'])
+        **labels: Additional key-value labels
+    """
     
     alert = {
         'title': title,
@@ -325,6 +473,10 @@ def send_alert(title, message, severity='warning', source='python-app', **labels
         'labels': labels
     }
     
+    # Add channels if specified
+    if channels:
+        alert['channels'] = channels
+    
     response = requests.post(
         'https://your-worker.workers.dev/api/alert',
         headers={'Content-Type': 'application/json'},
@@ -333,7 +485,7 @@ def send_alert(title, message, severity='warning', source='python-app', **labels
     
     return response.json()
 
-# Usage
+# Usage - default routing (based on severity)
 result = send_alert(
     title='High Error Rate',
     message='Application error rate exceeded threshold',
@@ -344,6 +496,17 @@ result = send_alert(
     error_rate='15.2%'
 )
 
+# Usage - specific channels
+result = send_alert(
+    title='Deployment Successful',
+    message='Version 2.0.0 deployed to production',
+    severity='info',
+    source='ci-cd',
+    channels=['slack', 'discord'],  # Only send to Slack and Discord
+    version='2.0.0',
+    environment='production'
+)
+
 print(result)
 ```
 
@@ -352,17 +515,31 @@ print(result)
 ```javascript
 const axios = require('axios');
 
-async function sendAlert({ title, message, severity = 'warning', source = 'nodejs-app', labels = {} }) {
+async function sendAlert({ 
+  title, 
+  message, 
+  severity = 'warning', 
+  source = 'nodejs-app', 
+  channels = null,
+  labels = {} 
+}) {
   try {
+    const payload = {
+      title,
+      message,
+      severity,
+      source,
+      labels
+    };
+    
+    // Add channels if specified
+    if (channels && channels.length > 0) {
+      payload.channels = channels;
+    }
+    
     const response = await axios.post(
       'https://your-worker.workers.dev/api/alert',
-      {
-        title,
-        message,
-        severity,
-        source,
-        labels
-      },
+      payload,
       {
         headers: { 'Content-Type': 'application/json' }
       }
@@ -375,7 +552,7 @@ async function sendAlert({ title, message, severity = 'warning', source = 'nodej
   }
 }
 
-// Usage
+// Usage - default routing
 sendAlert({
   title: 'Payment Processing Issue',
   message: 'Payment gateway responding slowly',
@@ -385,6 +562,21 @@ sendAlert({
     gateway: 'stripe',
     region: 'us-west-2',
     latency: '5000ms'
+  }
+}).then(result => {
+  console.log('Alert sent:', result);
+});
+
+// Usage - specific channels
+sendAlert({
+  title: 'Critical Payment Failure',
+  message: 'Payment gateway is completely down',
+  severity: 'critical',
+  source: 'payment-service',
+  channels: ['pagerduty', 'discord'],  // Only send to PagerDuty and Discord
+  labels: {
+    gateway: 'stripe',
+    region: 'us-west-2'
   }
 }).then(result => {
   console.log('Alert sent:', result);

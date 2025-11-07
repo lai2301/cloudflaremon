@@ -534,18 +534,42 @@ export async function sendCustomAlert(env, alertData) {
   };
 
   // Get enabled channels for external alerts
-  const enabledChannels = notificationsConfig.channels.filter(ch => {
-    if (!ch.enabled) return false;
+  let enabledChannels;
+  
+  // If specific channels are requested in the payload, use only those
+  if (alertData.channels && alertData.channels.length > 0) {
+    const requestedChannels = alertData.channels.map(c => c.toLowerCase());
+    enabledChannels = notificationsConfig.channels.filter(ch => {
+      if (!ch.enabled) return false;
+      
+      // Check if channel supports external alerts
+      if (ch.config && ch.config.externalAlerts === false) return false;
+      
+      // Check if this channel type is in the requested list
+      return requestedChannels.includes(ch.type.toLowerCase()) || 
+             requestedChannels.includes(ch.name.toLowerCase());
+    });
     
-    // Check if channel supports external alerts
-    if (ch.config && ch.config.externalAlerts === false) return false;
-    
-    // Map alert severity to our event types
-    return ch.events.includes(eventType);
-  });
+    console.log(`Using channels specified in payload: ${alertData.channels.join(', ')}`);
+  } else {
+    // Default behavior: filter by event type and severity
+    enabledChannels = notificationsConfig.channels.filter(ch => {
+      if (!ch.enabled) return false;
+      
+      // Check if channel supports external alerts
+      if (ch.config && ch.config.externalAlerts === false) return false;
+      
+      // Map alert severity to our event types
+      return ch.events.includes(eventType);
+    });
+  }
 
   if (enabledChannels.length === 0) {
-    console.log(`No enabled channels for alert severity: ${alertData.severity}`);
+    if (alertData.channels && alertData.channels.length > 0) {
+      console.log(`No matching enabled channels found for requested: ${alertData.channels.join(', ')}`);
+    } else {
+      console.log(`No enabled channels for alert severity: ${alertData.severity}`);
+    }
     return;
   }
 

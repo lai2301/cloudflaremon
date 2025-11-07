@@ -374,6 +374,18 @@ curl -X POST https://your-worker.workers.dev/api/alert \
 - `source` (optional): Alert source identifier (default: "external")
 - `labels` (optional): Additional key-value metadata
 - `annotations` (optional): Additional annotations
+- `channels` (optional): Array of specific channels to route to (e.g., `["discord", "slack"]`)
+
+**Channel Routing:** By default, alerts are routed to all enabled channels based on severity. Specify `channels` to override:
+
+```json
+{
+  "title": "Critical Database Issue",
+  "message": "Primary database is down",
+  "severity": "critical",
+  "channels": ["pagerduty", "discord"]
+}
+```
 
 **📖 See [External Alert Integration Guide](docs/EXTERNAL_ALERTS.md) for detailed integration examples with Alertmanager, Grafana, and custom scripts.**
 

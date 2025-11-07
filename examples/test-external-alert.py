@@ -217,8 +217,33 @@ def main():
         }
     )
     
+    # Test 8: Specific channels routing
+    send_alert(
+        "Test 8: Specific Channels (Discord + Slack only)",
+        {
+            "title": "Channel Routing Test",
+            "message": "This alert should only go to Discord and Slack",
+            "severity": "warning",
+            "source": "test-script",
+            "channels": ["discord", "slack"]
+        }
+    )
+    
+    # Test 9: Single channel routing
+    send_alert(
+        "Test 9: Single Channel (PagerDuty only)",
+        {
+            "title": "Critical Production Issue",
+            "message": "This alert should only trigger PagerDuty",
+            "severity": "critical",
+            "source": "test-script",
+            "channels": ["pagerduty"]
+        }
+    )
+    
     print("\n\n✅ All tests completed!\n")
     print("📌 Check your notification channels (Discord, Slack, etc.) to verify alerts were received.")
+    print("📌 Tests 8 and 9 demonstrate channel-specific routing.")
 
 if __name__ == "__main__":
     main()

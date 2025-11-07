@@ -357,7 +357,8 @@ async function handleCustomAlert(env, request) {
         severity: body.severity || 'warning',
         source: body.source || 'external',
         labels: body.labels || {},
-        annotations: body.annotations || {}
+        annotations: body.annotations || {},
+        channels: body.channels || []  // Optional: specify target channels
       };
     } else {
       return new Response(JSON.stringify({
@@ -407,6 +408,10 @@ function parseAlertmanagerPayload(body) {
   const labels = alert.labels || {};
   const annotations = alert.annotations || {};
   
+  // Check for channels in labels (e.g., channel="discord,slack")
+  const channelsLabel = labels.channels || annotations.channels || '';
+  const channels = channelsLabel ? channelsLabel.split(',').map(c => c.trim()) : [];
+  
   return {
     title: annotations.summary || labels.alertname || 'Alert',
     message: annotations.description || annotations.message || 'No description',
@@ -419,7 +424,8 @@ function parseAlertmanagerPayload(body) {
     },
     labels: labels,
     annotations: annotations,
-    generatorURL: alert.generatorURL
+    generatorURL: alert.generatorURL,
+    channels: channels
   };
 }
 
@@ -427,6 +433,10 @@ function parseAlertmanagerPayload(body) {
  * Parse Grafana webhook payload
  */
 function parseGrafanaPayload(body) {
+  // Check for channels in tags
+  const channelsTag = body.tags?.channels || '';
+  const channels = channelsTag ? channelsTag.split(',').map(c => c.trim()) : [];
+  
   return {
     title: body.title || body.ruleName || 'Grafana Alert',
     message: body.message || 'No message',
@@ -441,7 +451,8 @@ function parseGrafanaPayload(body) {
       imageUrl: body.imageUrl,
       message: body.message
     },
-    evalMatches: body.evalMatches || []
+    evalMatches: body.evalMatches || [],
+    channels: channels
   };
 }
 

@@ -66,13 +66,35 @@ curl -X POST https://your-worker.workers.dev/api/alert \
 ### Comprehensive Test Suite
 
 ```bash
-# Run all tests
+# Run all tests (includes channel routing tests)
 cd examples
 ./test-external-alert.sh https://your-worker.workers.dev YOUR_API_KEY
 
 # Or with Python
 python3 test-external-alert.py https://your-worker.workers.dev YOUR_API_KEY
 ```
+
+## Channel Routing
+
+By default, alerts are sent to all enabled channels based on severity. You can override this by specifying channels in the payload:
+
+```bash
+# Send to specific channels only
+curl -X POST https://your-worker.workers.dev/api/alert \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Critical Database Issue",
+    "message": "Primary database is down",
+    "severity": "critical",
+    "channels": ["pagerduty", "discord"]
+  }'
+```
+
+This gives you fine-grained control over alert routing:
+- Critical production issues → PagerDuty only
+- Deployment notifications → Slack only
+- Security alerts → Discord + Email
+- etc.
 
 ## Integrate with Alertmanager
 

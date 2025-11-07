@@ -210,7 +210,36 @@ make_request '{
 
 echo ""
 echo ""
+
+# Test 8: Specific channels routing
+echo "📝 Test 8: Specific Channels (Discord + Slack only)"
+echo "----------------------------------------"
+make_request '{
+    "title": "Channel Routing Test",
+    "message": "This alert should only go to Discord and Slack",
+    "severity": "warning",
+    "source": "test-script",
+    "channels": ["discord", "slack"]
+  }'
+
+echo ""
+echo ""
+
+# Test 9: Single channel routing
+echo "📝 Test 9: Single Channel (PagerDuty only)"
+echo "----------------------------------------"
+make_request '{
+    "title": "Critical Production Issue",
+    "message": "This alert should only trigger PagerDuty",
+    "severity": "critical",
+    "source": "test-script",
+    "channels": ["pagerduty"]
+  }'
+
+echo ""
+echo ""
 echo "✅ All tests completed!"
 echo ""
 echo "📌 Check your notification channels (Discord, Slack, etc.) to verify alerts were received."
+echo "📌 Tests 8 and 9 demonstrate channel-specific routing."
 
