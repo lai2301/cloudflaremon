@@ -67,7 +67,8 @@
     "autoRefreshSeconds": 30,
     "showUptimePercentage": true,
     "showUptimeHistory": true,
-    "uptimeRetentionDays": 120
+    "uptimeRetentionDays": 120,
+    "showExportButton": true
   },
   "uptimeThresholds": {
     "default": [

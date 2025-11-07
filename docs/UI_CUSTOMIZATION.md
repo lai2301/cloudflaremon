@@ -491,6 +491,54 @@ Choose colors that provide good contrast and accessibility:
 
 ⚠️ **Note:** These flags are reserved for future use. All features are currently always shown.
 
+### CSV Export
+
+The export button allows users to download uptime data as CSV files with customizable date ranges and service selection.
+
+```json
+{
+  "features": {
+    "showExportButton": true
+  }
+}
+```
+
+**Features:**
+- **Custom Date Range:** Select any date range within the retention period
+- **Quick Presets:** Last 7, 30, 90 days, or all time
+- **Service Selection:** Choose specific services or export all
+- **Group Information:** CSV includes service group names
+- **Detailed Metrics:** Exports uptime percentage, total checks, up/degraded/down/unknown counts per day
+
+**CSV Columns:**
+- Date
+- Service Name
+- Service ID
+- Group
+- Status (Up, Down, Degraded, Unknown)
+- Uptime % (calculated as (up + degraded) / total × 100)
+- Total Checks
+- Up Checks
+- Degraded Checks
+- Down Checks
+- Unknown Checks
+
+**Location:** The export button (📊) appears in the top-right corner of the dashboard, next to the theme toggle button.
+
+**Usage:**
+1. Click the export button (📊) to toggle the export dialog
+2. Select date range using quick presets or custom dates
+3. Choose which services to export (all selected by default)
+4. Click "Export CSV" to download the file
+5. Click the button again, press Escape, or click outside to close the dialog
+
+**UI Behavior:**
+- The dialog appears as a dropdown panel positioned near the export button
+- On desktop: Dropdown appears in top-right corner with smooth slide-down animation
+- On mobile: Dialog centers on screen with backdrop
+- Button highlights when dialog is open
+- Closes automatically after successful export
+
 ## Custom CSS
 
 ### Basic Styling

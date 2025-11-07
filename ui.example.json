@@ -103,7 +103,10 @@
     "_showUptimeHistory_comment": "Show uptime history visualization bars",
     
     "uptimeRetentionDays": 90,
-    "_uptimeRetentionDays_comment": "Number of days to retain uptime history data in KV storage. This affects both storage and the uptime visualization bars. Common values: 30, 60, 90, 180, 365. Higher values use more KV storage."
+    "_uptimeRetentionDays_comment": "Number of days to retain uptime history data in KV storage. This affects both storage and the uptime visualization bars. Common values: 30, 60, 90, 180, 365. Higher values use more KV storage.",
+    
+    "showExportButton": true,
+    "_showExportButton_comment": "Show the export button in the header next to the theme toggle. Allows users to export uptime data as CSV with custom date ranges and service selection."
   },
   
   "uptimeThresholds": {

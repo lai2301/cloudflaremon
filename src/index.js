@@ -878,6 +878,7 @@ async function handleDashboard(env) {
             -webkit-overflow-scrolling: touch;
             scrollbar-width: thin;
             scrollbar-color: var(--border-color) var(--bg-secondary);
+            scroll-behavior: smooth;
         }
         
         .uptime-bar-wrapper::-webkit-scrollbar {
@@ -1016,9 +1017,11 @@ async function handleDashboard(env) {
             position: absolute;
             top: 20px;
             right: 20px;
+            display: flex;
+            gap: 8px;
         }
         
-        .theme-toggle {
+        .theme-toggle, .export-btn {
             background: var(--bg-primary);
             color: var(--text-primary);
             border: 1px solid var(--border-color);
@@ -1034,7 +1037,7 @@ async function handleDashboard(env) {
             height: 44px;
         }
         
-        .theme-toggle:hover {
+        .theme-toggle:hover, .export-btn:hover {
             background: var(--bg-hover);
             transform: scale(1.05);
         }
@@ -1056,6 +1059,246 @@ async function handleDashboard(env) {
         
         .refresh-btn:hover {
             background: var(--bg-hover);
+        }
+        
+        .refresh-btn:active {
+            transform: scale(0.95);
+        }
+        
+        /* Export Dialog Styles */
+        .export-dialog {
+            display: none;
+            position: absolute;
+            top: 60px;
+            right: 20px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            width: 450px;
+            max-width: calc(100vw - 40px);
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            z-index: 10000;
+            animation: slideDown 0.2s ease-out;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .export-dialog.active {
+            display: block;
+        }
+        
+        /* Backdrop for mobile */
+        .export-backdrop {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 9999;
+        }
+        
+        .export-backdrop.active {
+            display: block;
+        }
+        
+        .export-dialog-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .export-dialog-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+        
+        .export-dialog-close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: 0;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        
+        .export-dialog-close:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+        
+        .export-btn.active {
+            background: var(--bg-hover);
+            border-color: #3b82f6;
+        }
+        
+        .export-form-group {
+            margin-bottom: 20px;
+        }
+        
+        .export-form-label {
+            display: block;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+        
+        .export-form-input, .export-form-select {
+            width: 100%;
+            padding: 10px 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        
+        .export-form-input:focus, .export-form-select:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+        
+        .export-services-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            background: var(--bg-secondary);
+        }
+        
+        .export-service-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            margin-bottom: 4px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+        
+        .export-service-item:hover {
+            background: var(--bg-hover);
+        }
+        
+        .export-service-checkbox {
+            margin-right: 10px;
+            cursor: pointer;
+        }
+        
+        .export-service-label {
+            color: var(--text-primary);
+            cursor: pointer;
+            flex: 1;
+        }
+        
+        .export-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+        
+        .export-btn-primary, .export-btn-secondary {
+            flex: 1;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            border: none;
+        }
+        
+        .export-btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .export-btn-primary:hover {
+            background: #2563eb;
+        }
+        
+        .export-btn-primary:disabled {
+            background: #6b7280;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        
+        .export-btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+        
+        .export-btn-secondary:hover {
+            background: var(--bg-hover);
+        }
+        
+        .export-date-range {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        
+        .export-quick-ranges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .export-quick-btn {
+            padding: 6px 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+        
+        .export-quick-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            border-color: #3b82f6;
+        }
+        
+        @media (max-width: 768px) {
+            .export-dialog {
+                top: 50%;
+                left: 50%;
+                right: auto;
+                transform: translate(-50%, -50%);
+                width: calc(100vw - 40px);
+                max-height: calc(100vh - 60px);
+            }
+            
+            .export-dialog.active {
+                transform: translate(-50%, -50%);
+            }
         }
         
         footer {
@@ -1135,11 +1378,16 @@ async function handleDashboard(env) {
 </head>
 <body>
     <div class="container">
-        ${uiConfig.theme.showToggle ? `
+        ${uiConfig.theme.showToggle || uiConfig.features.showExportButton !== false ? `
         <div class="theme-toggle-container">
+            <button class="export-btn" id="exportBtn" aria-label="Export data" title="Export CSV">
+                <span>📊</span>
+            </button>
+            ${uiConfig.theme.showToggle ? `
             <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
                 <span id="themeIcon">🌙</span>
             </button>
+            ` : ''}
         </div>
         ` : ''}
         <header>
@@ -1177,6 +1425,62 @@ async function handleDashboard(env) {
                 <span>Refresh</span>
             </button>
         </footer>
+    </div>
+    
+    <!-- Export Backdrop -->
+    <div id="exportBackdrop" class="export-backdrop" onclick="closeExportDialog()"></div>
+    
+    <!-- Export Dialog -->
+    <div id="exportDialog" class="export-dialog">
+        <div class="export-dialog-header">
+            <h3 class="export-dialog-title">Export to CSV</h3>
+            <button class="export-dialog-close" onclick="closeExportDialog()">×</button>
+        </div>
+            
+            <div class="export-form-group">
+                <label class="export-form-label">Time Period</label>
+                <div class="export-quick-ranges">
+                    <button class="export-quick-btn" onclick="setQuickRange(7)">Last 7 days</button>
+                    <button class="export-quick-btn" onclick="setQuickRange(30)">Last 30 days</button>
+                    <button class="export-quick-btn" onclick="setQuickRange(90)">Last 90 days</button>
+                    <button class="export-quick-btn" onclick="setQuickRange('all')">All time</button>
+                </div>
+            </div>
+            
+            <div class="export-form-group">
+                <label class="export-form-label">Custom Date Range</label>
+                <div class="export-date-range">
+                    <div>
+                        <label style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 4px;">From</label>
+                        <input type="date" id="exportStartDate" class="export-form-input" />
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; color: var(--text-secondary); display: block; margin-bottom: 4px;">To</label>
+                        <input type="date" id="exportEndDate" class="export-form-input" />
+                    </div>
+                </div>
+            </div>
+            
+            <div class="export-form-group">
+                <label class="export-form-label">
+                    Select Services
+                    <span style="font-size: 12px; color: var(--text-secondary); font-weight: normal; margin-left: 8px;">
+                        (<span id="selectedCount">0</span> selected)
+                    </span>
+                </label>
+                <div style="margin-bottom: 8px;">
+                    <button class="export-quick-btn" onclick="selectAllServices()">Select All</button>
+                    <button class="export-quick-btn" onclick="deselectAllServices()">Deselect All</button>
+                </div>
+                <div id="exportServicesList" class="export-services-list">
+                    <!-- Services will be populated dynamically -->
+                </div>
+            </div>
+            
+            <div class="export-actions">
+                <button class="export-btn-secondary" onclick="closeExportDialog()">Cancel</button>
+                <button class="export-btn-primary" id="exportButton" onclick="performExport()">Export CSV</button>
+            </div>
     </div>
     
     <script>
@@ -1576,6 +1880,14 @@ async function handleDashboard(env) {
                 document.getElementById('servicesGroups').innerHTML = groupsHtml;
                 document.getElementById('lastUpdate').textContent = \`Last updated: \${new Date(summary.timestamp).toLocaleString()}\`;
                 
+                // Scroll all uptime bars to the right (most recent dates)
+                setTimeout(() => {
+                    const uptimeWrappers = document.querySelectorAll('.uptime-bar-wrapper');
+                    uptimeWrappers.forEach(wrapper => {
+                        wrapper.scrollLeft = wrapper.scrollWidth;
+                    });
+                }, 50);
+                
             } catch (error) {
                 console.error('Error loading status:', error);
                 document.getElementById('overallStatus').innerHTML = \`
@@ -1610,6 +1922,278 @@ async function handleDashboard(env) {
         
         // Auto-refresh based on config
         ${uiConfig.features.autoRefreshSeconds > 0 ? `setInterval(loadStatus, ${uiConfig.features.autoRefreshSeconds * 1000});` : ''}
+        
+        // Export functionality
+        let exportServices = [];
+        let exportDialogOpen = false;
+        
+        // Initialize export button
+        const exportBtn = document.getElementById('exportBtn');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', toggleExportDialog);
+        }
+        
+        // Close dialog when clicking escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && exportDialogOpen) {
+                closeExportDialog();
+            }
+        });
+        
+        function toggleExportDialog() {
+            if (exportDialogOpen) {
+                closeExportDialog();
+            } else {
+                openExportDialog();
+            }
+        }
+        
+        function openExportDialog() {
+            // Fetch services and populate the dialog
+            fetch('/api/services')
+                .then(res => res.json())
+                .then(data => {
+                    exportServices = data.filter(s => s.enabled);
+                    populateExportServices();
+                    
+                    // Set default dates
+                    const today = new Date();
+                    const thirtyDaysAgo = new Date(today);
+                    thirtyDaysAgo.setDate(today.getDate() - 30);
+                    
+                    document.getElementById('exportStartDate').valueAsDate = thirtyDaysAgo;
+                    document.getElementById('exportEndDate').valueAsDate = today;
+                    
+                    document.getElementById('exportDialog').classList.add('active');
+                    document.getElementById('exportBackdrop').classList.add('active');
+                    document.getElementById('exportBtn').classList.add('active');
+                    exportDialogOpen = true;
+                })
+                .catch(err => {
+                    console.error('Error loading services for export:', err);
+                    alert('Failed to load services. Please try again.');
+                });
+        }
+        
+        function closeExportDialog() {
+            document.getElementById('exportDialog').classList.remove('active');
+            document.getElementById('exportBackdrop').classList.remove('active');
+            document.getElementById('exportBtn').classList.remove('active');
+            exportDialogOpen = false;
+        }
+        
+        function populateExportServices() {
+            const listContainer = document.getElementById('exportServicesList');
+            listContainer.innerHTML = exportServices.map(service => \`
+                <div class="export-service-item">
+                    <input type="checkbox" 
+                           class="export-service-checkbox" 
+                           id="export-\${service.id}" 
+                           value="\${service.id}"
+                           onchange="updateSelectedCount()">
+                    <label class="export-service-label" for="export-\${service.id}">
+                        \${service.name}
+                        <span style="color: var(--text-secondary); font-size: 12px; margin-left: 4px;">
+                            (\${service.groupName || 'Ungrouped'})
+                        </span>
+                    </label>
+                </div>
+            \`).join('');
+            
+            // Select all by default
+            selectAllServices();
+        }
+        
+        function updateSelectedCount() {
+            const checked = document.querySelectorAll('.export-service-checkbox:checked').length;
+            document.getElementById('selectedCount').textContent = checked;
+            document.getElementById('exportButton').disabled = checked === 0;
+        }
+        
+        function selectAllServices() {
+            document.querySelectorAll('.export-service-checkbox').forEach(cb => {
+                cb.checked = true;
+            });
+            updateSelectedCount();
+        }
+        
+        function deselectAllServices() {
+            document.querySelectorAll('.export-service-checkbox').forEach(cb => {
+                cb.checked = false;
+            });
+            updateSelectedCount();
+        }
+        
+        function setQuickRange(days) {
+            const endDate = new Date();
+            let startDate = new Date();
+            
+            if (days === 'all') {
+                // Set to earliest possible date (2020 or retention period)
+                const retentionDays = ${uiConfig.features.uptimeRetentionDays || 90};
+                startDate.setDate(endDate.getDate() - retentionDays);
+            } else {
+                startDate.setDate(endDate.getDate() - days);
+            }
+            
+            document.getElementById('exportStartDate').valueAsDate = startDate;
+            document.getElementById('exportEndDate').valueAsDate = endDate;
+        }
+        
+        async function performExport() {
+            const startDateInput = document.getElementById('exportStartDate').value;
+            const endDateInput = document.getElementById('exportEndDate').value;
+            const selectedServiceIds = Array.from(
+                document.querySelectorAll('.export-service-checkbox:checked')
+            ).map(cb => cb.value);
+            
+            if (!startDateInput || !endDateInput) {
+                alert('Please select both start and end dates.');
+                return;
+            }
+            
+            if (selectedServiceIds.length === 0) {
+                alert('Please select at least one service.');
+                return;
+            }
+            
+            const startDate = new Date(startDateInput);
+            const endDate = new Date(endDateInput);
+            
+            if (startDate > endDate) {
+                alert('Start date must be before end date.');
+                return;
+            }
+            
+            const exportButton = document.getElementById('exportButton');
+            exportButton.disabled = true;
+            exportButton.textContent = 'Exporting...';
+            
+            try {
+                // Fetch uptime data for all selected services
+                const uptimeDataPromises = selectedServiceIds.map(serviceId =>
+                    fetch(\`/api/uptime?serviceId=\${serviceId}\`)
+                        .then(res => res.json())
+                        .then(data => ({ serviceId, data }))
+                );
+                
+                const allUptimeData = await Promise.all(uptimeDataPromises);
+                
+                // Generate CSV
+                const csv = generateCSV(allUptimeData, startDate, endDate);
+                
+                // Download CSV
+                downloadCSV(csv, \`uptime-export-\${startDateInput}-to-\${endDateInput}.csv\`);
+                
+                closeExportDialog();
+            } catch (error) {
+                console.error('Error exporting data:', error);
+                alert('Failed to export data. Please try again.');
+            } finally {
+                exportButton.disabled = false;
+                exportButton.textContent = 'Export CSV';
+            }
+        }
+        
+        function generateCSV(allUptimeData, startDate, endDate) {
+            const rows = [];
+            
+            // Header
+            rows.push(['Date', 'Service Name', 'Service ID', 'Group', 'Status', 'Uptime %', 'Total Checks', 'Up Checks', 'Degraded Checks', 'Down Checks', 'Unknown Checks']);
+            
+            // Data rows
+            allUptimeData.forEach(({ serviceId, data }) => {
+                const service = exportServices.find(s => s.id === serviceId);
+                const serviceName = service?.name || serviceId;
+                const groupName = service?.groupName || 'Ungrouped';
+                
+                // If no data or no historical days, create empty rows for the date range
+                if (!data || !data.historicalDays || data.historicalDays.length === 0) {
+                    // Generate empty rows for each day in the range
+                    const currentDate = new Date(startDate);
+                    while (currentDate <= endDate) {
+                        rows.push([
+                            currentDate.toISOString().split('T')[0],
+                            serviceName,
+                            serviceId,
+                            groupName,
+                            'No Data',
+                            'N/A',
+                            0,
+                            0,
+                            0,
+                            0,
+                            0
+                        ]);
+                        currentDate.setDate(currentDate.getDate() + 1);
+                    }
+                    return;
+                }
+                
+                data.historicalDays.forEach(day => {
+                    const dayDate = new Date(day.date);
+                    if (dayDate >= startDate && dayDate <= endDate) {
+                        const totalChecks = day.totalChecks || 0;
+                        const upChecks = day.upChecks || 0;
+                        const degradedChecks = day.degradedChecks || 0;
+                        const downChecks = day.downChecks || 0;
+                        const unknownChecks = day.unknownChecks || 0;
+                        const uptime = totalChecks > 0 
+                            ? ((upChecks + degradedChecks) / totalChecks * 100).toFixed(2)
+                            : 'N/A';
+                        
+                        let status = 'No Data';
+                        if (totalChecks > 0) {
+                            if (downChecks > 0) status = 'Down';
+                            else if (degradedChecks > 0) status = 'Degraded';
+                            else if (upChecks > 0) status = 'Up';
+                        }
+                        
+                        rows.push([
+                            day.date,
+                            serviceName,
+                            serviceId,
+                            groupName,
+                            status,
+                            uptime,
+                            totalChecks,
+                            upChecks,
+                            degradedChecks,
+                            downChecks,
+                            unknownChecks
+                        ]);
+                    }
+                });
+            });
+            
+            // Convert to CSV string
+            return rows.map(row => 
+                row.map(cell => {
+                    const cellStr = String(cell);
+                    // Escape quotes and wrap in quotes if contains comma, quote, or newline
+                    if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\\n')) {
+                        return '"' + cellStr.replace(/"/g, '""') + '"';
+                    }
+                    return cellStr;
+                }).join(',')
+            ).join('\\n');
+        }
+        
+        function downloadCSV(csvContent, filename) {
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            URL.revokeObjectURL(url);
+        }
     </script>
     
     <footer>

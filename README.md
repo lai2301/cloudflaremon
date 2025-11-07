@@ -20,6 +20,7 @@ A push-based Cloudflare Worker heartbeat monitoring solution for internal networ
 - 🌐 **External Alert Integration**: Receive alerts from Prometheus Alertmanager, Grafana, and other tools
 - 🎨 **Modern UI**: Uptimeflare-inspired design with dark mode support and customizable themes
 - 🎯 **Color-Coded Uptime**: Configurable thresholds with visual indicators (excellent/good/fair/poor)
+- 📥 **CSV Export**: Download uptime data with custom date ranges and service selection
 - 📦 **Multiple Client Examples**: Bash, Python, Node.js, systemd, cron, Docker
 
 ## How It Works
