@@ -29,7 +29,7 @@ function buildServicesWithGroups() {
     
     if (!group) {
       // No group, return service as-is
-      return { ...service, groupId: null, groupName: 'Ungrouped' };
+      return { ...service, groupId: null, groupName: 'Ungrouped', uptimeThresholdSet: 'default' };
     }
     
     // Deep merge: start with group defaults, override with service specifics
@@ -37,6 +37,7 @@ function buildServicesWithGroups() {
       ...service,
       groupId: group.id,
       groupName: group.name,
+      uptimeThresholdSet: group.uptimeThresholdSet || 'default',
       stalenessThreshold: service.stalenessThreshold ?? group.stalenessThreshold,
       notifications: {
         enabled: service.notifications?.enabled ?? group.notifications?.enabled ?? false,
@@ -235,7 +236,8 @@ async function checkHeartbeatStaleness(env) {
       stalenessThreshold: stalenessThreshold,
       timestamp: timestamp,
       groupId: service.groupId || null,
-      groupName: service.groupName || 'Ungrouped'
+      groupName: service.groupName || 'Ungrouped',
+      uptimeThresholdSet: service.uptimeThresholdSet || 'default'
     };
 
     results.push(result);
@@ -754,12 +756,37 @@ async function handleDashboard(env) {
         .services-header {
             padding: 24px 32px;
             border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
         }
         
         .services-title {
             font-size: 20px;
             font-weight: 600;
             color: var(--text-primary);
+        }
+        
+        .threshold-legend {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            font-size: 13px;
+        }
+        
+        .threshold-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .threshold-badge {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            border: 1px solid;
         }
         
         .service-item {
@@ -830,12 +857,13 @@ async function handleDashboard(env) {
             transition: all 0.2s;
         }
         
-        ${uiConfig.uptimeThresholds.map(threshold => `
+        ${Object.values(uiConfig.uptimeThresholds).flatMap(thresholdSet => 
+            thresholdSet.map(threshold => `
         .service-uptime.uptime-${threshold.name} {
             color: ${threshold.color};
             background: ${threshold.color}15;
             border: 1px solid ${threshold.color}40;
-        }`).join('\n')}
+        }`)).join('\n')}
         
         .uptime-bar-container {
             margin-bottom: 12px;
@@ -1438,29 +1466,37 @@ async function handleDashboard(env) {
                     }
                 }));
                 
-                // Group services by groupName
+                // Group services by groupName and track threshold set
                 const groupedServices = {};
                 servicesWithUptime.forEach(({ service, uptimeData }) => {
                     const groupName = service.groupName || 'Ungrouped';
+                    const thresholdSet = service.uptimeThresholdSet || 'default';
                     if (!groupedServices[groupName]) {
-                        groupedServices[groupName] = [];
+                        groupedServices[groupName] = {
+                            thresholdSet: thresholdSet,
+                            services: []
+                        };
                     }
-                    groupedServices[groupName].push({ service, uptimeData });
+                    groupedServices[groupName].services.push({ service, uptimeData });
                 });
                 
+                // All threshold sets for client-side use
+                const allThresholds = ${JSON.stringify(uiConfig.uptimeThresholds)};
+                
                 // Generate HTML for each group
-                const groupsHtml = Object.entries(groupedServices).map(([groupName, services]) => {
-                    const servicesHtml = services.map(({ service, uptimeData }) => {
+                const groupsHtml = Object.entries(groupedServices).map(([groupName, groupData]) => {
+                    const thresholds = allThresholds[groupData.thresholdSet] || allThresholds['default'];
+                    
+                    const servicesHtml = groupData.services.map(({ service, uptimeData }) => {
                     try {
                         const icon = service.status === 'up' ? '✓' : (service.status === 'down' ? '✕' : '●');
                         const timeSince = service.lastSeen ? formatDuration(Date.now() - new Date(service.lastSeen).getTime()) : 'Never';
                         const uptime = uptimeData && uptimeData.overallUptime > 0 ? \`\${uptimeData.overallUptime}%\` : 'N/A';
                         
-                        // Calculate uptime threshold class
+                        // Calculate uptime threshold class using group's threshold set
                         let uptimeClass = '';
                         if (uptimeData && uptimeData.overallUptime > 0) {
                             const percentage = uptimeData.overallUptime;
-                            const thresholds = ${JSON.stringify(uiConfig.uptimeThresholds)};
                             // Sort thresholds by min value descending and find the first match
                             const sortedThresholds = [...thresholds].sort((a, b) => b.min - a.min);
                             const matchedThreshold = sortedThresholds.find(t => percentage >= t.min);
@@ -1511,11 +1547,22 @@ async function handleDashboard(env) {
                     }
                     }).join('');
                     
-                    // Return the group container with header and services
+                    // Generate threshold legend for this group
+                    const legendHtml = thresholds.map(threshold => \`
+                        <div class="threshold-item">
+                            <div class="threshold-badge" style="background: \${threshold.color}15; border-color: \${threshold.color}40;"></div>
+                            <span style="color: var(--text-secondary);">\${threshold.label} ≥\${threshold.min}%</span>
+                        </div>
+                    \`).join('');
+                    
+                    // Return the group container with header, legend, and services
                     return \`
                         <div class="services-container">
                             <div class="services-header">
                                 <div class="services-title">\${groupName}</div>
+                                <div class="threshold-legend">
+                                    \${legendHtml}
+                                </div>
                             </div>
                             <div class="services-list">
                                 \${servicesHtml}

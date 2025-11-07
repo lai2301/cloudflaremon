@@ -4,6 +4,7 @@
       "id": "production",
       "name": "Production Services",
       "services": ["production-api", "production-database", "production-cache"],
+      "uptimeThresholdSet": "strict",
       "stalenessThreshold": 300,
       "notifications": {
         "enabled": true,
@@ -15,6 +16,7 @@
       "id": "staging",
       "name": "Staging Environment",
       "services": ["staging-api", "staging-database"],
+      "uptimeThresholdSet": "default",
       "stalenessThreshold": 600,
       "notifications": {
         "enabled": true,
@@ -26,6 +28,7 @@
       "id": "infrastructure",
       "name": "Infrastructure",
       "services": ["backup-service", "monitoring-agent"],
+      "uptimeThresholdSet": "default",
       "stalenessThreshold": 600,
       "notifications": {
         "enabled": true,
@@ -37,6 +40,7 @@
       "id": "development",
       "name": "Development",
       "services": ["dev-service", "test-service"],
+      "uptimeThresholdSet": "relaxed",
       "stalenessThreshold": 900,
       "notifications": {
         "enabled": false

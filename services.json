@@ -4,6 +4,7 @@
       "id": "core-services",
       "name": "Core Services",
       "services": ["service-1"],
+      "uptimeThresholdSet": "strict",
       "stalenessThreshold": 300,
       "notifications": {
         "enabled": true,
@@ -15,6 +16,7 @@
       "id": "infrastructure",
       "name": "Infrastructure",
       "services": ["service-2"],
+      "uptimeThresholdSet": "default",
       "stalenessThreshold": 300,
       "notifications": {
         "enabled": true,

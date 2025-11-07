@@ -103,37 +103,89 @@
     "_show90DayHistory_comment": "Currently always shown, reserved for future toggle"
   },
   
-  "uptimeThresholds": [
-    {
-      "name": "excellent",
-      "_name_comment": "CSS class name (will be uptime-excellent). Use lowercase, no spaces.",
-      "min": 99.5,
-      "_min_comment": "Minimum uptime percentage for this level",
-      "color": "#10b981",
-      "_color_comment": "Hex color code for this threshold level",
-      "label": "Excellent",
-      "_label_comment": "Human-readable label (reserved for future use)"
-    },
-    {
-      "name": "good",
-      "min": 99.0,
-      "color": "#3b82f6",
-      "label": "Good"
-    },
-    {
-      "name": "fair",
-      "min": 95.0,
-      "color": "#f59e0b",
-      "label": "Fair"
-    },
-    {
-      "name": "poor",
-      "min": 0,
-      "color": "#ef4444",
-      "label": "Poor"
-    }
-  ],
-  "_uptimeThresholds_comment": "Array of uptime thresholds. Add/remove levels as needed. System evaluates from highest to lowest min value.",
+  "uptimeThresholds": {
+    "_comment": "Define multiple threshold sets for different service groups. Each group can use a different set.",
+    
+    "default": [
+      {
+        "name": "excellent",
+        "_name_comment": "CSS class name (will be uptime-excellent). Use lowercase, no spaces.",
+        "min": 99.5,
+        "_min_comment": "Minimum uptime percentage for this level",
+        "color": "#10b981",
+        "_color_comment": "Hex color code for this threshold level",
+        "label": "Excellent",
+        "_label_comment": "Human-readable label displayed in the group header legend"
+      },
+      {
+        "name": "good",
+        "min": 99.0,
+        "color": "#3b82f6",
+        "label": "Good"
+      },
+      {
+        "name": "fair",
+        "min": 95.0,
+        "color": "#f59e0b",
+        "label": "Fair"
+      },
+      {
+        "name": "poor",
+        "min": 0,
+        "color": "#ef4444",
+        "label": "Poor"
+      }
+    ],
+    
+    "strict": [
+      {
+        "name": "excellent",
+        "min": 99.9,
+        "color": "#10b981",
+        "label": "Excellent"
+      },
+      {
+        "name": "good",
+        "min": 99.5,
+        "color": "#3b82f6",
+        "label": "Good"
+      },
+      {
+        "name": "fair",
+        "min": 99.0,
+        "color": "#f59e0b",
+        "label": "Fair"
+      },
+      {
+        "name": "poor",
+        "min": 0,
+        "color": "#ef4444",
+        "label": "Poor"
+      }
+    ],
+    
+    "relaxed": [
+      {
+        "name": "healthy",
+        "min": 95.0,
+        "color": "#10b981",
+        "label": "Healthy"
+      },
+      {
+        "name": "degraded",
+        "min": 90.0,
+        "color": "#f59e0b",
+        "label": "Degraded"
+      },
+      {
+        "name": "critical",
+        "min": 0,
+        "color": "#ef4444",
+        "label": "Critical"
+      }
+    ]
+  },
+  "_uptimeThresholds_structure": "Object with named threshold sets. Add/remove sets as needed. System evaluates from highest to lowest min value.",
   
   "customCss": "",
   "_customCss_comment": "Add custom CSS here to override default styles. Example: '.logo { max-width: 200px; }'",
