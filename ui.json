@@ -18,7 +18,7 @@
   },
   "branding": {
     "pageTitle": "Service Monitor Dashboard",
-    "favicon": "https://via.placeholder.com/32x32?text=SM",
+    "favicon": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>📊</text></svg>",
     "primaryColor": "#3b82f6",
     "accentColor": "#10b981"
   },

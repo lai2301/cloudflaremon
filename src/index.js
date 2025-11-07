@@ -1948,31 +1948,51 @@ async function handleDashboard(env) {
             }
         }
         
-        function openExportDialog() {
-            // Fetch services and populate the dialog
-            fetch('/api/services')
-                .then(res => res.json())
-                .then(data => {
-                    exportServices = data.filter(s => s.enabled);
-                    populateExportServices();
-                    
-                    // Set default dates
-                    const today = new Date();
-                    const thirtyDaysAgo = new Date(today);
-                    thirtyDaysAgo.setDate(today.getDate() - 30);
-                    
-                    document.getElementById('exportStartDate').valueAsDate = thirtyDaysAgo;
-                    document.getElementById('exportEndDate').valueAsDate = today;
-                    
-                    document.getElementById('exportDialog').classList.add('active');
-                    document.getElementById('exportBackdrop').classList.add('active');
-                    document.getElementById('exportBtn').classList.add('active');
-                    exportDialogOpen = true;
-                })
-                .catch(err => {
-                    console.error('Error loading services for export:', err);
-                    alert('Failed to load services. Please try again.');
-                });
+        async function openExportDialog() {
+            try {
+                // Fetch services and populate the dialog
+                const response = await fetch('/api/services');
+                
+                if (!response.ok) {
+                    throw new Error(\`HTTP error! status: \${response.status}\`);
+                }
+                
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error(\`Expected JSON but received: \${contentType}\`);
+                }
+                
+                const data = await response.json();
+                
+                if (!Array.isArray(data)) {
+                    throw new Error('Invalid services data format');
+                }
+                
+                exportServices = data.filter(s => s.enabled);
+                
+                if (exportServices.length === 0) {
+                    alert('No enabled services found to export.');
+                    return;
+                }
+                
+                populateExportServices();
+                
+                // Set default dates
+                const today = new Date();
+                const thirtyDaysAgo = new Date(today);
+                thirtyDaysAgo.setDate(today.getDate() - 30);
+                
+                document.getElementById('exportStartDate').valueAsDate = thirtyDaysAgo;
+                document.getElementById('exportEndDate').valueAsDate = today;
+                
+                document.getElementById('exportDialog').classList.add('active');
+                document.getElementById('exportBackdrop').classList.add('active');
+                document.getElementById('exportBtn').classList.add('active');
+                exportDialogOpen = true;
+            } catch (err) {
+                console.error('Error loading services for export:', err);
+                alert(\`Failed to load services: \${err.message}\\n\\nPlease check the console for details.\`);
+            }
         }
         
         function closeExportDialog() {
