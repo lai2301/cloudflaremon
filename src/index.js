@@ -777,16 +777,50 @@ async function handleDashboard(env) {
             margin-bottom: 12px;
         }
         
+        .uptime-bar-wrapper {
+            overflow-x: auto;
+            overflow-y: hidden;
+            margin-bottom: 8px;
+            padding-bottom: 4px;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border-color) var(--bg-secondary);
+        }
+        
+        .uptime-bar-wrapper::-webkit-scrollbar {
+            height: 6px;
+        }
+        
+        .uptime-bar-wrapper::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+            border-radius: 3px;
+        }
+        
+        .uptime-bar-wrapper::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+        
+        .uptime-bar-wrapper::-webkit-scrollbar-thumb:hover {
+            background: var(--text-tertiary);
+        }
+        
         .uptime-bar {
             display: flex;
             gap: 2px;
             height: 40px;
-            margin-bottom: 8px;
+            min-width: 720px;
+        }
+        
+        @media (max-width: 768px) {
+            .uptime-bar {
+                min-width: 600px;
+            }
         }
         
         .uptime-day {
             flex: 1;
-            min-width: 3px;
+            min-width: 6px;
             background: var(--status-up);
             border-radius: 2px;
             transition: all 0.2s ease;
@@ -1359,8 +1393,10 @@ async function handleDashboard(env) {
                                 <div class="service-uptime">\${uptime}</div>
                             </div>
                             <div class="uptime-bar-container">
-                                <div class="uptime-bar">
-                                    \${generateUptimeBar(uptimeData)}
+                                <div class="uptime-bar-wrapper">
+                                    <div class="uptime-bar">
+                                        \${generateUptimeBar(uptimeData)}
+                                    </div>
                                 </div>
                                 <div class="uptime-labels">
                                     <span>90 days ago</span>
