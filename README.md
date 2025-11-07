@@ -407,6 +407,8 @@ GET /api/services
 
 Returns the list of configured services from `services.json`.
 
+**Note:** This endpoint is optional. The dashboard embeds the services configuration directly in the HTML, so it doesn't make API calls to this endpoint. You can safely protect this endpoint with Cloudflare Access or other authentication without affecting dashboard functionality.
+
 #### External Alert Integration (POST)
 ```bash
 curl -X POST https://your-worker.workers.dev/api/alert \
@@ -684,7 +686,11 @@ npx wrangler secret put API_KEYS
 ### Dashboard Access
 
 - The dashboard is publicly accessible by default
-- Consider using Cloudflare Access to restrict dashboard access
+- **Cloudflare Access Compatible**: Protect your dashboard with Cloudflare Access
+  - The dashboard embeds services configuration, so no API calls to `/api/services`
+  - You can protect `/api/services`, `/api/status`, and `/api/uptime` with Cloudflare Access
+  - CSV export will continue to work even if API endpoints are protected
+  - Only `/api/heartbeat` and `/api/alert` need to remain publicly accessible
 - No sensitive data is displayed (only service names and status)
 - API keys are never exposed through the dashboard or APIs
 

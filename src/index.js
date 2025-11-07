@@ -70,7 +70,8 @@ export default {
     } else if (url.pathname === '/api/uptime') {
       return handleGetUptime(env, url);
     } else if (url.pathname === '/api/services') {
-      // List configured services
+      // List configured services (optional API - dashboard uses embedded config)
+      // Can be protected by Cloudflare Access without affecting dashboard functionality
       return new Response(JSON.stringify(processedServices, null, 2), {
         headers: { 
           'Content-Type': 'application/json',
@@ -1489,6 +1490,9 @@ async function handleDashboard(env) {
     </div>
     
     <script>
+        // Embedded services configuration (avoids API call if Cloudflare Access is enabled)
+        const SERVICES_CONFIG = ${JSON.stringify(processedServices)};
+        
         // Theme management
         const THEME_KEY = 'theme-preference';
         const defaultTheme = '${uiConfig.theme.defaultMode}';
@@ -1953,27 +1957,14 @@ async function handleDashboard(env) {
             }
         }
         
-        async function openExportDialog() {
+        function openExportDialog() {
             try {
-                // Fetch services and populate the dialog
-                const response = await fetch('/api/services');
-                
-                if (!response.ok) {
-                    throw new Error(\`HTTP error! status: \${response.status}\`);
+                // Use embedded services configuration (no API call needed)
+                if (!Array.isArray(SERVICES_CONFIG)) {
+                    throw new Error('Invalid services configuration');
                 }
                 
-                const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    throw new Error(\`Expected JSON but received: \${contentType}\`);
-                }
-                
-                const data = await response.json();
-                
-                if (!Array.isArray(data)) {
-                    throw new Error('Invalid services data format');
-                }
-                
-                exportServices = data.filter(s => s.enabled);
+                exportServices = SERVICES_CONFIG.filter(s => s.enabled);
                 
                 if (exportServices.length === 0) {
                     alert('No enabled services found to export.');
