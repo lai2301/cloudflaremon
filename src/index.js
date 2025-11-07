@@ -341,16 +341,19 @@ async function handleCustomAlert(env, request) {
     const body = await request.json();
     
     // Detect alert source and parse accordingly
+    // Order matters: check most specific formats first, generic format last
     let alertData;
     
     if (body.alerts && Array.isArray(body.alerts)) {
-      // Alertmanager format
+      // Alertmanager format: has 'alerts' array
       alertData = parseAlertmanagerPayload(body);
-    } else if (body.evalMatches || body.message) {
-      // Grafana format
+    } else if (body.evalMatches || (body.state && body.ruleName)) {
+      // Grafana format: has 'evalMatches' OR both 'state' and 'ruleName'
+      // Note: Don't check just 'message' as it would match generic format too
       alertData = parseGrafanaPayload(body);
     } else if (body.title && body.message) {
-      // Generic format
+      // Generic format: has 'title' and 'message'
+      // This is the catch-all format for custom integrations
       alertData = {
         title: body.title,
         message: body.message,
