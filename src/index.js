@@ -28,8 +28,16 @@ function buildServicesWithGroups() {
     const group = serviceToGroup.get(service.id);
     
     if (!group) {
-      // No group, return service as-is
-      return { ...service, groupId: null, groupName: 'Ungrouped', uptimeThresholdSet: 'default' };
+      // No group, return service as-is with default auth
+      return { 
+        ...service, 
+        groupId: null, 
+        groupName: 'Ungrouped', 
+        uptimeThresholdSet: 'default',
+        auth: {
+          required: service.auth?.required ?? true // Default to true if not specified
+        }
+      };
     }
     
     // Deep merge: start with group defaults, override with service specifics
@@ -39,6 +47,9 @@ function buildServicesWithGroups() {
       groupName: group.name,
       uptimeThresholdSet: group.uptimeThresholdSet || 'default',
       stalenessThreshold: service.stalenessThreshold ?? group.stalenessThreshold,
+      auth: {
+        required: service.auth?.required ?? group.auth?.required ?? true // Service overrides group, default to true
+      },
       notifications: {
         enabled: service.notifications?.enabled ?? group.notifications?.enabled ?? false,
         channels: service.notifications?.channels ?? group.notifications?.channels ?? [],
@@ -102,36 +113,73 @@ export default {
 
 /**
  * Handle incoming heartbeat from internal service
+ * Supports both single and batch (multiple services) heartbeats
+ * 
+ * Single service format:
+ * { "serviceId": "service-1" }
+ * 
+ * Multiple services format (shared token):
+ * { "services": ["service-1", "service-2", "service-3"] }
+ * 
+ * Multiple services format (per-service tokens):
+ * { 
+ *   "services": [
+ *     { "serviceId": "service-1", "token": "token-1" },
+ *     { "serviceId": "service-2", "token": "token-2" }
+ *   ]
+ * }
  */
 async function handleHeartbeat(request, env) {
   try {
     const data = await request.json();
+    const timestamp = new Date().toISOString();
     
-    // Validate required fields
-    if (!data.serviceId) {
-      return new Response(JSON.stringify({ error: 'serviceId is required' }), {
+    // Determine if this is a batch or single heartbeat
+    let serviceEntries = [];
+    
+    if (data.services && Array.isArray(data.services)) {
+      // Batch mode: multiple services
+      if (data.services.length === 0) {
+        return new Response(JSON.stringify({ error: 'services array cannot be empty' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      
+      // Check if services are strings or objects with tokens
+      serviceEntries = data.services.map(item => {
+        if (typeof item === 'string') {
+          // Simple string format: use shared Authorization header
+          return { serviceId: item, token: null };
+        } else if (item && typeof item === 'object' && item.serviceId) {
+          // Object format with per-service token
+          return { serviceId: item.serviceId, token: item.token || null };
+        } else {
+          return { serviceId: null, token: null, error: 'Invalid service format' };
+        }
+      });
+    } else if (data.serviceId) {
+      // Single mode: one service (backward compatible)
+      serviceEntries = [{ serviceId: data.serviceId, token: null }];
+    } else {
+      return new Response(JSON.stringify({ 
+        error: 'Either serviceId or services array is required',
+        usage: {
+          single: '{ "serviceId": "service-1" }',
+          batchShared: '{ "services": ["service-1", "service-2"] }',
+          batchPerService: '{ "services": [{"serviceId": "service-1", "token": "xxx"}, {"serviceId": "service-2", "token": "yyy"}] }'
+        }
+      }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }
       });
     }
 
-    // Find service in config
-    const service = processedServices.find(s => s.id === data.serviceId);
-    if (!service) {
-      return new Response(JSON.stringify({ error: 'Unknown serviceId' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-
-    // Validate API key if configured in environment variable
-    // API_KEYS should be a JSON string mapping service IDs to their API keys
-    let expectedApiKey = null;
-    
+    // Parse API keys once
+    let apiKeys = null;
     if (env.API_KEYS) {
       try {
-        const apiKeys = JSON.parse(env.API_KEYS);
-        expectedApiKey = apiKeys[data.serviceId];
+        apiKeys = JSON.parse(env.API_KEYS);
       } catch (error) {
         console.error('Error parsing API_KEYS:', error);
         return new Response(JSON.stringify({ error: 'Server configuration error' }), {
@@ -140,46 +188,152 @@ async function handleHeartbeat(request, env) {
         });
       }
     }
+
+    // Get shared Authorization header (fallback if no per-service token)
+    const sharedAuthHeader = request.headers.get('Authorization');
+
+    // Validate all services and check API keys
+    const results = [];
+    const validServiceIds = [];
     
-    if (expectedApiKey) {
-      const authHeader = request.headers.get('Authorization');
-      if (authHeader !== `Bearer ${expectedApiKey}`) {
-        return new Response(JSON.stringify({ error: 'Invalid API key' }), {
-          status: 401,
+    for (const entry of serviceEntries) {
+      const serviceId = entry.serviceId;
+      
+      // Check for malformed entry
+      if (!serviceId) {
+        results.push({
+          serviceId: 'unknown',
+          success: false,
+          error: entry.error || 'Invalid service entry'
+        });
+        continue;
+      }
+      
+      // Find service in config
+      const service = processedServices.find(s => s.id === serviceId);
+      
+      if (!service) {
+        results.push({
+          serviceId: serviceId,
+          success: false,
+          error: 'Unknown serviceId'
+        });
+        continue;
+      }
+
+      // Check if authentication is required for this service
+      const authRequired = service.auth?.required ?? true; // Default to true if not specified
+      
+      // Validate API key if required and configured
+      if (authRequired && apiKeys && apiKeys[serviceId]) {
+        const expectedApiKey = apiKeys[serviceId];
+        
+        // Use per-service token if provided, otherwise use shared Authorization header
+        let providedToken = null;
+        if (entry.token) {
+          // Per-service token provided in payload
+          providedToken = `Bearer ${entry.token}`;
+        } else {
+          // Use shared Authorization header
+          providedToken = sharedAuthHeader;
+        }
+        
+        if (providedToken !== `Bearer ${expectedApiKey}`) {
+          results.push({
+            serviceId: serviceId,
+            success: false,
+            error: 'Invalid API key'
+          });
+          continue;
+        }
+      } else if (authRequired && apiKeys && !apiKeys[serviceId]) {
+        // Auth is required but no API key is configured for this service
+        // This is a configuration warning, but allow the heartbeat
+        console.warn(`Service ${serviceId} requires auth but has no API key configured in API_KEYS`);
+      } else if (!authRequired) {
+        // Auth not required for this service - skip validation
+        console.log(`Service ${serviceId} has auth disabled - skipping authentication`);
+      }
+
+      // Service is valid
+      validServiceIds.push(serviceId);
+      results.push({
+        serviceId: serviceId,
+        success: true,
+        timestamp: timestamp
+      });
+    }
+
+    // Update heartbeat timestamps for all valid services in a single write
+    if (validServiceIds.length > 0) {
+      try {
+        const monitorDataJson = await env.HEARTBEAT_LOGS.get('monitor:data');
+        const monitorData = monitorDataJson ? JSON.parse(monitorDataJson) : {
+          latest: {},
+          uptime: {},
+          summary: null
+        };
+        
+        if (!monitorData.latest) monitorData.latest = {};
+        
+        // Update all valid service timestamps
+        for (const serviceId of validServiceIds) {
+          monitorData.latest[serviceId] = timestamp;
+        }
+        
+        await env.HEARTBEAT_LOGS.put('monitor:data', JSON.stringify(monitorData));
+        
+        console.log(`Batch heartbeat: ${validServiceIds.length} service(s) updated - ${validServiceIds.join(', ')}`);
+      } catch (error) {
+        console.error('Error updating heartbeat timestamps:', error);
+        return new Response(JSON.stringify({ error: 'Failed to update heartbeat data' }), {
+          status: 500,
           headers: { 'Content-Type': 'application/json' }
         });
       }
     }
 
-    const timestamp = new Date().toISOString();
+    // Return appropriate response based on success/failure
+    const successCount = results.filter(r => r.success).length;
+    const failureCount = results.length - successCount;
     
-    // Update latest heartbeat timestamp in single consolidated store
-    try {
-      const monitorDataJson = await env.HEARTBEAT_LOGS.get('monitor:data');
-      const monitorData = monitorDataJson ? JSON.parse(monitorDataJson) : {
-        latest: {},
-        uptime: {},
-        summary: null
-      };
-      
-      if (!monitorData.latest) monitorData.latest = {};
-      monitorData.latest[data.serviceId] = timestamp;
-      
-      await env.HEARTBEAT_LOGS.put('monitor:data', JSON.stringify(monitorData));
-    } catch (error) {
-      console.error('Error updating latest heartbeat:', error);
+    if (failureCount === 0) {
+      // All succeeded
+      return new Response(JSON.stringify({ 
+        success: true, 
+        message: serviceEntries.length === 1 
+          ? 'Heartbeat received' 
+          : `Batch heartbeat received for ${successCount} service(s)`,
+        timestamp: timestamp,
+        results: serviceEntries.length > 1 ? results : undefined
+      }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    } else if (successCount === 0) {
+      // All failed
+      return new Response(JSON.stringify({ 
+        success: false,
+        message: 'All heartbeats failed',
+        results: results
+      }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    } else {
+      // Partial success
+      return new Response(JSON.stringify({ 
+        success: true,
+        message: `Partial success: ${successCount} succeeded, ${failureCount} failed`,
+        results: results
+      }), {
+        status: 207, // Multi-Status
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
 
-    return new Response(JSON.stringify({ 
-      success: true, 
-      message: 'Heartbeat received',
-      timestamp: timestamp 
-    }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
-
   } catch (error) {
+    console.error('Heartbeat handler error:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
@@ -189,6 +343,9 @@ async function handleHeartbeat(request, env) {
 
 /**
  * Check for stale heartbeats and update service status
+ * This function runs on every cron schedule and checks ALL enabled services,
+ * regardless of their current status (up, down, degraded, or unknown).
+ * This ensures continuous monitoring and accurate uptime statistics.
  */
 async function checkHeartbeatStaleness(env) {
   const results = [];
@@ -204,7 +361,15 @@ async function checkHeartbeatStaleness(env) {
   };
 
   const latestData = monitorData.latest || {};
+  
+  // Track statistics for logging
+  let checkedCount = 0;
+  let upCount = 0;
+  let downCount = 0;
+  let unknownCount = 0;
 
+  // Check ALL enabled services (including those currently down)
+  // This ensures we continue recording downtime in statistics
   for (const service of processedServices) {
     if (!service.enabled) {
       continue;
@@ -221,6 +386,7 @@ async function checkHeartbeatStaleness(env) {
       status = 'unknown';
       lastSeen = null;
       timeSinceLastHeartbeat = null;
+      unknownCount++;
     } else {
       const lastHeartbeatDate = new Date(lastHeartbeatTime);
       timeSinceLastHeartbeat = now - lastHeartbeatDate.getTime();
@@ -228,8 +394,10 @@ async function checkHeartbeatStaleness(env) {
       
       if (timeSinceLastHeartbeat > stalenessThreshold) {
         status = 'down';
+        downCount++;
       } else {
         status = 'up';
+        upCount++;
       }
     }
 
@@ -247,9 +415,14 @@ async function checkHeartbeatStaleness(env) {
     };
 
     results.push(result);
+    checkedCount++;
   }
 
+  // Log check summary (helpful for debugging and confirming continuous monitoring)
+  console.log(`Staleness check completed: ${checkedCount} services checked (Up: ${upCount}, Down: ${downCount}, Unknown: ${unknownCount})`);
+
   // Update summary and uptime in the single store
+  // This records the current check for ALL services, including down ones
   await updateMonitorData(env, monitorData, results, timestamp);
 
   // Check for status changes and send notifications
@@ -260,6 +433,9 @@ async function checkHeartbeatStaleness(env) {
 
 /**
  * Update all monitor data (summary and uptime) in a single write
+ * This function processes ALL service check results and increments counters
+ * for up/down/degraded/unknown checks, ensuring accurate statistics even
+ * for services that remain down over multiple check cycles.
  */
 async function updateMonitorData(env, monitorData, results, timestamp) {
   const today = new Date(timestamp).toISOString().split('T')[0]; // YYYY-MM-DD format
@@ -279,7 +455,8 @@ async function updateMonitorData(env, monitorData, results, timestamp) {
       results: results
     };
 
-    // Update uptime data for each service
+    // Update uptime data for each service (including down services)
+    // Every check is recorded to maintain accurate uptime percentages
     for (const result of results) {
       // Initialize service data if not exists
       if (!monitorData.uptime[result.serviceId]) {
@@ -307,12 +484,15 @@ async function updateMonitorData(env, monitorData, results, timestamp) {
 
       const dailyData = serviceData.days[today];
 
-      // Increment counters
+      // Increment counters for ALL check results
+      // This includes recording down checks for services that remain offline
       dailyData.totalChecks++;
       if (result.status === 'up') {
         dailyData.upChecks++;
       } else if (result.status === 'down') {
         dailyData.downChecks++;
+        // Log down service checks for visibility (helpful for debugging)
+        console.log(`Recording down check for service: ${result.serviceName} (${result.serviceId}) - Down checks today: ${dailyData.downChecks}`);
       } else if (result.status === 'degraded') {
         dailyData.degradedChecks++;
       } else {
