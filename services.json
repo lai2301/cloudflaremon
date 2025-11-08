@@ -6,6 +6,9 @@
       "services": ["service-1"],
       "uptimeThresholdSet": "strict",
       "stalenessThreshold": 300,
+      "auth": {
+        "required": true
+      },
       "notifications": {
         "enabled": true,
         "channels": ["telegram"],
@@ -18,6 +21,9 @@
       "services": ["service-2"],
       "uptimeThresholdSet": "default",
       "stalenessThreshold": 300,
+      "auth": {
+        "required": false
+      },
       "notifications": {
         "enabled": true,
         "channels": ["discord", "pagerduty"],
