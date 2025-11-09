@@ -1,853 +1,155 @@
-import servicesConfig from '../services.json';
-import uiConfig from '../ui.json';
-import { checkAndSendNotifications, testNotification } from './notifications.js';
-
 /**
  * Cloudflare Worker Heartbeat Monitor (Push-based)
- * Receives heartbeats from internal network services and monitors for staleness
+ * Modular architecture with clear separation of concerns
  */
+
+// Configuration
+import { getUiConfig, buildServicesWithGroups } from './config/loader.js';
+
+// Handlers
+import { handleHeartbeat } from './handlers/heartbeat.js';
+import { handleCustomAlert, handleGetRecentAlerts } from './handlers/alert.js';
+import { handleGetStatus } from './handlers/status.js';
+import { handleGetUptime } from './handlers/uptime.js';
+
+// Core
+import { checkHeartbeatStaleness } from './core/monitoring.js';
+
+// Notifications
+import { testNotification } from './core/notifications.js';
+
+// Get UI config for dashboard
+const uiConfig = getUiConfig();
 
 /**
- * Build services map with group configurations merged
- * Service-level settings override group-level settings
+ * REMOVED: Functions now in modules
+ * - buildServicesWithGroups() → config/loader.js
+ * - handleHeartbeat() → handlers/heartbeat.js
+ * - handleCustomAlert(), handleGetRecentAlerts(), storeRecentAlert(), cleanupAlerts() → handlers/alert.js
+ * - handleGetStatus() → handlers/status.js
+ * - handleGetUptime() → handlers/uptime.js
+ * - checkHeartbeatStaleness(), updateMonitorData() → core/monitoring.js
  */
-function buildServicesWithGroups() {
-  const groups = servicesConfig.groups || [];
-  const services = servicesConfig.services || [];
-  
-  // Create a map of service ID to group
-  const serviceToGroup = new Map();
-  groups.forEach(group => {
-    group.services?.forEach(serviceId => {
-      serviceToGroup.set(serviceId, group);
-    });
-  });
-  
-  // Merge group config with service config
-  const mergedServices = services.map(service => {
-    const group = serviceToGroup.get(service.id);
-    
-    if (!group) {
-      // No group, return service as-is with default auth
-      return { 
-        ...service, 
-        groupId: null, 
-        groupName: 'Ungrouped', 
-        uptimeThresholdSet: 'default',
-        auth: {
-          required: service.auth?.required ?? true // Default to true if not specified
-        }
-      };
-    }
-    
-    // Deep merge: start with group defaults, override with service specifics
-    const merged = {
-      ...service,
-      groupId: group.id,
-      groupName: group.name,
-      uptimeThresholdSet: group.uptimeThresholdSet || 'default',
-      stalenessThreshold: service.stalenessThreshold ?? group.stalenessThreshold,
-      auth: {
-        required: service.auth?.required ?? group.auth?.required ?? true // Service overrides group, default to true
-      },
-      notifications: {
-        enabled: service.notifications?.enabled ?? group.notifications?.enabled ?? false,
-        channels: service.notifications?.channels ?? group.notifications?.channels ?? [],
-        events: service.notifications?.events ?? group.notifications?.events ?? []
-      }
-    };
-    
-    return merged;
-  });
-  
-  return mergedServices;
-}
 
-// Build the merged services list
+// Build the merged services list (now imported from config/loader.js)
 const processedServices = buildServicesWithGroups();
 
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
-    // Route handling
-    if (url.pathname === '/') {
-      return handleDashboard(env);
-    } else if (url.pathname === '/api/heartbeat' && request.method === 'POST') {
-      // Receive heartbeat from internal services
-      return handleHeartbeat(request, env);
-    } else if (url.pathname === '/api/status') {
-      return handleGetStatus(env);
-    } else if (url.pathname === '/api/uptime') {
-      return handleGetUptime(env, url);
-    } else if (url.pathname === '/api/services') {
-      // List configured services (optional API - dashboard uses embedded config)
-      // Can be protected by Cloudflare Access without affecting dashboard functionality
-      return new Response(JSON.stringify(processedServices, null, 2), {
-        headers: { 
-          'Content-Type': 'application/json',
+    // Handle CORS preflight requests
+    if (request.method === 'OPTIONS') {
+      return new Response(null, {
+        headers: {
           'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type'
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization'
         }
       });
-    } else if (url.pathname === '/api/test-notification' && request.method === 'POST') {
-      // Test notification system
-      return handleTestNotification(env, request);
-    } else if (url.pathname === '/api/alert' && request.method === 'POST') {
-      // Receive external alerts (Alertmanager, Grafana, etc.)
-      return handleCustomAlert(env, request);
-    } else if (url.pathname === '/api/alerts/recent') {
-      // Get recent alerts for dashboard notifications
-      return handleGetRecentAlerts(env, url);
     }
 
-    return new Response('Not Found', { status: 404 });
+    try {
+      // API Routes (using imported handlers from modules)
+      if (url.pathname === '/api/heartbeat' && request.method === 'POST') {
+        return await handleHeartbeat(request, env);
+      }
+      
+      if (url.pathname === '/api/alert' && request.method === 'POST') {
+        return await handleCustomAlert(env, request);
+      }
+      
+      if (url.pathname === '/api/alerts/recent' && request.method === 'GET') {
+        return await handleGetRecentAlerts(env, url);
+      }
+      
+      if (url.pathname === '/api/status' && request.method === 'GET') {
+        return await handleGetStatus(env);
+      }
+      
+      if (url.pathname === '/api/uptime' && request.method === 'GET') {
+        return await handleGetUptime(env, url);
+      }
+      
+      if (url.pathname === '/api/test-notification' && request.method === 'POST') {
+        return await testNotification(env, request);
+      }
+      
+      if (url.pathname === '/api/services' && request.method === 'GET') {
+        // List configured services
+        return new Response(JSON.stringify(processedServices, null, 2), {
+          headers: { 
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type'
+          }
+        });
+      }
+      
+      // Default: Dashboard
+      if (url.pathname === '/' || url.pathname === '') {
+        return await handleDashboard(env);
+      }
+
+      return new Response('Not Found', { status: 404 });
+      
+    } catch (error) {
+      console.error('Error handling request:', error);
+      return new Response(JSON.stringify({ 
+        error: 'Internal server error',
+        message: error.message 
+      }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
   },
 
   async scheduled(event, env, ctx) {
-    // This runs on the cron schedule defined in wrangler.toml
-    // Check for stale heartbeats and update service status
-    console.log('Scheduled staleness check triggered at:', new Date(event.scheduledTime).toISOString());
-    
-    ctx.waitUntil(checkHeartbeatStaleness(env));
+    try {
+      console.log('Cron trigger: Starting heartbeat staleness check...', new Date(event.scheduledTime).toISOString());
+      
+      // Check all services for staleness (now using imported function from core/monitoring.js)
+      await checkHeartbeatStaleness(env);
+      
+      console.log('Cron trigger: Completed successfully');
+    } catch (error) {
+      console.error('Error in cron trigger:', error);
+      throw error; // Re-throw to mark cron execution as failed
+    }
   }
 };
 
-/**
- * Handle incoming heartbeat from internal service
- * Supports both single and batch (multiple services) heartbeats
+/*
+ * ============================================================================
+ * FUNCTIONS EXTRACTED TO MODULES
+ * ============================================================================
+ * The following functions have been moved to separate modules for better
+ * organization and maintainability:
  * 
- * Single service format:
- * { "serviceId": "service-1" }
+ * - handleHeartbeat() → src/handlers/heartbeat.js
+ * - checkHeartbeatStaleness() → src/core/monitoring.js
+ * - updateMonitorData() → src/core/monitoring.js
+ * - storeRecentAlert() → src/handlers/alert.js
+ * - cleanupAlerts() → src/handlers/alert.js
+ * - handleCustomAlert() → src/handlers/alert.js
+ * - handleGetRecentAlerts() → src/handlers/alert.js
+ * - parseAlertmanagerPayload() → src/handlers/alert.js
+ * - parseGrafanaPayload() → src/handlers/alert.js
+ * - handleGetStatus() → src/handlers/status.js
+ * - handleGetUptime() → src/handlers/uptime.js
  * 
- * Multiple services format (shared token):
- * { "services": ["service-1", "service-2", "service-3"] }
- * 
- * Multiple services format (per-service tokens):
- * { 
- *   "services": [
- *     { "serviceId": "service-1", "token": "token-1" },
- *     { "serviceId": "service-2", "token": "token-2" }
- *   ]
- * }
+ * All functions are imported at the top of this file and used in the
+ * export default routing above.
+ * ============================================================================
  */
-async function handleHeartbeat(request, env) {
-  try {
-    const data = await request.json();
-    const timestamp = new Date().toISOString();
-    
-    // Determine if this is a batch or single heartbeat
-    let serviceEntries = [];
-    
-    if (data.services && Array.isArray(data.services)) {
-      // Batch mode: multiple services
-      if (data.services.length === 0) {
-        return new Response(JSON.stringify({ error: 'services array cannot be empty' }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
-      
-      // Check if services are strings or objects with tokens
-      serviceEntries = data.services.map(item => {
-        if (typeof item === 'string') {
-          // Simple string format: use shared Authorization header
-          return { serviceId: item, token: null };
-        } else if (item && typeof item === 'object' && item.serviceId) {
-          // Object format with per-service token
-          return { serviceId: item.serviceId, token: item.token || null };
-        } else {
-          return { serviceId: null, token: null, error: 'Invalid service format' };
-        }
-      });
-    } else if (data.serviceId) {
-      // Single mode: one service (backward compatible)
-      serviceEntries = [{ serviceId: data.serviceId, token: null }];
-    } else {
-      return new Response(JSON.stringify({ 
-        error: 'Either serviceId or services array is required',
-        usage: {
-          single: '{ "serviceId": "service-1" }',
-          batchShared: '{ "services": ["service-1", "service-2"] }',
-          batchPerService: '{ "services": [{"serviceId": "service-1", "token": "xxx"}, {"serviceId": "service-2", "token": "yyy"}] }'
-        }
-      }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-
-    // Parse API keys once
-    let apiKeys = null;
-    if (env.API_KEYS) {
-      try {
-        apiKeys = JSON.parse(env.API_KEYS);
-      } catch (error) {
-        console.error('Error parsing API_KEYS:', error);
-        return new Response(JSON.stringify({ error: 'Server configuration error' }), {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
-    }
-
-    // Get shared Authorization header (fallback if no per-service token)
-    const sharedAuthHeader = request.headers.get('Authorization');
-
-    // Validate all services and check API keys
-    const results = [];
-    const validServiceIds = [];
-    
-    for (const entry of serviceEntries) {
-      const serviceId = entry.serviceId;
-      
-      // Check for malformed entry
-      if (!serviceId) {
-        results.push({
-          serviceId: 'unknown',
-          success: false,
-          error: entry.error || 'Invalid service entry'
-        });
-        continue;
-      }
-      
-      // Find service in config
-      const service = processedServices.find(s => s.id === serviceId);
-      
-      if (!service) {
-        results.push({
-          serviceId: serviceId,
-          success: false,
-          error: 'Unknown serviceId'
-        });
-        continue;
-      }
-
-      // Check if authentication is required for this service
-      const authRequired = service.auth?.required ?? true; // Default to true if not specified
-      
-      // Validate API key if required and configured
-      if (authRequired && apiKeys && apiKeys[serviceId]) {
-        const expectedApiKey = apiKeys[serviceId];
-        
-        // Use per-service token if provided, otherwise use shared Authorization header
-        let providedToken = null;
-        if (entry.token) {
-          // Per-service token provided in payload
-          providedToken = `Bearer ${entry.token}`;
-        } else {
-          // Use shared Authorization header
-          providedToken = sharedAuthHeader;
-        }
-        
-        if (providedToken !== `Bearer ${expectedApiKey}`) {
-          results.push({
-            serviceId: serviceId,
-            success: false,
-            error: 'Invalid API key'
-          });
-          continue;
-        }
-      } else if (authRequired && apiKeys && !apiKeys[serviceId]) {
-        // Auth is required but no API key is configured for this service
-        // This is a configuration warning, but allow the heartbeat
-        console.warn(`Service ${serviceId} requires auth but has no API key configured in API_KEYS`);
-      } else if (!authRequired) {
-        // Auth not required for this service - skip validation
-        console.log(`Service ${serviceId} has auth disabled - skipping authentication`);
-      }
-
-      // Service is valid
-      validServiceIds.push(serviceId);
-      results.push({
-        serviceId: serviceId,
-        success: true,
-        timestamp: timestamp
-      });
-    }
-
-    // Update heartbeat timestamps for all valid services in a single write
-    if (validServiceIds.length > 0) {
-      try {
-        const monitorDataJson = await env.HEARTBEAT_LOGS.get('monitor:data');
-        const monitorData = monitorDataJson ? JSON.parse(monitorDataJson) : {
-          latest: {},
-          uptime: {},
-          summary: null
-        };
-        
-        if (!monitorData.latest) monitorData.latest = {};
-        
-        // Update all valid service timestamps
-        for (const serviceId of validServiceIds) {
-          monitorData.latest[serviceId] = timestamp;
-        }
-        
-        await env.HEARTBEAT_LOGS.put('monitor:data', JSON.stringify(monitorData));
-        
-        console.log(`Batch heartbeat: ${validServiceIds.length} service(s) updated - ${validServiceIds.join(', ')}`);
-      } catch (error) {
-        console.error('Error updating heartbeat timestamps:', error);
-        return new Response(JSON.stringify({ error: 'Failed to update heartbeat data' }), {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
-    }
-
-    // Return appropriate response based on success/failure
-    const successCount = results.filter(r => r.success).length;
-    const failureCount = results.length - successCount;
-    
-    if (failureCount === 0) {
-      // All succeeded
-      return new Response(JSON.stringify({ 
-        success: true, 
-        message: serviceEntries.length === 1 
-          ? 'Heartbeat received' 
-          : `Batch heartbeat received for ${successCount} service(s)`,
-        timestamp: timestamp,
-        results: serviceEntries.length > 1 ? results : undefined
-      }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    } else if (successCount === 0) {
-      // All failed
-      return new Response(JSON.stringify({ 
-        success: false,
-        message: 'All heartbeats failed',
-        results: results
-      }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    } else {
-      // Partial success
-      return new Response(JSON.stringify({ 
-        success: true,
-        message: `Partial success: ${successCount} succeeded, ${failureCount} failed`,
-        results: results
-      }), {
-        status: 207, // Multi-Status
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-
-  } catch (error) {
-    console.error('Heartbeat handler error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  }
-}
 
 /**
- * Check for stale heartbeats and update service status
- * This function runs on every cron schedule and checks ALL enabled services,
- * regardless of their current status (up, down, degraded, or unknown).
- * This ensures continuous monitoring and accurate uptime statistics.
+ * Dashboard Handler
+ * All API handlers have been moved to separate modules (see imports above)
+ * This file now contains only routing and the dashboard HTML generation
  */
-async function checkHeartbeatStaleness(env) {
-  const results = [];
-  const now = Date.now();
-  const timestamp = new Date().toISOString();
-
-  // Get all monitor data in a single read
-  const monitorDataJson = await env.HEARTBEAT_LOGS.get('monitor:data');
-  const monitorData = monitorDataJson ? JSON.parse(monitorDataJson) : {
-    latest: {},
-    uptime: {},
-    summary: null
-  };
-
-  const latestData = monitorData.latest || {};
-  
-  // Track statistics for logging
-  let checkedCount = 0;
-  let upCount = 0;
-  let downCount = 0;
-  let unknownCount = 0;
-
-  // Check ALL enabled services (including those currently down)
-  // This ensures we continue recording downtime in statistics
-  for (const service of processedServices) {
-    if (!service.enabled) {
-      continue;
-    }
-
-    // Get latest heartbeat timestamp
-    const lastHeartbeatTime = latestData[service.id];
-    
-    const stalenessThreshold = (service.stalenessThreshold || 300) * 1000; // Default 5 minutes
-    
-    let status, lastSeen, timeSinceLastHeartbeat;
-    
-    if (!lastHeartbeatTime) {
-      status = 'unknown';
-      lastSeen = null;
-      timeSinceLastHeartbeat = null;
-      unknownCount++;
-    } else {
-      const lastHeartbeatDate = new Date(lastHeartbeatTime);
-      timeSinceLastHeartbeat = now - lastHeartbeatDate.getTime();
-      lastSeen = lastHeartbeatTime;
-      
-      if (timeSinceLastHeartbeat > stalenessThreshold) {
-        status = 'down';
-        downCount++;
-      } else {
-        status = 'up';
-        upCount++;
-      }
-    }
-
-    const result = {
-      serviceId: service.id,
-      serviceName: service.name,
-      status: status,
-      lastSeen: lastSeen,
-      timeSinceLastHeartbeat: timeSinceLastHeartbeat,
-      stalenessThreshold: stalenessThreshold,
-      timestamp: timestamp,
-      groupId: service.groupId || null,
-      groupName: service.groupName || 'Ungrouped',
-      uptimeThresholdSet: service.uptimeThresholdSet || 'default'
-    };
-
-    results.push(result);
-    checkedCount++;
-  }
-
-  // Log check summary (helpful for debugging and confirming continuous monitoring)
-  console.log(`Staleness check completed: ${checkedCount} services checked (Up: ${upCount}, Down: ${downCount}, Unknown: ${unknownCount})`);
-
-  // Update summary and uptime in the single store
-  // This records the current check for ALL services, including down ones
-  await updateMonitorData(env, monitorData, results, timestamp);
-
-  // Check for status changes and send notifications
-  await checkAndSendNotifications(env, results, monitorData, { services: processedServices });
-
-  return results;
-}
-
-/**
- * Update all monitor data (summary and uptime) in a single write
- * This function processes ALL service check results and increments counters
- * for up/down/degraded/unknown checks, ensuring accurate statistics even
- * for services that remain down over multiple check cycles.
- */
-async function updateMonitorData(env, monitorData, results, timestamp) {
-  const today = new Date(timestamp).toISOString().split('T')[0]; // YYYY-MM-DD format
-
-  try {
-    // Initialize structure if needed
-    if (!monitorData.uptime) monitorData.uptime = {};
-    
-    // Update summary
-    monitorData.summary = {
-      timestamp: timestamp,
-      totalServices: results.length,
-      servicesUp: results.filter(r => r.status === 'up').length,
-      servicesDegraded: results.filter(r => r.status === 'degraded').length,
-      servicesDown: results.filter(r => r.status === 'down').length,
-      servicesUnknown: results.filter(r => r.status === 'unknown').length,
-      results: results
-    };
-
-    // Update uptime data for each service (including down services)
-    // Every check is recorded to maintain accurate uptime percentages
-    for (const result of results) {
-      // Initialize service data if not exists
-      if (!monitorData.uptime[result.serviceId]) {
-        monitorData.uptime[result.serviceId] = {
-          serviceId: result.serviceId,
-          serviceName: result.serviceName,
-          days: {}
-        };
-      }
-
-      const serviceData = monitorData.uptime[result.serviceId];
-
-      // Get or create today's data
-      if (!serviceData.days[today]) {
-        serviceData.days[today] = {
-          date: today,
-          totalChecks: 0,
-          upChecks: 0,
-          downChecks: 0,
-          degradedChecks: 0,
-          unknownChecks: 0,
-          uptimePercentage: 0
-        };
-      }
-
-      const dailyData = serviceData.days[today];
-
-      // Increment counters for ALL check results
-      // This includes recording down checks for services that remain offline
-      dailyData.totalChecks++;
-      if (result.status === 'up') {
-        dailyData.upChecks++;
-      } else if (result.status === 'down') {
-        dailyData.downChecks++;
-        // Log down service checks for visibility (helpful for debugging)
-        console.log(`Recording down check for service: ${result.serviceName} (${result.serviceId}) - Down checks today: ${dailyData.downChecks}`);
-      } else if (result.status === 'degraded') {
-        dailyData.degradedChecks++;
-      } else {
-        dailyData.unknownChecks++;
-      }
-
-      // Calculate uptime percentage (exclude unknown from calculation)
-      const knownChecks = dailyData.totalChecks - dailyData.unknownChecks;
-      if (knownChecks > 0) {
-        dailyData.uptimePercentage = parseFloat(((dailyData.upChecks + dailyData.degradedChecks * 0.5) / knownChecks * 100).toFixed(2));
-      }
-
-      dailyData.lastUpdate = timestamp;
-
-      // Keep only last N days for this service (configurable retention period)
-      const retentionDays = uiConfig.features.uptimeRetentionDays || 90;
-      const dates = Object.keys(serviceData.days).sort();
-      if (dates.length > retentionDays) {
-        // Remove oldest days
-        const daysToRemove = dates.slice(0, dates.length - retentionDays);
-        daysToRemove.forEach(date => delete serviceData.days[date]);
-      }
-    }
-
-    // Store everything in a single write operation
-    await env.HEARTBEAT_LOGS.put('monitor:data', JSON.stringify(monitorData));
-  } catch (error) {
-    console.error('Error updating monitor data:', error);
-  }
-}
-
-/**
- * Handle test notification request
- */
-async function handleTestNotification(env, request) {
-  try {
-    const body = await request.json();
-    const { channelType, eventType = 'down' } = body;
-
-    const result = await testNotification(env, channelType, eventType);
-
-    return new Response(JSON.stringify({ 
-      success: true, 
-      message: `Test ${eventType} notification sent to ${result.channel}`,
-      ...result
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
-
-  } catch (error) {
-    console.error('Test notification error:', error);
-    const status = error.message.includes('not found') ? 404 : 
-                   error.message.includes('disabled') ? 400 : 500;
-    return new Response(JSON.stringify({ 
-      success: false, 
-      message: error.message 
-    }), {
-      status: status,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  }
-}
-
-/**
- * Handle get recent alerts API
- */
-async function handleGetRecentAlerts(env, url) {
-  try {
-    const since = url.searchParams.get('since'); // Optional: get alerts since timestamp
-    const limit = parseInt(url.searchParams.get('limit') || '20');
-    
-    // Get alerts from KV
-    const alertsJson = await env.HEARTBEAT_LOGS.get('recent:alerts');
-    let alerts = alertsJson ? JSON.parse(alertsJson) : [];
-    
-    // Filter by 'since' timestamp if provided
-    if (since) {
-      alerts = alerts.filter(alert => alert.timestamp > since);
-    }
-    
-    // Limit results
-    alerts = alerts.slice(0, limit);
-    
-    return new Response(JSON.stringify({
-      success: true,
-      alerts: alerts,
-      count: alerts.length
-    }, null, 2), {
-      headers: { 
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Cache-Control': 'no-cache, no-store, must-revalidate'
-      }
-    });
-  } catch (error) {
-    console.error('Error fetching recent alerts:', error);
-    return new Response(JSON.stringify({ 
-      success: false,
-      error: error.message,
-      alerts: [],
-      count: 0
-    }), {
-      status: 500,
-      headers: { 
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      }
-    });
-  }
-}
-
-/**
- * Store recent alert for dashboard notifications
- */
-/**
- * Clean up old alerts based on configuration
- */
-function cleanupAlerts(alerts, config = {}) {
-  // Default settings
-  const maxAlerts = config.maxAlerts || 100;
-  const maxAgeDays = config.maxAgeDays || 7;
-  const now = Date.now();
-  const maxAgeMs = maxAgeDays * 24 * 60 * 60 * 1000;
-  
-  let cleaned = alerts;
-  
-  // Remove alerts older than maxAgeDays
-  cleaned = cleaned.filter(alert => {
-    const alertTime = new Date(alert.timestamp).getTime();
-    const age = now - alertTime;
-    return age < maxAgeMs;
-  });
-  
-  // Keep only last maxAlerts
-  if (cleaned.length > maxAlerts) {
-    cleaned = cleaned.slice(0, maxAlerts);
-  }
-  
-  return cleaned;
-}
-
-async function storeRecentAlert(env, alertData) {
-  const timestamp = new Date().toISOString();
-  const alertId = `alert:${Date.now()}:${Math.random().toString(36).substr(2, 9)}`;
-  
-  // Create alert record
-  const alert = {
-    id: alertId,
-    title: alertData.title,
-    message: alertData.message,
-    severity: alertData.severity || 'warning',
-    source: alertData.source || 'external',
-    timestamp: timestamp,
-    read: false
-  };
-  
-  // Get existing alerts
-  const alertsJson = await env.HEARTBEAT_LOGS.get('recent:alerts');
-  let alerts = alertsJson ? JSON.parse(alertsJson) : [];
-  
-  // Add new alert at the beginning
-  alerts.unshift(alert);
-  
-  // Load notification config for alert history settings
-  const notificationsConfig = (await import('../notifications.json')).default;
-  const historyConfig = notificationsConfig?.settings?.alertHistory || {};
-  
-  // Clean up old/excess alerts if enabled
-  if (historyConfig.cleanupOnAdd !== false) {
-    alerts = cleanupAlerts(alerts, historyConfig);
-  }
-  
-  // Store back
-  await env.HEARTBEAT_LOGS.put('recent:alerts', JSON.stringify(alerts));
-  
-  console.log(`Stored alert for dashboard: ${alertData.title} (total: ${alerts.length})`);
-}
-
-/**
- * Handle custom alert from external tools (Alertmanager, Grafana, etc.)
- */
-async function handleCustomAlert(env, request) {
-  // Optional authentication - if ALERT_API_KEY is set, require it
-  if (env.ALERT_API_KEY) {
-    const authHeader = request.headers.get('Authorization');
-    const providedKey = authHeader?.replace('Bearer ', '');
-    
-    if (!providedKey || providedKey !== env.ALERT_API_KEY) {
-      return new Response(JSON.stringify({
-        success: false,
-        message: 'Unauthorized - Invalid or missing API key'
-      }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-  }
-  
-  try {
-    const body = await request.json();
-    
-    // Detect alert source and parse accordingly
-    // Order matters: check most specific formats first, generic format last
-    let alertData;
-    
-    if (body.alerts && Array.isArray(body.alerts)) {
-      // Alertmanager format: has 'alerts' array
-      alertData = parseAlertmanagerPayload(body);
-    } else if (body.evalMatches || (body.state && body.ruleName)) {
-      // Grafana format: has 'evalMatches' OR both 'state' and 'ruleName'
-      // Note: Don't check just 'message' as it would match generic format too
-      alertData = parseGrafanaPayload(body);
-    } else if (body.title && body.message) {
-      // Generic format: has 'title' and 'message'
-      // This is the catch-all format for custom integrations
-      
-      // Support both 'channel' (singular) and 'channels' (plural)
-      let channels = body.channels || body.channel || [];
-      // Ensure it's an array
-      if (!Array.isArray(channels)) {
-        channels = [channels];
-      }
-      
-      alertData = {
-        title: body.title,
-        message: body.message,
-        severity: body.severity || 'warning',
-        source: body.source || 'external',
-        labels: body.labels || {},
-        annotations: body.annotations || {},
-        channels: channels  // Optional: specify target channels
-      };
-    } else {
-      return new Response(JSON.stringify({
-        success: false,
-        message: 'Unsupported alert format. Use Alertmanager, Grafana, or generic format.'
-      }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-
-    // Send notifications using the custom alert handler
-    const { sendCustomAlert } = await import('./notifications.js');
-    const result = await sendCustomAlert(env, alertData);
-
-    // Handle validation errors
-    if (result && !result.success) {
-      return new Response(JSON.stringify({
-        success: false,
-        message: 'Alert validation failed',
-        errors: result.errors,
-        availableChannels: result.availableChannels,
-        alertTitle: alertData.title
-      }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-
-    // Store alert for dashboard notifications
-    try {
-      await storeRecentAlert(env, alertData);
-    } catch (error) {
-      console.error('Error storing alert for dashboard:', error);
-      // Don't fail the request if storage fails
-    }
-
-    return new Response(JSON.stringify({
-      success: true,
-      message: 'Alert processed and notifications sent',
-      alertTitle: alertData.title,
-      channelsSent: result?.channelsSent || []
-    }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
-
-  } catch (error) {
-    console.error('Custom alert error:', error);
-    return new Response(JSON.stringify({
-      success: false,
-      message: error.message
-    }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
-  }
-}
-
-/**
- * Parse Alertmanager webhook payload
- */
-function parseAlertmanagerPayload(body) {
-  const alerts = body.alerts || [];
-  const firingAlerts = alerts.filter(a => a.status === 'firing');
-  const resolvedAlerts = alerts.filter(a => a.status === 'resolved');
-  
-  // Use first alert for details
-  const alert = alerts[0] || {};
-  const labels = alert.labels || {};
-  const annotations = alert.annotations || {};
-  
-  // Check for channels in labels (e.g., channel="discord,slack")
-  const channelsLabel = labels.channels || annotations.channels || '';
-  const channels = channelsLabel ? channelsLabel.split(',').map(c => c.trim()) : [];
-  
-  return {
-    title: annotations.summary || labels.alertname || 'Alert',
-    message: annotations.description || annotations.message || 'No description',
-    severity: labels.severity || 'warning',
-    source: 'alertmanager',
-    status: firingAlerts.length > 0 ? 'firing' : 'resolved',
-    count: {
-      firing: firingAlerts.length,
-      resolved: resolvedAlerts.length
-    },
-    labels: labels,
-    annotations: annotations,
-    generatorURL: alert.generatorURL,
-    channels: channels
-  };
-}
-
-/**
- * Parse Grafana webhook payload
- */
-function parseGrafanaPayload(body) {
-  // Check for channels in tags
-  const channelsTag = body.tags?.channels || '';
-  const channels = channelsTag ? channelsTag.split(',').map(c => c.trim()) : [];
-  
-  return {
-    title: body.title || body.ruleName || 'Grafana Alert',
-    message: body.message || 'No message',
-    severity: body.state === 'alerting' ? 'critical' : body.state === 'ok' ? 'info' : 'warning',
-    source: 'grafana',
-    status: body.state || 'unknown',
-    labels: {
-      ruleName: body.ruleName,
-      ruleUrl: body.ruleUrl
-    },
-    annotations: {
-      imageUrl: body.imageUrl,
-      message: body.message
-    },
-    evalMatches: body.evalMatches || [],
-    channels: channels
-  };
-}
 
 /**
  * Handle dashboard page
@@ -3369,117 +2671,5 @@ async function handleDashboard(env) {
   return new Response(html, {
     headers: { 'Content-Type': 'text/html' }
   });
-}
-
-/**
- * Handle get status API
- */
-async function handleGetStatus(env) {
-  const monitorDataJson = await env.HEARTBEAT_LOGS.get('monitor:data');
-  const monitorData = monitorDataJson ? JSON.parse(monitorDataJson) : { summary: null };
-  const summary = monitorData.summary || null;
-
-  return new Response(JSON.stringify({ summary }, null, 2), {
-    headers: { 
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type'
-    }
-  });
-}
-
-/**
- * Handle get uptime history API
- */
-async function handleGetUptime(env, url) {
-  const serviceId = url.searchParams.get('serviceId');
-  
-  if (!serviceId) {
-    return new Response(JSON.stringify({ error: 'serviceId parameter required' }), {
-      status: 400,
-      headers: { 
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type'
-      }
-    });
-  }
-
-  try {
-    // Get all monitor data in a single read
-    const monitorDataJson = await env.HEARTBEAT_LOGS.get('monitor:data');
-    const monitorData = monitorDataJson ? JSON.parse(monitorDataJson) : { uptime: {} };
-    const allUptimeData = monitorData.uptime || {};
-    const serviceData = allUptimeData[serviceId] || { days: {} };
-
-    // Fill in missing days with null data up to retention period
-    const retentionDays = uiConfig.features.uptimeRetentionDays || 90;
-    const today = new Date();
-    const historicalDays = [];
-    let totalChecksAll = 0;
-    let upChecksAll = 0;
-    let degradedChecksAll = 0;
-    let unknownChecksAll = 0;
-
-    for (let i = retentionDays - 1; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      const dateStr = date.toISOString().split('T')[0];
-      
-      const dayData = serviceData.days[dateStr];
-      if (dayData) {
-        historicalDays.push(dayData);
-        totalChecksAll += dayData.totalChecks;
-        upChecksAll += dayData.upChecks;
-        degradedChecksAll += dayData.degradedChecks;
-        unknownChecksAll += dayData.unknownChecks;
-      } else {
-        historicalDays.push({
-          date: dateStr,
-          totalChecks: 0,
-          upChecks: 0,
-          downChecks: 0,
-          degradedChecks: 0,
-          unknownChecks: 0,
-          uptimePercentage: null
-        });
-      }
-    }
-
-    // Calculate overall uptime percentage for the period
-    const knownChecksAll = totalChecksAll - unknownChecksAll;
-    let overallUptime = 0;
-    if (knownChecksAll > 0) {
-      overallUptime = parseFloat(((upChecksAll + degradedChecksAll * 0.5) / knownChecksAll * 100).toFixed(2));
-    }
-
-    return new Response(JSON.stringify({
-      serviceId: serviceId,
-      days: historicalDays,
-      overallUptime: overallUptime,
-      totalDays: historicalDays.filter(d => d.totalChecks > 0).length,
-      retentionDays: retentionDays
-    }, null, 2), {
-      headers: { 
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type'
-      }
-    });
-  } catch (error) {
-    console.error('Error fetching uptime data:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { 
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type'
-      }
-    });
-  }
 }
 

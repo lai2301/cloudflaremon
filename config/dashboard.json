@@ -1,0 +1,70 @@
+{
+  "header": {
+    "title": "Service Monitor",
+    "subtitle": "Real-time service health monitoring",
+    "logoUrl": "",
+    "logoAlt": "Service Monitor",
+    "showLogo": false,
+    "links": [
+      {
+        "text": "Home",
+        "url": "/"
+      },
+      {
+        "text": "Documentation",
+        "url": "https://github.com/your-username/cloudflaremon"
+      }
+    ]
+  },
+  "branding": {
+    "pageTitle": "Service Monitor Dashboard",
+    "favicon": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>📊</text></svg>",
+    "primaryColor": "#3b82f6",
+    "accentColor": "#10b981"
+  },
+  "theme": {
+    "defaultMode": "auto",
+    "showToggle": true,
+    "colors": {
+      "light": {
+        "primary": "#ffffff",
+        "secondary": "#f9fafb",
+        "text": "#111827",
+        "textSecondary": "#6b7280",
+        "border": "#e5e7eb",
+        "statusUp": "#10b981",
+        "statusDown": "#ef4444",
+        "statusDegraded": "#f59e0b"
+      },
+      "dark": {
+        "primary": "#111827",
+        "secondary": "#1f2937",
+        "text": "#f9fafb",
+        "textSecondary": "#d1d5db",
+        "border": "#374151",
+        "statusUp": "#10b981",
+        "statusDown": "#ef4444",
+        "statusDegraded": "#f59e0b"
+      }
+    }
+  },
+  "footer": {
+    "text": "Powered by Cloudflare Workers",
+    "links": [
+      {
+        "text": "Documentation",
+        "url": "https://github.com/your-username/cloudflaremon"
+      },
+      {
+        "text": "Status",
+        "url": "/"
+      }
+    ]
+  },
+  "customCss": "",
+  "customHtml": {
+    "headerExtra": "",
+    "footerExtra": ""
+  }
+}
+

@@ -1,4 +1,7 @@
 {
+  "_description": "Dashboard UI and Display Configuration",
+  "_usage": "Copy this file to dashboard.json and customize for your needs",
+  
   "header": {
     "title": "Service Monitor",
     "subtitle": "Real-time service health monitoring",
@@ -16,12 +19,14 @@
       }
     ]
   },
+  
   "branding": {
     "pageTitle": "Service Monitor Dashboard",
     "favicon": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>📊</text></svg>",
     "primaryColor": "#3b82f6",
     "accentColor": "#10b981"
   },
+  
   "theme": {
     "defaultMode": "auto",
     "showToggle": true,
@@ -48,6 +53,7 @@
       }
     }
   },
+  
   "footer": {
     "text": "Powered by Cloudflare Workers",
     "links": [
@@ -61,89 +67,7 @@
       }
     ]
   },
-  "features": {
-    "showRefreshButton": true,
-    "showLastUpdated": true,
-    "autoRefreshSeconds": 30,
-    "showUptimePercentage": true,
-    "showUptimeHistory": true,
-    "uptimeRetentionDays": 120,
-    "showExportButton": true
-  },
-  "uptimeThresholds": {
-    "default": [
-      {
-        "name": "excellent",
-        "min": 99.5,
-        "color": "#10b981",
-        "label": "Excellent"
-      },
-      {
-        "name": "good",
-        "min": 99.0,
-        "color": "#3b82f6",
-        "label": "Good"
-      },
-      {
-        "name": "fair",
-        "min": 95.0,
-        "color": "#f59e0b",
-        "label": "Fair"
-      },
-      {
-        "name": "poor",
-        "min": 0,
-        "color": "#ef4444",
-        "label": "Poor"
-      }
-    ],
-    "strict": [
-      {
-        "name": "excellent",
-        "min": 99.9,
-        "color": "#10b981",
-        "label": "Excellent"
-      },
-      {
-        "name": "good",
-        "min": 99.5,
-        "color": "#3b82f6",
-        "label": "Good"
-      },
-      {
-        "name": "fair",
-        "min": 80.0,
-        "color": "#f59e0b",
-        "label": "Fair"
-      },
-      {
-        "name": "poor",
-        "min": 0,
-        "color": "#ef4444",
-        "label": "Poor"
-      }
-    ],
-    "relaxed": [
-      {
-        "name": "healthy",
-        "min": 95.0,
-        "color": "#10b981",
-        "label": "Healthy"
-      },
-      {
-        "name": "degraded",
-        "min": 90.0,
-        "color": "#f59e0b",
-        "label": "Degraded"
-      },
-      {
-        "name": "critical",
-        "min": 0,
-        "color": "#ef4444",
-        "label": "Critical"
-      }
-    ]
-  },
+  
   "customCss": "",
   "customHtml": {
     "headerExtra": "",

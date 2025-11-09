@@ -80,7 +80,7 @@ grep "YOUR_KV_NAMESPACE_ID_HERE" wrangler.toml
 
 ## Step 3: Configure Services (2 min)
 
-Edit `services.json`:
+Edit `config/services.json`:
 
 ```json
 {
@@ -222,7 +222,7 @@ curl https://your-worker.workers.dev/api/status
 ## Common Issues
 
 ### "Invalid API key"
-- Check that the API key in your client matches `services.json`
+- Check that the API key in your client matches `config/services.json`
 - Ensure proper Authorization header format: `Bearer your-key`
 
 ### Services show as "Unknown"

@@ -1,0 +1,155 @@
+{
+  "_notice": "⚠️ DEPRECATED: This file will be removed in a future version. Please migrate to dashboard.json + settings.json. See CONFIG_MIGRATION.md for details.",
+  "_migration": "The configuration has been split into two files for better organization: dashboard.json (UI/display) and settings.json (features/logic). Your existing ui.json still works but is no longer the recommended approach.",
+  "header": {
+    "title": "Service Monitor",
+    "subtitle": "Real-time service health monitoring",
+    "logoUrl": "",
+    "logoAlt": "Service Monitor",
+    "showLogo": false,
+    "links": [
+      {
+        "text": "Home",
+        "url": "/"
+      },
+      {
+        "text": "Documentation",
+        "url": "https://github.com/your-username/cloudflaremon"
+      }
+    ]
+  },
+  "branding": {
+    "pageTitle": "Service Monitor Dashboard",
+    "favicon": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>📊</text></svg>",
+    "primaryColor": "#3b82f6",
+    "accentColor": "#10b981"
+  },
+  "theme": {
+    "defaultMode": "auto",
+    "showToggle": true,
+    "colors": {
+      "light": {
+        "primary": "#ffffff",
+        "secondary": "#f9fafb",
+        "text": "#111827",
+        "textSecondary": "#6b7280",
+        "border": "#e5e7eb",
+        "statusUp": "#10b981",
+        "statusDown": "#ef4444",
+        "statusDegraded": "#f59e0b"
+      },
+      "dark": {
+        "primary": "#111827",
+        "secondary": "#1f2937",
+        "text": "#f9fafb",
+        "textSecondary": "#d1d5db",
+        "border": "#374151",
+        "statusUp": "#10b981",
+        "statusDown": "#ef4444",
+        "statusDegraded": "#f59e0b"
+      }
+    }
+  },
+  "footer": {
+    "text": "Powered by Cloudflare Workers",
+    "links": [
+      {
+        "text": "Documentation",
+        "url": "https://github.com/your-username/cloudflaremon"
+      },
+      {
+        "text": "Status",
+        "url": "/"
+      }
+    ]
+  },
+  "features": {
+    "showRefreshButton": true,
+    "showLastUpdated": true,
+    "autoRefreshSeconds": 30,
+    "showUptimePercentage": true,
+    "showUptimeHistory": true,
+    "uptimeRetentionDays": 120,
+    "showExportButton": true
+  },
+  "uptimeThresholds": {
+    "default": [
+      {
+        "name": "excellent",
+        "min": 99.5,
+        "color": "#10b981",
+        "label": "Excellent"
+      },
+      {
+        "name": "good",
+        "min": 99.0,
+        "color": "#3b82f6",
+        "label": "Good"
+      },
+      {
+        "name": "fair",
+        "min": 95.0,
+        "color": "#f59e0b",
+        "label": "Fair"
+      },
+      {
+        "name": "poor",
+        "min": 0,
+        "color": "#ef4444",
+        "label": "Poor"
+      }
+    ],
+    "strict": [
+      {
+        "name": "excellent",
+        "min": 99.9,
+        "color": "#10b981",
+        "label": "Excellent"
+      },
+      {
+        "name": "good",
+        "min": 99.5,
+        "color": "#3b82f6",
+        "label": "Good"
+      },
+      {
+        "name": "fair",
+        "min": 80.0,
+        "color": "#f59e0b",
+        "label": "Fair"
+      },
+      {
+        "name": "poor",
+        "min": 0,
+        "color": "#ef4444",
+        "label": "Poor"
+      }
+    ],
+    "relaxed": [
+      {
+        "name": "healthy",
+        "min": 95.0,
+        "color": "#10b981",
+        "label": "Healthy"
+      },
+      {
+        "name": "degraded",
+        "min": 90.0,
+        "color": "#f59e0b",
+        "label": "Degraded"
+      },
+      {
+        "name": "critical",
+        "min": 0,
+        "color": "#ef4444",
+        "label": "Critical"
+      }
+    ]
+  },
+  "customCss": "",
+  "customHtml": {
+    "headerExtra": "",
+    "footerExtra": ""
+  }
+}
+

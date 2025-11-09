@@ -1,11 +1,11 @@
 # UI Customization Guide
 
-Customize the dashboard appearance using `ui.json`.
+Customize the dashboard appearance using configuration files.
 
 ## Table of Contents
 
 - [Overview](#overview)
-- [Configuration File](#configuration-file)
+- [Configuration Files](#configuration-files)
 - [Header Customization](#header-customization)
 - [Branding](#branding)
 - [Theme & Colors](#theme--colors)
@@ -18,18 +18,51 @@ Customize the dashboard appearance using `ui.json`.
 
 ## Overview
 
-The dashboard UI can be fully customized through the `ui.json` configuration file. This allows you to:
+The dashboard UI can be fully customized through configuration files. This allows you to:
 - Add your company logo
 - Change page title and header text
 - Customize footer content
+- Configure feature toggles
 - Add custom CSS styles
 - Inject custom HTML
 - Control auto-refresh behavior
+- Set uptime thresholds and retention
 
-## Configuration File
+## Configuration Files
 
-Create or edit `ui.json` in your project root:
+### **New Structure** ✨ (Recommended)
 
+Configuration is split into two files for better organization:
+
+**`config/dashboard.json`** - UI appearance and branding:
+```json
+{
+  "header": { ... },
+  "branding": { ... },
+  "footer": { ... },
+  "customCss": "",
+  "customHtml": { ... }
+}
+```
+
+**`config/settings.json`** - Features and behavior:
+```json
+{
+  "features": { ... },
+  "uptimeThresholds": { ... },
+  "uptime": { "retentionDays": 120 }
+}
+```
+
+💡 **Tip:** Copy example files to `config/`:
+```bash
+cp examples/dashboard.example.json config/dashboard.json
+cp examples/settings.example.json config/settings.json
+```
+
+### **Legacy Structure** ⚠️ (Still Supported)
+
+**`config/ui.json`** - All-in-one configuration:
 ```json
 {
   "header": { ... },
@@ -41,7 +74,11 @@ Create or edit `ui.json` in your project root:
 }
 ```
 
-💡 **Tip:** Copy `ui.example.json` to `ui.json` and customize it.
+The system automatically uses `ui.json` if `dashboard.json` is not found, providing backward compatibility.
+
+---
+
+> **📝 Note:** Throughout this guide, examples show configurations that apply to both structures. If using the new split structure, put UI-related settings in `dashboard.json` and feature/behavior settings in `settings.json`.
 
 ## Header Customization
 

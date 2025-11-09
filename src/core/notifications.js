@@ -3,7 +3,7 @@
  * Handles all notification channels and alert routing
  */
 
-import notificationsConfig from '../notifications.json';
+import notificationsConfig from '../../config/notifications.json';
 
 /**
  * Render a template string with variables
