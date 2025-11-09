@@ -1335,7 +1335,7 @@ async function handleDashboard(env) {
             gap: 8px;
         }
         
-        .theme-toggle, .export-btn, .auto-refresh-btn {
+        .theme-toggle, .export-btn, .auto-refresh-btn, .alert-history-btn {
             background: var(--bg-primary);
             color: var(--text-primary);
             border: 1px solid var(--border-color);
@@ -1352,7 +1352,7 @@ async function handleDashboard(env) {
             position: relative;
         }
         
-        .theme-toggle:hover, .export-btn:hover, .auto-refresh-btn:hover {
+        .theme-toggle:hover, .export-btn:hover, .auto-refresh-btn:hover, .alert-history-btn:hover {
             background: var(--bg-hover);
             transform: scale(1.05);
         }
@@ -1876,11 +1876,232 @@ async function handleDashboard(env) {
             border-left: 4px solid #3b82f6;
         }
         
+        /* Alert History Modal */
+        .alert-history-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .alert-history-modal.active {
+            display: flex;
+        }
+        
+        .alert-history-content {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            max-width: 900px;
+            width: 90%;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+        
+        .alert-history-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .alert-history-header h2 {
+            margin: 0;
+            font-size: 20px;
+            color: var(--text-primary);
+        }
+        
+        .alert-history-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        
+        .alert-history-close:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+        
+        .alert-history-filters {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        
+        .filter-btn:hover {
+            background: var(--bg-hover);
+        }
+        
+        .filter-btn.active {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        
+        .alert-history-body {
+            padding: 16px 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        
+        .alert-history-item {
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-left: 4px solid #6b7280;
+            transition: all 0.2s;
+        }
+        
+        .alert-history-item:hover {
+            transform: translateX(4px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .alert-history-item.severity-critical {
+            border-left-color: #ef4444;
+        }
+        
+        .alert-history-item.severity-warning {
+            border-left-color: #f59e0b;
+        }
+        
+        .alert-history-item.severity-info {
+            border-left-color: #3b82f6;
+        }
+        
+        .alert-history-item-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .alert-history-item-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 15px;
+            flex: 1;
+        }
+        
+        .alert-history-item-badge {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-left: 12px;
+        }
+        
+        .alert-history-item-badge.critical {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .alert-history-item-badge.warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .alert-history-item-badge.info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        [data-theme="dark"] .alert-history-item-badge.critical {
+            background: #7f1d1d;
+            color: #fecaca;
+        }
+        
+        [data-theme="dark"] .alert-history-item-badge.warning {
+            background: #78350f;
+            color: #fde68a;
+        }
+        
+        [data-theme="dark"] .alert-history-item-badge.info {
+            background: #1e3a8a;
+            color: #bfdbfe;
+        }
+        
+        .alert-history-item-message {
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+        
+        .alert-history-item-footer {
+            display: flex;
+            gap: 16px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .alert-history-item-source {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .alert-history-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+        
+        .alert-history-empty-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+        
         @media (max-width: 768px) {
             .alert-toast-container {
                 left: 20px;
                 right: 20px;
                 max-width: none;
+            }
+            
+            .alert-history-content {
+                width: 95%;
+                max-height: 90vh;
+            }
+            
+            .alert-history-filters {
+                flex-direction: column;
+            }
+            
+            .filter-btn {
+                width: 100%;
             }
         }
         
@@ -1892,11 +2113,38 @@ async function handleDashboard(env) {
     <!-- Alert Toast Container -->
     <div class="alert-toast-container" id="alertToastContainer"></div>
     
+    <!-- Alert History Modal -->
+    <div class="alert-history-modal" id="alertHistoryModal">
+        <div class="alert-history-content">
+            <div class="alert-history-header">
+                <h2>📋 Alert History</h2>
+                <button class="alert-history-close" onclick="closeAlertHistory()" aria-label="Close">×</button>
+            </div>
+            <div class="alert-history-filters">
+                <button class="filter-btn active" data-filter="all" onclick="filterAlerts('all')">All</button>
+                <button class="filter-btn" data-filter="critical" onclick="filterAlerts('critical')">🚨 Critical</button>
+                <button class="filter-btn" data-filter="warning" onclick="filterAlerts('warning')">⚠️ Warning</button>
+                <button class="filter-btn" data-filter="info" onclick="filterAlerts('info')">ℹ️ Info</button>
+                <button class="filter-btn" data-filter="heartbeat-monitor" onclick="filterAlerts('heartbeat-monitor')">💓 Service Status</button>
+                <button class="filter-btn" data-filter="external" onclick="filterAlerts('external')">📡 External</button>
+            </div>
+            <div class="alert-history-body" id="alertHistoryBody">
+                <div class="alert-history-empty">
+                    <div class="alert-history-empty-icon">📭</div>
+                    <div>Loading alerts...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <div class="container">
         ${uiConfig.theme.showToggle || uiConfig.features.showExportButton !== false ? `
         <div class="theme-toggle-container">
             <button class="export-btn" id="exportBtn" aria-label="Export data" title="Export CSV">
                 <span>📊</span>
+            </button>
+            <button class="alert-history-btn" id="alertHistoryBtn" aria-label="Alert history" title="Alert History">
+                <span>🔔</span>
             </button>
             <button class="auto-refresh-btn" id="autoRefreshBtn" aria-label="Toggle auto-refresh" title="Auto-refresh">
                 <span id="autoRefreshIcon">🔄</span>
@@ -2960,6 +3208,149 @@ async function handleDashboard(env) {
             
             URL.revokeObjectURL(url);
         }
+        
+        // Alert History functionality
+        let allAlerts = [];
+        let currentFilter = 'all';
+        
+        async function openAlertHistory() {
+            const modal = document.getElementById('alertHistoryModal');
+            modal.classList.add('active');
+            
+            // Load alerts
+            await loadAlertHistory();
+        }
+        
+        function closeAlertHistory() {
+            const modal = document.getElementById('alertHistoryModal');
+            modal.classList.remove('active');
+        }
+        
+        async function loadAlertHistory() {
+            const bodyElement = document.getElementById('alertHistoryBody');
+            bodyElement.innerHTML = '<div class="alert-history-empty"><div class="alert-history-empty-icon">⏳</div><div>Loading alerts...</div></div>';
+            
+            try {
+                const response = await fetch('/api/alerts/recent?limit=1000');
+                const data = await response.json();
+                
+                if (data.success) {
+                    allAlerts = data.alerts || [];
+                    renderAlertHistory();
+                } else {
+                    bodyElement.innerHTML = '<div class="alert-history-empty"><div class="alert-history-empty-icon">❌</div><div>Failed to load alerts</div></div>';
+                }
+            } catch (error) {
+                console.error('Error loading alert history:', error);
+                bodyElement.innerHTML = '<div class="alert-history-empty"><div class="alert-history-empty-icon">❌</div><div>Error loading alerts</div></div>';
+            }
+        }
+        
+        function filterAlerts(filter) {
+            currentFilter = filter;
+            
+            // Update active button
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                if (btn.dataset.filter === filter) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            renderAlertHistory();
+        }
+        
+        function renderAlertHistory() {
+            const bodyElement = document.getElementById('alertHistoryBody');
+            
+            if (allAlerts.length === 0) {
+                bodyElement.innerHTML = '<div class="alert-history-empty"><div class="alert-history-empty-icon">📭</div><div>No alerts found</div></div>';
+                return;
+            }
+            
+            // Filter alerts
+            let filteredAlerts = allAlerts;
+            
+            if (currentFilter !== 'all') {
+                if (currentFilter === 'external') {
+                    // Show all non-heartbeat-monitor alerts
+                    filteredAlerts = allAlerts.filter(alert => alert.source !== 'heartbeat-monitor');
+                } else if (currentFilter === 'heartbeat-monitor') {
+                    // Show only heartbeat-monitor alerts
+                    filteredAlerts = allAlerts.filter(alert => alert.source === 'heartbeat-monitor');
+                } else {
+                    // Filter by severity
+                    filteredAlerts = allAlerts.filter(alert => alert.severity === currentFilter);
+                }
+            }
+            
+            if (filteredAlerts.length === 0) {
+                bodyElement.innerHTML = '<div class="alert-history-empty"><div class="alert-history-empty-icon">🔍</div><div>No alerts match this filter</div></div>';
+                return;
+            }
+            
+            // Render alerts
+            const html = filteredAlerts.map(alert => {
+                const timestamp = new Date(alert.timestamp);
+                const formattedDate = timestamp.toLocaleString();
+                const severityIcon = alert.severity === 'critical' ? '🚨' : 
+                                     alert.severity === 'warning' ? '⚠️' : 'ℹ️';
+                const sourceIcon = alert.source === 'heartbeat-monitor' ? '💓' : '📡';
+                const sourceName = alert.source === 'heartbeat-monitor' ? 'Service Monitor' : 
+                                  alert.source === 'grafana' ? 'Grafana' :
+                                  alert.source === 'alertmanager' ? 'Alertmanager' :
+                                  alert.source || 'External';
+                
+                return \`
+                    <div class="alert-history-item severity-\${alert.severity}">
+                        <div class="alert-history-item-header">
+                            <div class="alert-history-item-title">
+                                \${severityIcon} \${alert.title}
+                            </div>
+                            <div class="alert-history-item-badge \${alert.severity}">
+                                \${alert.severity}
+                            </div>
+                        </div>
+                        <div class="alert-history-item-message">
+                            \${alert.message}
+                        </div>
+                        <div class="alert-history-item-footer">
+                            <div class="alert-history-item-source">
+                                <span>\${sourceIcon}</span>
+                                <span>\${sourceName}</span>
+                            </div>
+                            <div>
+                                <span>🕐</span>
+                                <span>\${formattedDate}</span>
+                            </div>
+                        </div>
+                    </div>
+                \`;
+            }).join('');
+            
+            bodyElement.innerHTML = html;
+        }
+        
+        // Alert history button click handler
+        document.getElementById('alertHistoryBtn')?.addEventListener('click', openAlertHistory);
+        
+        // Close modal on backdrop click
+        document.getElementById('alertHistoryModal')?.addEventListener('click', (e) => {
+            if (e.target.id === 'alertHistoryModal') {
+                closeAlertHistory();
+            }
+        });
+        
+        // Close modal on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('alertHistoryModal');
+                if (modal?.classList.contains('active')) {
+                    closeAlertHistory();
+                }
+            }
+        });
     </script>
     
     <footer>
