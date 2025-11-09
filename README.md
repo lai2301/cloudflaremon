@@ -91,7 +91,7 @@ npm run deploy
 
 ### 4. Customize Dashboard (Optional)
 
-Edit `ui.json` to customize the dashboard appearance:
+Edit `config/ui.json` to customize the dashboard appearance:
 
 ```json
 {
@@ -118,7 +118,7 @@ Edit `ui.json` to customize the dashboard appearance:
 
 ### 5. Configure Your Services
 
-Edit `services.json` to add your services to monitor. Services can be organized into groups for better organization:
+Edit `config/services.json` to add your services to monitor. Services can be organized into groups for better organization:
 
 ```json
 {
@@ -201,7 +201,7 @@ npx wrangler secret put API_KEYS
 
 Enable alerts when services go down or recover. 
 
-#### Step 1: Edit `notifications.json`
+#### Step 1: Edit `config/notifications.json`
 
 ```json
 {
@@ -381,7 +381,7 @@ curl -X POST https://your-worker.workers.dev/api/heartbeat \
 ```
 
 **Request Body:**
-- `serviceId` (required): Must match an ID in `services.json`
+- `serviceId` (required): Must match an ID in `config/services.json`
 - `status` (optional): Service status, default "up"
 - `metadata` (optional): Any additional data you want to track
 - `message` (optional): Human-readable status message
@@ -405,7 +405,7 @@ Returns historical logs for a specific service (up to `MAX_LOG_ENTRIES`).
 GET /api/services
 ```
 
-Returns the list of configured services from `services.json`.
+Returns the list of configured services from `config/services.json`.
 
 **Note:** This endpoint is optional. The dashboard embeds the services configuration directly in the HTML, so it doesn't make API calls to this endpoint. You can safely protect this endpoint with Cloudflare Access or other authentication without affecting dashboard functionality.
 
@@ -596,14 +596,14 @@ This means no heartbeat has been received yet. Check:
 
 ### "Invalid API key" errors
 
-- Verify the API key in your heartbeat client matches the one in `services.json`
+- Verify the API key in your heartbeat client matches the one in `config/services.json`
 - API keys are case-sensitive
 - Ensure the Authorization header format is: `Bearer your-api-key`
 
 ### Services showing as "Down" but they're running
 
 - Check if heartbeats are being sent frequently enough
-- Verify the `stalenessThreshold` in `services.json` is appropriate
+- Verify the `stalenessThreshold` in `config/services.json` is appropriate
 - The threshold should be at least 2-3x your heartbeat interval
 - Example: If sending heartbeats every 2 minutes, threshold should be 5+ minutes (300+ seconds)
 

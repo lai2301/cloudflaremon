@@ -10,31 +10,67 @@ cloudflaremon/
 ├── 📄 package.json                 # Node.js dependencies
 ├── 📄 package-lock.json            # Locked dependencies
 ├── 📄 wrangler.toml                # Cloudflare Worker config
-├── 📄 services.json                # Services to monitor
 ├── 📄 .gitignore                   # Git ignore rules
 ├── 📄 .nvmrc                       # Node.js version (20)
 │
-├── 📁 src/                         # Worker source code
-│   └── index.js                   # Main worker logic
+├── 📁 config/                      # ⚙️ Configuration files
+│   ├── README.md                  # Config documentation
+│   ├── services.json              # Services to monitor
+│   ├── dashboard.json             # UI appearance & branding
+│   ├── settings.json              # Feature toggles & behavior
+│   ├── notifications.json         # Alert notifications config
+│   └── ui.json                    # Legacy config (deprecated)
+│
+├── 📁 src/                         # 💻 Worker source code
+│   ├── index.js                   # Main worker (routing & dashboard)
+│   ├── config/                    # Configuration management
+│   │   └── loader.js              # Config loader & merger
+│   ├── handlers/                  # API request handlers
+│   │   ├── heartbeat.js           # POST /api/heartbeat
+│   │   ├── alert.js               # POST /api/alert, GET /api/alerts/recent
+│   │   ├── status.js              # GET /api/status
+│   │   └── uptime.js              # GET /api/uptime
+│   └── core/                      # Core business logic
+│       ├── monitoring.js          # Heartbeat staleness checks
+│       └── notifications.js       # Notification system
 │
 ├── 📁 docs/                        # 📚 Documentation
 │   ├── README.md                  # Documentation index
 │   ├── QUICKSTART.md              # 10-minute setup guide
 │   ├── ARCHITECTURE.md            # System design & diagrams
 │   ├── DEPLOYMENT.md              # GitHub Actions setup
+│   ├── AUTHENTICATION.md          # Auth configuration guide
+│   ├── NOTIFICATIONS.md           # Notification system guide
+│   ├── ALERT_NOTIFICATIONS.md     # Dashboard alerts guide
+│   ├── EXTERNAL_ALERTS.md         # External alert integration
+│   ├── UI_CUSTOMIZATION.md        # UI customization guide
 │   ├── SETUP_CHECKLIST.md         # Pre-deployment checklist
-│   └── PERMISSIONS.md             # GitHub permissions guide
+│   ├── SECURITY.md                # Security best practices
+│   └── ...                        # Additional documentation
 │
-├── 📁 examples/                    # 📦 Heartbeat client examples
+├── 📁 examples/                    # 📦 Example configurations
+│   ├── services.example.json      # Example services config
+│   ├── dashboard.example.json     # Example dashboard config
+│   ├── settings.example.json      # Example settings config
+│   ├── notifications.example.json # Example notifications config
+│   └── ui.example.json            # Legacy example
+│
+├── 📁 clients/                     # 🔌 Heartbeat client examples
 │   ├── README.md                  # Client implementation guide
 │   ├── heartbeat-client.sh        # Bash client
 │   ├── heartbeat-client.py        # Python client
 │   ├── heartbeat-client.js        # Node.js client
 │   ├── crontab.example            # Cron examples
 │   ├── docker-compose.yml         # Docker setup
+│   ├── test-notification.sh       # Test notification script
 │   └── systemd/                   # systemd units
 │       ├── heartbeat.service      # systemd service
 │       └── heartbeat.timer        # systemd timer
+│
+├── 📁 scripts/                     # 🔧 Helper scripts
+│   ├── generate-api-keys.sh       # Generate API keys (Bash)
+│   ├── generate-api-keys.py       # Generate API keys (Python)
+│   └── seed-test-data.js          # Seed test data for dev
 │
 ├── 📁 terraform/                   # 🏗️ Infrastructure as Code
 │   ├── README.md                  # Terraform guide
@@ -52,7 +88,8 @@ cloudflaremon/
     └── workflows/                 # CI/CD workflows
         ├── README.md              # Workflows documentation
         ├── deploy.yml             # Production deployment
-        └── preview.yml            # PR validation
+        ├── preview.yml            # PR validation
+        └── debug-secrets.yml      # Debug helper (manual)
 ```
 
 ## Key Files Explained
@@ -64,20 +101,37 @@ cloudflaremon/
 | `README.md` | Main project documentation, features, and quick overview |
 | `package.json` | Node.js project config and dependencies |
 | `wrangler.toml` | Cloudflare Worker configuration |
-| `services.json` | Configuration of services to monitor |
 | `.nvmrc` | Specifies Node.js version (v20) |
 
-### Source Code (`src/`)
+### Configuration (`config/`)
 
 | File | Purpose |
 |------|---------|
-| `index.js` | Main Cloudflare Worker with heartbeat API and dashboard |
+| `README.md` | Configuration documentation and guide |
+| `services.json` | Services to monitor, groups, and authentication settings |
+| `dashboard.json` | UI appearance, branding, themes, and colors |
+| `settings.json` | Feature toggles, uptime settings, and behavior config |
+| `notifications.json` | Alert notifications, channels, and templates |
+| `ui.json` | Legacy config (deprecated, use dashboard.json + settings.json) |
 
-**Key components:**
-- Heartbeat receiver endpoint (`POST /api/heartbeat`)
-- Status API (`GET /api/status`)
-- Dashboard UI (`GET /`)
-- Scheduled staleness checks
+### Source Code (`src/`)
+
+| File/Directory | Purpose |
+|----------------|---------|
+| `index.js` | Main worker entry point (routing, dashboard HTML/CSS/JS) |
+| `config/loader.js` | Configuration file loader and merger |
+| `handlers/heartbeat.js` | POST /api/heartbeat handler (single & batch) |
+| `handlers/alert.js` | POST /api/alert, GET /api/alerts/recent handlers |
+| `handlers/status.js` | GET /api/status handler |
+| `handlers/uptime.js` | GET /api/uptime handler (historical data) |
+| `core/monitoring.js` | Heartbeat staleness checks and service monitoring |
+| `core/notifications.js` | Notification system (Discord, Slack, Email, etc.) |
+
+**Architecture:**
+- **Modular design** - Separated concerns for maintainability
+- **Clean imports** - Each module has focused responsibility
+- **Handlers** - API request processing
+- **Core logic** - Business logic and scheduled tasks
 
 ### Documentation (`docs/`)
 
@@ -90,7 +144,7 @@ cloudflaremon/
 | `SETUP_CHECKLIST.md` | Pre-deployment verification checklist |
 | `PERMISSIONS.md` | GitHub Actions permissions explained |
 
-### Heartbeat Clients (`examples/`)
+### Example Configurations (`examples/`)
 
 | File | Purpose |
 |------|---------|
@@ -175,21 +229,32 @@ Dashboard (GET /)
 
 ## File Categories
 
-### 📝 Configuration Files
+### ⚙️ Configuration Files
 - `wrangler.toml` - Worker configuration
-- `services.json` - Services to monitor
+- `config/services.json` - Services to monitor
+- `config/dashboard.json` - UI customization
+- `config/settings.json` - Feature toggles
+- `config/notifications.json` - Alert notifications
 - `package.json` - Node.js project
 - `.nvmrc` - Node.js version
 
 ### 💻 Source Code
-- `src/index.js` - Worker implementation
+- `src/index.js` - Main entry point & routing
+- `src/config/` - Configuration management
+- `src/handlers/` - API request handlers
+- `src/core/` - Business logic & scheduled tasks
 
 ### 📚 Documentation
 - `docs/*.md` - All documentation
 - `README.md` - Main overview
+- `config/README.md` - Configuration guide
 
-### 📦 Examples
-- `examples/*` - Client implementations
+### 📦 Example Files
+- `examples/*` - Example configuration files
+- `clients/*` - Heartbeat client implementations
+
+### 🔧 Helper Scripts
+- `scripts/*` - Utility and helper scripts
 
 ### 🏗️ Infrastructure
 - `terraform/*` - Infrastructure as code
@@ -199,7 +264,7 @@ Dashboard (GET /)
 
 ### 🔧 Development
 - `.github/CONTRIBUTING.md` - Contribution guide
-- `PROJECT_STRUCTURE.md` - This file
+- `docs/PROJECT_STRUCTURE.md` - This file
 
 ## Not in Repository (Gitignored)
 

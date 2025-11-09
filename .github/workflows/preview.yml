@@ -26,14 +26,48 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Validate services.json
+      - name: Check config directory structure
         run: |
-          echo "Validating services.json..."
-          if ! jq empty services.json 2>/dev/null; then
-            echo "❌ services.json is not valid JSON"
+          echo "Checking config directory structure..."
+          
+          # Check if config directory exists
+          if [ ! -d "config" ]; then
+            echo "❌ config/ directory not found"
             exit 1
           fi
-          echo "✅ services.json is valid"
+          
+          # Check for required config files
+          MISSING_FILES=()
+          for file in services.json dashboard.json settings.json notifications.json; do
+            if [ ! -f "config/$file" ]; then
+              MISSING_FILES+=("config/$file")
+            fi
+          done
+          
+          if [ ${#MISSING_FILES[@]} -ne 0 ]; then
+            echo "❌ Missing required config files:"
+            printf '  - %s\n' "${MISSING_FILES[@]}"
+            exit 1
+          fi
+          
+          echo "✅ All required config files exist"
+
+      - name: Validate config JSON files
+        run: |
+          echo "Validating configuration files..."
+          
+          # Validate each config file
+          for file in services.json dashboard.json settings.json notifications.json; do
+            echo "Checking config/$file..."
+            if ! jq empty "config/$file" 2>/dev/null; then
+              echo "❌ config/$file is not valid JSON"
+              exit 1
+            fi
+            echo "✅ config/$file is valid"
+          done
+          
+          echo ""
+          echo "✅ All configuration files are valid JSON"
 
       - name: Check KV namespace status
         run: |

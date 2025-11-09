@@ -26,7 +26,7 @@ This repository includes automated deployment workflows for Cloudflare Workers u
 - Pull requests to `main` branch
 
 **What it does:**
-- Validates `services.json` syntax
+- Validates `config/services.json` and other config files syntax
 - Validates `wrangler.toml` configuration (dry-run)
 - Comments on PR with validation status
 
@@ -183,7 +183,7 @@ Steps:
 
 ### Deployment succeeds but worker doesn't work
 
-- Check that `services.json` is properly configured
+- Check that `config/services.json` is properly configured
 - Verify KV namespace exists and ID is correct in `wrangler.toml`
 - Review worker logs: `npx wrangler tail`
 
