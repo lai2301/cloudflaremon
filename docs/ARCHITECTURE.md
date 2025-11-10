@@ -54,11 +54,12 @@
               ┌───────────────────────────────────┐
               │    Cloudflare KV Storage          │
               │                                   │
-              │  • heartbeats:{serviceId}        │
-              │  • latest:{serviceId}            │
-              │  • logs:{serviceId}              │
-              │  • summary:latest                │
-              │  • summary:history               │
+              │  • monitor:latest                │
+              │    (heartbeat timestamps)        │
+              │  • monitor:data                  │
+              │    (summary + uptime stats)      │
+              │  • recent:alerts                 │
+              │    (alert history)               │
               └───────────────────────────────────┘
                                   │
                                   ▼
@@ -93,12 +94,13 @@ Internal Service → Heartbeat Client → POST /api/heartbeat → Worker
 }
 ```
 
-### 2. Staleness Check (Every 5 minutes, via cron)
+### 2. Staleness Check (Every 10 minutes, via cron)
 
 ```
 Cloudflare Cron Trigger → Worker scheduled() function
                              ↓
-                    Read latest:{serviceId} from KV
+                    Read monitor:latest from KV
+                    Read monitor:data from KV
                              ↓
                     Calculate time since last heartbeat
                              ↓
@@ -106,7 +108,9 @@ Cloudflare Cron Trigger → Worker scheduled() function
                              ↓
                     Determine status (up/down/unknown)
                              ↓
-                    Store summary in KV
+                    Update uptime statistics
+                             ↓
+                    Store updated monitor:data in KV
 ```
 
 ### 3. Dashboard View (On-demand)
@@ -114,15 +118,16 @@ Cloudflare Cron Trigger → Worker scheduled() function
 ```
 User Browser → GET / → Worker
                         ↓
-                   Load dashboard HTML
+                   Read monitor:latest from KV
+                   Read monitor:data from KV
                         ↓
-                   JavaScript loads status
+                   Embed data into HTML
                         ↓
-                   GET /api/status → Read summary:latest from KV
+                   Return dashboard with embedded data
                         ↓
-                   Display service status
+                   (Optional) JavaScript polls /api/alerts/recent
                         ↓
-                   Auto-refresh every 30s
+                   Auto-refresh configurable (default: disabled)
 ```
 
 ## Key Design Decisions
@@ -149,6 +154,23 @@ User Browser → GET / → Worker
 3. **Simple**: Key-value interface
 4. **Cost-Effective**: Free tier sufficient for most use cases
 5. **Durable**: Reliable storage
+
+### Why Separate KV Keys?
+
+The system uses two separate KV keys (`monitor:latest` and `monitor:data`) to prevent race conditions:
+
+**Problem**: When both heartbeat updates and cron checks write to the same key, they can overwrite each other's changes due to KV's eventual consistency model.
+
+**Solution**: Separate concerns:
+- Heartbeats ONLY update `monitor:latest` (timestamps)
+- Cron ONLY updates `monitor:data` (summary + uptime)
+- Dashboard reads both keys
+
+**Benefits**:
+1. **No race conditions**: Updates don't conflict
+2. **Smaller heartbeat writes**: Only timestamps, not full statistics
+3. **Consistent status**: Cron-generated summaries are never overwritten
+4. **Better performance**: Reduced payload sizes for frequent operations
 
 ## Component Details
 
@@ -190,16 +212,24 @@ User Browser → GET / → Worker
 **Purpose**: Persist heartbeat data and service status
 
 **Keys**:
-- `heartbeats:{serviceId}` - Recent heartbeats (array, max 100)
-- `latest:{serviceId}` - Timestamp of last heartbeat
-- `logs:{serviceId}` - Staleness check results (array, max 100)
-- `summary:latest` - Current status of all services
-- `summary:history` - Historical summaries (array, max 1000)
+- `monitor:latest` - Latest heartbeat timestamps for all services (JSON object: `{serviceId: timestamp}`)
+  - Updated by: Heartbeat handler
+  - Read by: Cron checks, Dashboard
+  
+- `monitor:data` - Service status and uptime statistics (JSON object)
+  - Contains: `summary` (current status) and `uptime` (daily statistics per service)
+  - Updated by: Cron scheduled task
+  - Read by: Dashboard, API endpoints
+  
+- `recent:alerts` - Dashboard alert history (JSON array)
+  - Contains: External alerts and service status change notifications
+  - Updated by: Alert handlers, Service monitoring
+  - Configurable retention (default: 100 alerts, 7 days)
 
 **Data Retention**:
-- Heartbeats: Last 100 per service
-- Logs: Last 100 checks per service
-- Summary history: Last 1000 summaries
+- Latest timestamps: All enabled services (live data)
+- Uptime statistics: Configurable (default: 120 days per service)
+- Alert history: Configurable (default: 100 alerts or 7 days)
 
 ### Dashboard
 
@@ -218,18 +248,20 @@ User Browser → GET / → Worker
 ### Recommended Settings
 
 ```
-Heartbeat Interval:     2 minutes (120 seconds)
-Staleness Threshold:    5 minutes (300 seconds)
-Staleness Check:        5 minutes (cron)
-Dashboard Refresh:      30 seconds (auto)
+Heartbeat Interval:     2-5 minutes (120-300 seconds)
+Staleness Threshold:    5-10 minutes (300-600 seconds)
+Staleness Check:        10 minutes (cron)
+Dashboard Refresh:      Manual or configurable auto-refresh
+Alert Polling:          10-60 seconds (if enabled)
 ```
 
 ### Why These Values?
 
-1. **2-minute heartbeats**: Balance between freshness and overhead
-2. **5-minute threshold**: Allows 2 missed heartbeats before alerting
-3. **5-minute staleness check**: Matches threshold for timely detection
-4. **30-second dashboard**: Real-time feel without excessive polling
+1. **2-5 minute heartbeats**: Balance between freshness and KV operation costs
+2. **5-10 minute threshold**: Allows 2 missed heartbeats before alerting
+3. **10-minute staleness check**: Efficient detection with minimal KV operations
+4. **Manual dashboard refresh**: Embedded data eliminates need for auto-refresh
+5. **Alert polling**: Only if real-time notifications are needed
 
 ### Customization
 
@@ -269,10 +301,11 @@ Accept or reject request
 
 ### Current Limits
 
-- **Services**: ~100-1000 (KV write limits)
-- **Heartbeat Frequency**: 30s - 10m recommended
-- **Storage**: ~1GB KV storage (free tier)
+- **Services**: ~100-500 (KV write limits and processing time)
+- **Heartbeat Frequency**: 2-10 minutes recommended
+- **Storage**: Minimal (2 primary KV entries + alert history)
 - **Requests**: 100,000/day (free tier)
+- **KV Operations**: Primary constraint (1000 writes/day on free tier)
 
 ### Scaling Beyond Free Tier
 
@@ -304,18 +337,30 @@ If you need more:
 - Worker execution time
 - Error rates
 
+## Implemented Features
+
+Recently added capabilities:
+
+1. ✅ **Multi-Channel Notifications**: Discord, Slack, Telegram, Email, PagerDuty, Pushover, Webhook
+2. ✅ **External Alert Integration**: Grafana, Alertmanager, custom webhooks
+3. ✅ **Real-time Dashboard Alerts**: Toast and browser notifications
+4. ✅ **Alert History**: Searchable history with configurable retention
+5. ✅ **Uptime Statistics**: Daily uptime tracking with configurable retention (120 days)
+6. ✅ **CSV Export**: Historical data export with custom date ranges
+7. ✅ **API Endpoint Controls**: Enable/disable individual endpoints
+8. ✅ **Customizable Alerts**: Severity filtering, polling intervals
+
 ## Future Enhancements
 
 Potential improvements:
 
-1. **Alerting**: Integrate with Slack, Discord, PagerDuty
-2. **Authentication**: Add login to dashboard
-3. **Webhooks**: Trigger external actions on status changes
-4. **Charts**: Historical graphs of uptime
-5. **Multi-region**: Track which region sent heartbeat
-6. **Health Scores**: Calculate uptime percentages
-7. **Dependencies**: Track service dependencies
-8. **Custom Status Pages**: Public status page generation
+1. **Authentication**: Add login to dashboard (currently supports Cloudflare Access)
+2. **Charts**: Visual graphs of uptime trends
+3. **Multi-region Tracking**: Identify which region/datacenter sent heartbeat
+4. **Service Dependencies**: Track and visualize service dependencies
+5. **Custom Status Pages**: Public-facing status page generation
+6. **Synthetic Monitoring**: Active checks in addition to heartbeats
+7. **Performance Metrics**: Track response times and custom metrics
 
 ## Comparison with Alternatives
 
