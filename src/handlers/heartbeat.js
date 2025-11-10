@@ -171,32 +171,54 @@ export async function handleHeartbeat(request, env) {
       });
     }
 
-    // Update heartbeat timestamps for all valid services in a single write
+    // Update heartbeat timestamps for all valid services
+    // Use a retry mechanism to handle race conditions with cron updates
     if (validServiceIds.length > 0) {
-      try {
-        const monitorDataJson = await env.HEARTBEAT_LOGS.get('monitor:data');
-        const monitorData = monitorDataJson ? JSON.parse(monitorDataJson) : {
-          latest: {},
-          uptime: {},
-          summary: null
-        };
-        
-        if (!monitorData.latest) monitorData.latest = {};
-        
-        // Update all valid service timestamps
-        for (const serviceId of validServiceIds) {
-          monitorData.latest[serviceId] = timestamp;
+      const maxRetries = 3;
+      let attempt = 0;
+      let success = false;
+      
+      while (attempt < maxRetries && !success) {
+        try {
+          attempt++;
+          
+          // Always read fresh data to avoid overwriting cron updates
+          const monitorDataJson = await env.HEARTBEAT_LOGS.get('monitor:data');
+          const monitorData = monitorDataJson ? JSON.parse(monitorDataJson) : {
+            latest: {},
+            uptime: {},
+            summary: null
+          };
+          
+          // Log what we read to debug race conditions
+          const existingSummaryTimestamp = monitorData.summary?.timestamp;
+          console.log(`Heartbeat: Read KV - Summary timestamp: ${existingSummaryTimestamp || 'null'}, Latest count: ${Object.keys(monitorData.latest || {}).length}`);
+          
+          // Preserve existing fields (critical to avoid overwriting cron's summary)
+          if (!monitorData.latest) monitorData.latest = {};
+          if (!monitorData.uptime) monitorData.uptime = {};
+          // Preserve summary and uptime from existing data
+          
+          // Update all valid service timestamps
+          for (const serviceId of validServiceIds) {
+            monitorData.latest[serviceId] = timestamp;
+          }
+          
+          await env.HEARTBEAT_LOGS.put('monitor:data', JSON.stringify(monitorData));
+          success = true;
+          
+          console.log(`Batch heartbeat: ${validServiceIds.length} service(s) updated - ${validServiceIds.join(', ')} | Preserved summary: ${existingSummaryTimestamp || 'null'} (attempt ${attempt})`);
+        } catch (error) {
+          console.error(`Error updating heartbeat timestamps (attempt ${attempt}):`, error);
+          if (attempt >= maxRetries) {
+            return new Response(JSON.stringify({ error: 'Failed to update heartbeat data after retries' }), {
+              status: 500,
+              headers: { 'Content-Type': 'application/json' }
+            });
+          }
+          // Wait a bit before retry
+          await new Promise(resolve => setTimeout(resolve, 100));
         }
-        
-        await env.HEARTBEAT_LOGS.put('monitor:data', JSON.stringify(monitorData));
-        
-        console.log(`Batch heartbeat: ${validServiceIds.length} service(s) updated - ${validServiceIds.join(', ')}`);
-      } catch (error) {
-        console.error('Error updating heartbeat timestamps:', error);
-        return new Response(JSON.stringify({ error: 'Failed to update heartbeat data' }), {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' }
-        });
       }
     }
 

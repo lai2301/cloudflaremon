@@ -27,6 +27,8 @@ export async function checkHeartbeatStaleness(env) {
   };
 
   const latestData = monitorData.latest || {};
+  const existingSummaryTimestamp = monitorData.summary?.timestamp;
+  console.log(`Cron: Read KV - Summary timestamp: ${existingSummaryTimestamp || 'null'}, Latest count: ${Object.keys(latestData).length}`);
   
   // Track statistics for logging
   let checkedCount = 0;
@@ -186,6 +188,7 @@ async function updateMonitorData(env, monitorData, results, timestamp) {
 
     // Store everything in a single write operation
     await env.HEARTBEAT_LOGS.put('monitor:data', JSON.stringify(monitorData));
+    console.log(`Cron: Wrote KV - Summary timestamp: ${timestamp}, Latest count: ${Object.keys(monitorData.latest || {}).length}, Uptime services: ${Object.keys(monitorData.uptime || {}).length}`);
     console.log(`Monitor data updated successfully at ${timestamp}`);
   } catch (error) {
     console.error('Error updating monitor data:', error);
