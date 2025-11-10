@@ -8,7 +8,8 @@
  * Returns summary of all service statuses
  */
 export async function handleGetStatus(env) {
-  const monitorDataJson = await env.HEARTBEAT_LOGS.get('monitor:data', { cacheTtl: 0 });
+  // Note: KV has edge caching (minimum 60s), but HTTP cache headers prevent client/CDN caching
+  const monitorDataJson = await env.HEARTBEAT_LOGS.get('monitor:data');
   const monitorData = monitorDataJson ? JSON.parse(monitorDataJson) : { summary: null };
   const summary = monitorData.summary || null;
 

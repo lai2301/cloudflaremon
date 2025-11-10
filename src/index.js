@@ -153,8 +153,17 @@ export default {
 
 /**
  * Handle dashboard page
+ * Embeds monitor data directly to avoid API calls and caching issues
  */
 async function handleDashboard(env) {
+  // Fetch monitor data directly from KV
+  const monitorDataJson = await env.HEARTBEAT_LOGS.get('monitor:data');
+  const monitorData = monitorDataJson ? JSON.parse(monitorDataJson) : {
+    latest: {},
+    uptime: {},
+    summary: null
+  };
+  
   const html = `
 <!DOCTYPE html>
 <html lang="en">
@@ -1577,6 +1586,9 @@ async function handleDashboard(env) {
         // Embedded services configuration (avoids API call if Cloudflare Access is enabled)
         const SERVICES_CONFIG = ${JSON.stringify(processedServices)};
         
+        // Embedded monitor data (eliminates API calls and caching issues)
+        const EMBEDDED_MONITOR_DATA = ${JSON.stringify(monitorData)};
+        
         // Theme management
         const THEME_KEY = 'theme-preference';
         const defaultTheme = '${uiConfig.theme.defaultMode}';
@@ -1691,7 +1703,7 @@ async function handleDashboard(env) {
         function generateUptimeBar(uptimeData) {
             if (!uptimeData || !uptimeData.days || uptimeData.days.length === 0) {
                 // Fallback: generate days based on retention period with no data
-                const retentionDays = ${uiConfig.features.uptimeRetentionDays};
+                const retentionDays = ${uiConfig.uptimeRetentionDays || uiConfig.features?.uptimeRetentionDays || 90};
                 const today = new Date();
                 let html = '';
                 for (let i = retentionDays - 1; i >= 0; i--) {
@@ -1755,6 +1767,65 @@ async function handleDashboard(env) {
                 return uptimeCache[serviceId];
             }
             
+            // Check if embedded data has uptime for this service
+            if (typeof EMBEDDED_MONITOR_DATA !== 'undefined' && EMBEDDED_MONITOR_DATA && EMBEDDED_MONITOR_DATA.uptime && EMBEDDED_MONITOR_DATA.uptime[serviceId]) {
+                const serviceUptime = EMBEDDED_MONITOR_DATA.uptime[serviceId];
+                const existingDays = serviceUptime.days || {};
+                
+                // Fill in missing days up to retention period (same as API does)
+                const retentionDays = ${uiConfig.uptimeRetentionDays || uiConfig.features?.uptimeRetentionDays || 90};
+                const today = new Date();
+                const historicalDays = [];
+                let totalChecksAll = 0;
+                let upChecksAll = 0;
+                let degradedChecksAll = 0;
+                let unknownChecksAll = 0;
+                
+                for (let i = retentionDays - 1; i >= 0; i--) {
+                    const date = new Date(today);
+                    date.setDate(date.getDate() - i);
+                    const dateStr = date.toISOString().split('T')[0];
+                    
+                    const dayData = existingDays[dateStr];
+                    if (dayData) {
+                        historicalDays.push(dayData);
+                        totalChecksAll += dayData.totalChecks || 0;
+                        upChecksAll += dayData.upChecks || 0;
+                        degradedChecksAll += dayData.degradedChecks || 0;
+                        unknownChecksAll += dayData.unknownChecks || 0;
+                    } else {
+                        // Fill in missing days with empty data
+                        historicalDays.push({
+                            date: dateStr,
+                            totalChecks: 0,
+                            upChecks: 0,
+                            downChecks: 0,
+                            degradedChecks: 0,
+                            unknownChecks: 0,
+                            uptimePercentage: null
+                        });
+                    }
+                }
+                
+                // Calculate overall uptime
+                const knownChecksAll = totalChecksAll - unknownChecksAll;
+                const overallUptime = knownChecksAll > 0 
+                    ? parseFloat(((upChecksAll + degradedChecksAll * 0.5) / knownChecksAll * 100).toFixed(2))
+                    : 0;
+                
+                const data = {
+                    serviceId: serviceId,
+                    days: historicalDays,
+                    overallUptime: overallUptime,
+                    totalDays: historicalDays.filter(d => d.totalChecks > 0).length,
+                    retentionDays: retentionDays
+                };
+                
+                uptimeCache[serviceId] = data;
+                return data;
+            }
+            
+            // Fallback to API if embedded data not available
             try {
                 const response = await fetch(\`/api/uptime?serviceId=\${serviceId}\`);
                 const data = await response.json();
@@ -1768,11 +1839,19 @@ async function handleDashboard(env) {
         
         async function loadStatus() {
             try {
-                const response = await fetch('/api/status');
-                if (!response.ok) {
-                    throw new Error(\`HTTP error! status: \${response.status}\`);
+                // Use embedded data if available (initial page load), otherwise fetch from API (refresh)
+                let data;
+                if (typeof EMBEDDED_MONITOR_DATA !== 'undefined' && EMBEDDED_MONITOR_DATA && EMBEDDED_MONITOR_DATA.summary) {
+                    data = { summary: EMBEDDED_MONITOR_DATA.summary };
+                    console.log('Using embedded monitor data (no API call needed)');
+                } else {
+                    const response = await fetch('/api/status');
+                    if (!response.ok) {
+                        throw new Error(\`HTTP error! status: \${response.status}\`);
+                    }
+                    data = await response.json();
+                    console.log('Fetched fresh data from API');
                 }
-                const data = await response.json();
                 
                 if (!data.summary) {
                     document.getElementById('overallStatus').innerHTML = \`
@@ -1918,7 +1997,7 @@ async function handleDashboard(env) {
                                     </div>
                                 </div>
                                 <div class="uptime-labels">
-                                    <span>\${uptimeData?.retentionDays || ${uiConfig.features.uptimeRetentionDays}} days ago</span>
+                                    <span>\${uptimeData?.retentionDays || ${uiConfig.uptimeRetentionDays || uiConfig.features?.uptimeRetentionDays || 90}} days ago</span>
                                     <span>Today</span>
                                 </div>
                             </div>
@@ -1934,7 +2013,7 @@ async function handleDashboard(env) {
                                 \${uptimeData && uptimeData.totalDays > 0 ? \`
                                 <div class="meta-item">
                                     <span class="meta-label">Tracked days:</span>
-                                    <span>\${uptimeData.totalDays}/\${uptimeData.retentionDays || ${uiConfig.features.uptimeRetentionDays}}</span>
+                                    <span>\${uptimeData.totalDays}/\${uptimeData.retentionDays || ${uiConfig.uptimeRetentionDays || uiConfig.features?.uptimeRetentionDays || 90}}</span>
                                 </div>
                                 \` : ''}
                             </div>
@@ -2346,7 +2425,7 @@ async function handleDashboard(env) {
             
             if (days === 'all') {
                 // Set to earliest possible date (2020 or retention period)
-                const retentionDays = ${uiConfig.features.uptimeRetentionDays || 90};
+                const retentionDays = ${uiConfig.uptimeRetentionDays || uiConfig.features?.uptimeRetentionDays || 90};
                 startDate.setDate(endDate.getDate() - retentionDays);
             } else {
                 startDate.setDate(endDate.getDate() - days);
@@ -2669,7 +2748,12 @@ async function handleDashboard(env) {
   `;
 
   return new Response(html, {
-    headers: { 'Content-Type': 'text/html' }
+    headers: { 
+      'Content-Type': 'text/html',
+      'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    }
   });
 }
 

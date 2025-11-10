@@ -30,8 +30,9 @@ export async function handleGetUptime(env, url) {
   try {
     const uiConfig = getUiConfig();
     
-    // Get all monitor data in a single read (disable KV cache)
-    const monitorDataJson = await env.HEARTBEAT_LOGS.get('monitor:data', { cacheTtl: 0 });
+    // Get all monitor data in a single read
+    // Note: KV has minimum 60s edge caching, but HTTP cache headers prevent client/CDN caching
+    const monitorDataJson = await env.HEARTBEAT_LOGS.get('monitor:data');
     const monitorData = monitorDataJson ? JSON.parse(monitorDataJson) : { uptime: {} };
     const allUptimeData = monitorData.uptime || {};
     const serviceData = allUptimeData[serviceId] || { days: {} };
