@@ -200,12 +200,16 @@ export default {
  * Embeds monitor data directly to avoid API calls and caching issues
  */
 async function handleDashboard(env) {
-  // Fetch monitor data directly from KV
-  const monitorDataJson = await env.HEARTBEAT_LOGS.get('monitor:data');
-  const monitorData = monitorDataJson ? JSON.parse(monitorDataJson) : {
-    latest: {},
-    uptime: {},
-    summary: null
+  // Fetch monitor data from separate KV keys to avoid race conditions
+  const [latestJson, dataJson] = await Promise.all([
+    env.HEARTBEAT_LOGS.get('monitor:latest'),
+    env.HEARTBEAT_LOGS.get('monitor:data')
+  ]);
+  
+  // Merge latest timestamps with summary/uptime data
+  const monitorData = {
+    latest: latestJson ? JSON.parse(latestJson) : {},
+    ...(dataJson ? JSON.parse(dataJson) : { uptime: {}, summary: null })
   };
   
   const html = `

@@ -18,15 +18,18 @@ export async function checkHeartbeatStaleness(env) {
   const now = Date.now();
   const timestamp = new Date().toISOString();
 
-  // Get all monitor data in a single read
-  const monitorDataJson = await env.HEARTBEAT_LOGS.get('monitor:data');
-  const monitorData = monitorDataJson ? JSON.parse(monitorDataJson) : {
-    latest: {},
+  // Read from separate KV keys to avoid race conditions
+  const [latestJson, dataJson] = await Promise.all([
+    env.HEARTBEAT_LOGS.get('monitor:latest'),
+    env.HEARTBEAT_LOGS.get('monitor:data')
+  ]);
+  
+  const latestData = latestJson ? JSON.parse(latestJson) : {};
+  const monitorData = dataJson ? JSON.parse(dataJson) : {
     uptime: {},
     summary: null
   };
 
-  const latestData = monitorData.latest || {};
   const existingSummaryTimestamp = monitorData.summary?.timestamp;
   console.log(`Cron: Read KV - Summary timestamp: ${existingSummaryTimestamp || 'null'}, Latest count: ${Object.keys(latestData).length}`);
   
@@ -186,9 +189,15 @@ async function updateMonitorData(env, monitorData, results, timestamp) {
       }
     }
 
-    // Store everything in a single write operation
-    await env.HEARTBEAT_LOGS.put('monitor:data', JSON.stringify(monitorData));
-    console.log(`Cron: Wrote KV - Summary timestamp: ${timestamp}, Latest count: ${Object.keys(monitorData.latest || {}).length}, Uptime services: ${Object.keys(monitorData.uptime || {}).length}`);
+    // Store only summary and uptime (latest is stored separately by heartbeat handler)
+    // This structure eliminates race conditions with concurrent heartbeat updates
+    const dataToStore = {
+      summary: monitorData.summary,
+      uptime: monitorData.uptime
+    };
+    
+    await env.HEARTBEAT_LOGS.put('monitor:data', JSON.stringify(dataToStore));
+    console.log(`Cron: Wrote monitor:data - Summary timestamp: ${timestamp}, Uptime services: ${Object.keys(monitorData.uptime || {}).length}`);
     console.log(`Monitor data updated successfully at ${timestamp}`);
   } catch (error) {
     console.error('Error updating monitor data:', error);
