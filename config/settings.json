@@ -10,7 +10,7 @@
   },
   "api": {
     "enableStatusEndpoint": true,
-    "enableUptimeEndpoint": false,
+    "enableUptimeEndpoint": true,
     "enableServicesEndpoint": true,
     "enableHeartbeatEndpoint": true,
     "enableAlertEndpoint": true,
