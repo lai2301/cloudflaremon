@@ -51,39 +51,83 @@ export default {
 
     try {
       // API Routes (using imported handlers from modules)
+      // Check if API endpoints are enabled in settings
+      
       if (url.pathname === '/api/heartbeat' && request.method === 'POST') {
-        return await handleHeartbeat(request, env);
+        if (uiConfig.api?.enableHeartbeatEndpoint !== false) {
+          return await handleHeartbeat(request, env);
+        }
+        return new Response(JSON.stringify({ error: 'Heartbeat API is disabled' }), {
+          status: 403,
+          headers: { 'Content-Type': 'application/json' }
+        });
       }
       
       if (url.pathname === '/api/alert' && request.method === 'POST') {
-        return await handleCustomAlert(env, request);
+        if (uiConfig.api?.enableAlertEndpoint !== false) {
+          return await handleCustomAlert(env, request);
+        }
+        return new Response(JSON.stringify({ error: 'Alert API is disabled' }), {
+          status: 403,
+          headers: { 'Content-Type': 'application/json' }
+        });
       }
       
       if (url.pathname === '/api/alerts/recent' && request.method === 'GET') {
-        return await handleGetRecentAlerts(env, url);
+        if (uiConfig.api?.enableAlertHistoryEndpoint !== false) {
+          return await handleGetRecentAlerts(env, url, uiConfig);
+        }
+        return new Response(JSON.stringify({ error: 'Alert history API is disabled' }), {
+          status: 403,
+          headers: { 'Content-Type': 'application/json' }
+        });
       }
       
       if (url.pathname === '/api/status' && request.method === 'GET') {
-        return await handleGetStatus(env);
+        if (uiConfig.api?.enableStatusEndpoint !== false) {
+          return await handleGetStatus(env);
+        }
+        return new Response(JSON.stringify({ error: 'Status API is disabled' }), {
+          status: 403,
+          headers: { 'Content-Type': 'application/json' }
+        });
       }
       
       if (url.pathname === '/api/uptime' && request.method === 'GET') {
-        return await handleGetUptime(env, url);
+        if (uiConfig.api?.enableUptimeEndpoint !== false) {
+          return await handleGetUptime(env, url);
+        }
+        return new Response(JSON.stringify({ error: 'Uptime API is disabled' }), {
+          status: 403,
+          headers: { 'Content-Type': 'application/json' }
+        });
       }
       
       if (url.pathname === '/api/test-notification' && request.method === 'POST') {
-        return await testNotification(env, request);
+        // Test notification is enabled for debugging only
+        if (uiConfig.api?.enableTestNotificationEndpoint !== false) {
+          return await testNotification(env, request);
+        }
+        return new Response(JSON.stringify({ error: 'Test notification API is disabled' }), {
+          status: 403,
+          headers: { 'Content-Type': 'application/json' }
+        });
       }
       
       if (url.pathname === '/api/services' && request.method === 'GET') {
-        // List configured services
-        return new Response(JSON.stringify(processedServices, null, 2), {
-          headers: { 
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type'
-          }
+        if (uiConfig.api?.enableServicesEndpoint !== false) {
+          return new Response(JSON.stringify(processedServices, null, 2), {
+            headers: { 
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Methods': 'GET, OPTIONS',
+              'Access-Control-Allow-Headers': 'Content-Type'
+            }
+          });
+        }
+        return new Response(JSON.stringify({ error: 'Services API is disabled' }), {
+          status: 403,
+          headers: { 'Content-Type': 'application/json' }
         });
       }
       
@@ -170,6 +214,9 @@ async function handleDashboard(env) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>${uiConfig.branding.pageTitle}</title>
     <link rel="icon" href="${uiConfig.branding.favicon}">
     <style>
@@ -1449,18 +1496,24 @@ async function handleDashboard(env) {
     </div>
     
     <div class="container">
-        ${uiConfig.theme.showToggle || uiConfig.features.showExportButton !== false ? `
+        ${uiConfig.theme.showToggle || uiConfig.features.showExportButton !== false || uiConfig.features.showAlertHistoryButton !== false ? `
         <div class="theme-toggle-container">
+            ${uiConfig.features.showExportButton !== false && uiConfig.api?.enableUptimeEndpoint !== false ? `
             <button class="export-btn" id="exportBtn" aria-label="Export data" title="Export CSV">
                 <span>📊</span>
             </button>
+            ` : ''}
+            ${uiConfig.features.showAlertHistoryButton !== false && uiConfig.api?.enableAlertHistoryEndpoint !== false ? `
             <button class="alert-history-btn" id="alertHistoryBtn" aria-label="Alert history" title="Alert History">
                 <span>🔔</span>
             </button>
+            ` : ''}
+            ${uiConfig.features.showRefreshButton !== false && (uiConfig.api?.enableStatusEndpoint !== false || uiConfig.api?.enableUptimeEndpoint !== false) ? `
             <button class="auto-refresh-btn" id="autoRefreshBtn" aria-label="Toggle auto-refresh" title="Auto-refresh">
                 <span id="autoRefreshIcon">🔄</span>
                 <span class="auto-refresh-timer" id="autoRefreshTimer" style="display: none;"></span>
             </button>
+            ` : ''}
             <div class="auto-refresh-menu" id="autoRefreshMenu">
                 <div class="auto-refresh-menu-item" data-seconds="0">
                     <span>Off</span>
@@ -1519,10 +1572,12 @@ async function handleDashboard(env) {
         
         <footer>
             <div id="lastUpdate" style="margin-bottom: 12px;"></div>
+            ${uiConfig.features.showRefreshButton !== false && (uiConfig.api?.enableStatusEndpoint !== false || uiConfig.api?.enableUptimeEndpoint !== false) ? `
             <button class="refresh-btn" onclick="refreshStatus()">
                 <span>↻</span>
                 <span>Refresh</span>
             </button>
+            ` : ''}
         </footer>
     </div>
     
@@ -1588,6 +1643,9 @@ async function handleDashboard(env) {
         
         // Embedded monitor data (eliminates API calls and caching issues)
         const EMBEDDED_MONITOR_DATA = ${JSON.stringify(monitorData)};
+        
+        // Alert notification configuration
+        const ALERT_NOTIFICATION_CONFIG = ${JSON.stringify(uiConfig.alertNotifications)};
         
         // Theme management
         const THEME_KEY = 'theme-preference';
@@ -1843,7 +1901,7 @@ async function handleDashboard(env) {
                 let data;
                 if (typeof EMBEDDED_MONITOR_DATA !== 'undefined' && EMBEDDED_MONITOR_DATA && EMBEDDED_MONITOR_DATA.summary) {
                     data = { summary: EMBEDDED_MONITOR_DATA.summary };
-                    console.log('Using embedded monitor data (no API call needed)');
+                    //console.log('Using embedded monitor data (no API call needed)');
                 } else {
                     const response = await fetch('/api/status');
                     if (!response.ok) {
@@ -2203,8 +2261,11 @@ async function handleDashboard(env) {
         });
         
         // Alert Notifications
-        const ALERT_CHECK_INTERVAL = 10000; // Check every 10 seconds
-        const LAST_ALERT_TIMESTAMP_KEY = 'last-alert-timestamp';
+        const ALERT_CHECK_INTERVAL = (ALERT_NOTIFICATION_CONFIG.pollingIntervalSeconds || 10) * 1000;
+        const LAST_ALERT_TIMESTAMP_KEY = ALERT_NOTIFICATION_CONFIG.localStorageKey || 'last-alert-timestamp';
+        const SEVERITY_FILTER = ALERT_NOTIFICATION_CONFIG.severityFilter || [];
+        const ENABLE_TOAST_NOTIFICATIONS = ALERT_NOTIFICATION_CONFIG.enableToastNotifications !== false;
+        const ENABLE_BROWSER_NOTIFICATIONS = ALERT_NOTIFICATION_CONFIG.enableBrowserNotifications !== false;
         let alertCheckInterval = null;
         
         function getLastAlertTimestamp() {
@@ -2213,6 +2274,15 @@ async function handleDashboard(env) {
         
         function setLastAlertTimestamp(timestamp) {
             localStorage.setItem(LAST_ALERT_TIMESTAMP_KEY, timestamp);
+        }
+        
+        function shouldShowNotification(alert) {
+            // If no severity filter is set (empty array), show all alerts
+            if (!SEVERITY_FILTER || SEVERITY_FILTER.length === 0) {
+                return true;
+            }
+            // Check if alert severity matches any in the filter
+            return SEVERITY_FILTER.includes(alert.severity?.toLowerCase());
         }
         
         function getSeverityIcon(severity) {
@@ -2227,6 +2297,12 @@ async function handleDashboard(env) {
         }
         
         function showToastNotification(alert) {
+            // Check if toast notifications are enabled
+            if (!ENABLE_TOAST_NOTIFICATIONS) return;
+            
+            // Check if alert passes severity filter
+            if (!shouldShowNotification(alert)) return;
+            
             const container = document.getElementById('alertToastContainer');
             if (!container) return;
             
@@ -2258,6 +2334,12 @@ async function handleDashboard(env) {
         };
         
         function showBrowserNotification(alert) {
+            // Check if browser notifications are enabled
+            if (!ENABLE_BROWSER_NOTIFICATIONS) return;
+            
+            // Check if alert passes severity filter
+            if (!shouldShowNotification(alert)) return;
+            
             // Check if browser supports notifications
             if (!('Notification' in window)) {
                 return;
@@ -2750,9 +2832,12 @@ async function handleDashboard(env) {
   return new Response(html, {
     headers: { 
       'Content-Type': 'text/html',
-      'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+      'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0, private',
       'Pragma': 'no-cache',
-      'Expires': '0'
+      'Expires': '0',
+      'CDN-Cache-Control': 'no-store',
+      'Cloudflare-CDN-Cache-Control': 'no-store',
+      'Vary': 'Accept-Encoding'
     }
   });
 }

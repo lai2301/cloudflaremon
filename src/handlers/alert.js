@@ -73,10 +73,11 @@ export async function storeRecentAlert(env, alertData) {
 /**
  * Get recent alerts
  */
-export async function handleGetRecentAlerts(env, url) {
+export async function handleGetRecentAlerts(env, url, uiConfig = {}) {
   try {
     const since = url.searchParams.get('since'); // Optional: get alerts since timestamp
-    const limit = parseInt(url.searchParams.get('limit') || '20');
+    const limit = parseInt(url.searchParams.get('limit') || uiConfig.alertHistory?.defaultLimit?.toString() || '20');
+    const periodHours = parseFloat(url.searchParams.get('hours') || uiConfig.alertHistory?.defaultRecentPeriodHours?.toString() || '24');
     
     // Get alerts from KV
     const alertsJson = await env.HEARTBEAT_LOGS.get('recent:alerts');
@@ -85,6 +86,10 @@ export async function handleGetRecentAlerts(env, url) {
     // Filter by 'since' timestamp if provided
     if (since) {
       alerts = alerts.filter(alert => alert.timestamp > since);
+    } else if (periodHours > 0) {
+      // Apply default recent period filter if no 'since' is provided
+      const cutoffTime = new Date(Date.now() - periodHours * 60 * 60 * 1000).toISOString();
+      alerts = alerts.filter(alert => alert.timestamp > cutoffTime);
     }
     
     // Limit results
@@ -93,7 +98,8 @@ export async function handleGetRecentAlerts(env, url) {
     return new Response(JSON.stringify({
       success: true,
       alerts: alerts,
-      count: alerts.length
+      count: alerts.length,
+      periodHours: periodHours
     }, null, 2), {
       headers: { 
         'Content-Type': 'application/json',
