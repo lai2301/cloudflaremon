@@ -8,6 +8,26 @@
     "showExportButton": true,
     "showAlertHistoryButton": true
   },
+  "api": {
+    "enableStatusEndpoint": true,
+    "enableUptimeEndpoint": false,
+    "enableServicesEndpoint": true,
+    "enableHeartbeatEndpoint": true,
+    "enableAlertEndpoint": true,
+    "enableAlertHistoryEndpoint": true,
+    "enableTestNotificationEndpoint": false
+  },
+  "alertHistory": {
+    "defaultRecentPeriodHours": 24,
+    "defaultLimit": 20
+  },
+  "alertNotifications": {
+    "pollingIntervalSeconds": 60,
+    "localStorageKey": "last-alert-timestamp",
+    "severityFilter": ["critical", "error", "warning"],
+    "enableToastNotifications": true,
+    "enableBrowserNotifications": true
+  },
   "uptime": {
     "retentionDays": 120,
     "thresholdProfile": "default"

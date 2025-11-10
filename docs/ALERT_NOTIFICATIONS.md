@@ -4,15 +4,18 @@ Real-time notification system that shows toast notifications in the dashboard fo
 - **External alerts** received via `/api/alert` (Grafana, Alertmanager, custom)
 - **Service status changes** from heartbeat monitoring (down/up/degraded)
 
+> 📝 **Want to customize?** See [Alert Notification Customization](./ALERT_NOTIFICATION_CUSTOMIZATION.md) for polling interval, severity filtering, and notification type settings.
+
 ## 🎉 Features
 
-- **📱 Toast Notifications** - In-page notifications with title, message, and severity
-- **🔔 Browser Notifications** - System notifications (optional, requires permission)
+- **📱 Toast Notifications** - In-page notifications with title, message, and severity (configurable)
+- **🔔 Browser Notifications** - System notifications (optional, requires permission, configurable)
 - **🎨 Severity Colors** - Critical (red), Warning (yellow), Info (blue)
 - **⏰ Auto-dismiss** - Toast notifications auto-close after 10 seconds
-- **🔄 Real-time Polling** - Checks for new alerts every 10 seconds
-- **💾 Persistent State** - Remembers last seen alert (no duplicates)
+- **🔄 Real-time Polling** - Checks for new alerts (configurable interval, default 10 seconds)
+- **💾 Persistent State** - Remembers last seen alert (no duplicates, configurable localStorage key)
 - **🔧 Unified Alerts** - Both external and internal service alerts in one feed
+- **🎯 Severity Filtering** - Show notifications only for specific severity levels (configurable)
 
 ---
 

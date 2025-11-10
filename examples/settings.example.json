@@ -12,6 +12,33 @@
     "showAlertHistoryButton": true
   },
   
+  "api": {
+    "_description": "Enable/disable individual API endpoints. Dashboard uses embedded data by default.",
+    "enableStatusEndpoint": true,
+    "enableUptimeEndpoint": true,
+    "enableServicesEndpoint": true,
+    "enableHeartbeatEndpoint": true,
+    "enableAlertEndpoint": true,
+    "enableAlertHistoryEndpoint": true,
+    "enableTestNotificationEndpoint": false
+  },
+  
+  "alertHistory": {
+    "_description": "Alert history API configuration",
+    "defaultRecentPeriodHours": 24,
+    "defaultLimit": 20
+  },
+  
+  "alertNotifications": {
+    "_description": "Dashboard alert notification settings",
+    "pollingIntervalSeconds": 10,
+    "localStorageKey": "last-alert-timestamp",
+    "severityFilter": ["critical", "error", "warning"],
+    "_severityFilterNote": "Only show notifications for these severity levels. Options: critical, error, warning, info, success. Empty array [] disables filtering (shows all).",
+    "enableToastNotifications": true,
+    "enableBrowserNotifications": true
+  },
+  
   "uptime": {
     "retentionDays": 120,
     "thresholdProfile": "default"

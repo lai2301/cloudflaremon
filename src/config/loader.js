@@ -64,6 +64,26 @@ export function getUiConfig() {
   const mergedConfig = {
     ...dashboardConfig,
     features: settingsConfig.features,
+    api: settingsConfig.api || {
+      enableStatusEndpoint: true,
+      enableUptimeEndpoint: true,
+      enableServicesEndpoint: true,
+      enableHeartbeatEndpoint: true,
+      enableAlertEndpoint: true,
+      enableAlertHistoryEndpoint: true,
+      enableTestNotificationEndpoint: false
+    },
+    alertHistory: settingsConfig.alertHistory || {
+      defaultRecentPeriodHours: 24,
+      defaultLimit: 20
+    },
+    alertNotifications: settingsConfig.alertNotifications || {
+      pollingIntervalSeconds: 10,
+      localStorageKey: 'last-alert-timestamp',
+      severityFilter: ['critical', 'error', 'warning'],
+      enableToastNotifications: true,
+      enableBrowserNotifications: true
+    },
     uptimeThresholds: settingsConfig.uptimeThresholds,
     uptimeRetentionDays: settingsConfig.uptime?.retentionDays || legacyUiConfig.features?.uptimeRetentionDays || 120
   };
