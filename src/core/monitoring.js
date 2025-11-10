@@ -186,8 +186,12 @@ async function updateMonitorData(env, monitorData, results, timestamp) {
 
     // Store everything in a single write operation
     await env.HEARTBEAT_LOGS.put('monitor:data', JSON.stringify(monitorData));
+    console.log(`Monitor data updated successfully at ${timestamp}`);
   } catch (error) {
     console.error('Error updating monitor data:', error);
+    console.error('Error stack:', error.stack);
+    // Re-throw to make the cron fail visibly
+    throw error;
   }
 }
 

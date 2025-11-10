@@ -3,10 +3,10 @@
  * Handles loading and merging configuration files
  */
 
-import servicesConfig from '../../config/services.json';
-import dashboardConfig from '../../config/dashboard.json';
-import settingsConfig from '../../config/settings.json';
-import legacyUiConfig from '../../config/ui.json';
+import servicesConfig from '../../config/services.json' assert { type: 'json' };
+import dashboardConfig from '../../config/dashboard.json' assert { type: 'json' };
+import settingsConfig from '../../config/settings.json' assert { type: 'json' };
+import legacyUiConfig from '../../config/ui.json' assert { type: 'json' };
 
 /**
  * Build services map with group configurations merged

@@ -1,0 +1,70 @@
+# Standalone test job for quick testing
+# Run: kubectl apply -f test-job.yaml
+# Check logs: kubectl logs -n monitoring job/heartbeat-test
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: heartbeat-test
+  namespace: monitoring
+spec:
+  # Delete after 60 seconds
+  ttlSecondsAfterFinished: 60
+  
+  template:
+    spec:
+      serviceAccountName: heartbeat-cronjob
+      restartPolicy: Never
+      
+      containers:
+      - name: heartbeat
+        image: alpine/k8s:1.28.3
+        command:
+        - /bin/sh
+        - -c
+        - |
+          set -e
+          echo "==================================="
+          echo "Heartbeat Test Job"
+          echo "==================================="
+          echo ""
+          
+          echo "Installing dependencies..."
+          apk add --no-cache curl jq bash > /dev/null 2>&1
+          echo "✓ Dependencies installed (curl, jq, bash)"
+          echo ""
+          
+          echo "Checking configuration..."
+          echo "Worker URL: $WORKER_URL"
+          echo "Cluster: $CLUSTER_NAME"
+          echo "API Key: ${API_KEY:0:10}... (truncated)"
+          echo ""
+          
+          echo "Running heartbeat script..."
+          echo "-----------------------------------"
+          /bin/bash /scripts/heartbeat.sh
+          
+        env:
+        - name: WORKER_URL
+          valueFrom:
+            secretKeyRef:
+              name: heartbeat-secrets
+              key: worker-url
+        - name: API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: heartbeat-secrets
+              key: api-key
+        - name: CLUSTER_NAME
+          value: "production"
+        
+        volumeMounts:
+        - name: script
+          mountPath: /scripts
+      
+      volumes:
+      - name: script
+        configMap:
+          name: heartbeat-cronjob-script
+          defaultMode: 0755
+

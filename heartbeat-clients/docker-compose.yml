@@ -1,26 +1,33 @@
-version: '3.8'
-
 services:
   heartbeat-sender:
     image: alpine:latest
     container_name: heartbeat-sender
     restart: unless-stopped
     environment:
-      - WORKER_URL=https://heartbeat-monitor.your-subdomain.workers.dev/api/heartbeat
-      - SERVICE_ID=service-1
-      - API_KEY=your-secret-key-1
-      - INTERVAL=120  # seconds between heartbeats
-    command: >
-      sh -c "
-        apk add --no-cache curl &&
+      - WORKER_URL=https://mon.pipdor.com/api/heartbeat
+      - SERVICE_ID=unraid-n1
+      - API_KEY=TS8ZtuRSKWRjw7aQmpTM/sad3we2edaasfg+lM=
+      - INTERVAL=300
+      - CF_ACCESS_CLIENT_ID=fwer324esdfasdf.access
+      - CF_ACCESS_CLIENT_SECRET=daserqweq
+    command:
+      - /bin/sh
+      - -c
+      - |
+        apk add --no-cache curl
         while true; do
-          curl -X POST \"$$WORKER_URL\" \
-            -H 'Content-Type: application/json' \
-            -H \"Authorization: Bearer $$API_KEY\" \
-            -d '{\"serviceId\":\"'$$SERVICE_ID'\",\"status\":\"up\",\"message\":\"Heartbeat from Docker\"}' &&
-          echo \"[$(date)] Heartbeat sent\" ||
-          echo \"[$(date)] Failed to send heartbeat\" ;
-          sleep $$INTERVAL ;
+          curl -X POST "$${WORKER_URL}" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $${API_KEY}" \
+            -H "CF-Access-Client-Id: $${CF_ACCESS_CLIENT_ID}" \
+            -H "CF-Access-Client-Secret: $${CF_ACCESS_CLIENT_SECRET}" \
+            -d "{\"serviceId\":\"$${SERVICE_ID}\",\"status\":\"up\",\"message\":\"Heartbeat from Docker\"}"
+          
+          if [ $$? -eq 0 ]; then
+            echo "[$$(date)] Heartbeat sent successfully"
+          else
+            echo "[$$(date)] Failed to send heartbeat"
+          fi
+          
+          sleep $${INTERVAL}
         done
-      "
-

@@ -19,6 +19,8 @@ stringData:
   # Replace with your actual values
   worker-url: "https://mon.pipdor.com/api/heartbeat"
   api-key: "your-secret-key-here"
+  CF-Access-Client-Id: "your-client-id-here"
+  CF-Access-Client-Secret: "your-client-secret-here"
 
 ---
 # ConfigMap for heartbeat script
@@ -209,21 +211,22 @@ spec:
           
           containers:
           - name: heartbeat
-            image: bitnami/kubectl:latest
+            image: alpine/k8s:1.28.3
             command:
-            - /bin/bash
+            - /bin/sh
             - -c
             - |
-              # Install curl if not available
-              if ! command -v curl &> /dev/null; then
-                apt-get update && apt-get install -y curl
-              fi
+              set -e
+              echo "Installing dependencies..."
               
-              # Make script executable
-              chmod +x /scripts/heartbeat.sh
+              # Install curl, jq, and bash (Alpine uses apk)
+              apk add --no-cache curl jq bash > /dev/null 2>&1
               
-              # Run heartbeat
-              /scripts/heartbeat.sh
+              echo "Dependencies installed successfully"
+              echo ""
+              
+              # Run heartbeat script (already executable via defaultMode: 0755)
+              /bin/bash /scripts/heartbeat.sh
             
             env:
             # Worker URL from secret
@@ -263,47 +266,47 @@ spec:
               defaultMode: 0755
 
 ---
-# Optional: Manual Job for testing
-# Uncomment to create a one-time test job
-# apiVersion: batch/v1
-# kind: Job
-# metadata:
-#   name: heartbeat-test
-#   namespace: monitoring
-# spec:
-#   template:
-#     spec:
-#       serviceAccountName: heartbeat-cronjob
-#       restartPolicy: Never
-#       containers:
-#       - name: heartbeat
-#         image: bitnami/kubectl:latest
-#         command:
-#         - /bin/bash
-#         - -c
-#         - |
-#           apt-get update && apt-get install -y curl
-#           chmod +x /scripts/heartbeat.sh
-#           /scripts/heartbeat.sh
-#         env:
-#         - name: WORKER_URL
-#           valueFrom:
-#             secretKeyRef:
-#               name: heartbeat-secrets
-#               key: worker-url
-#         - name: API_KEY
-#           valueFrom:
-#             secretKeyRef:
-#               name: heartbeat-secrets
-#               key: api-key
-#         - name: CLUSTER_NAME
-#           value: "production"
-#         volumeMounts:
-#         - name: script
-#           mountPath: /scripts
-#       volumes:
-#       - name: script
-#         configMap:
-#           name: heartbeat-cronjob-script
-#           defaultMode: 0755
-
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: heartbeat-test
+  namespace: monitoring
+spec:
+  template:
+    spec:
+      serviceAccountName: heartbeat-cronjob
+      restartPolicy: Never
+      containers:
+        - name: heartbeat
+          image: alpine/k8s:1.28.3
+          command:
+          - /bin/sh
+          - -c
+          - |
+            set -e
+            echo "Installing dependencies..."
+            apk add --no-cache curl jq bash > /dev/null 2>&1
+            echo "Dependencies installed"
+            echo ""
+            /bin/bash /scripts/heartbeat.sh
+          env:
+          - name: WORKER_URL
+            valueFrom:
+              secretKeyRef:
+                name: heartbeat-secrets
+                key: worker-url
+          - name: API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: heartbeat-secrets
+                key: api-key
+          - name: CLUSTER_NAME
+            value: "k3s-cluster"
+          volumeMounts:
+          - name: script
+            mountPath: /scripts
+      volumes:
+      - name: script
+        configMap:
+          name: heartbeat-cronjob-script
+          defaultMode: 0755
