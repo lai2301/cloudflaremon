@@ -29,7 +29,7 @@
     "enableBrowserNotifications": true
   },
   "uptime": {
-    "retentionDays": 120,
+    "retentionDays": 60,
     "thresholdProfile": "default"
   },
   "uptimeThresholds": {

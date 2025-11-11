@@ -351,6 +351,20 @@ async function handleDashboard(env) {
             border-color: var(--text-tertiary);
         }
         
+        .header-links a.highlight {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+        
+        .header-links a.highlight:hover {
+            background: linear-gradient(135deg, #5568d3 0%, #653a8a 100%);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+        
         h1 {
             font-size: 32px;
             font-weight: 700;
@@ -1550,7 +1564,7 @@ async function handleDashboard(env) {
             ${uiConfig.header.showLogo && uiConfig.header.logoUrl ? `<img src="${uiConfig.header.logoUrl}" alt="${uiConfig.header.logoAlt}" class="logo" />` : ''}
             ${uiConfig.header.links && uiConfig.header.links.length > 0 ? `
             <div class="header-links">
-                ${uiConfig.header.links.map(link => `<a href="${link.url}" target="${link.url.startsWith('http') ? '_blank' : '_self'}" rel="${link.url.startsWith('http') ? 'noopener noreferrer' : ''}">${link.text}</a>`).join('')}
+                ${uiConfig.header.links.map(link => `<a href="${link.url}" class="${link.highlight ? 'highlight' : ''}" target="${link.url.startsWith('http') ? '_blank' : '_self'}" rel="${link.url.startsWith('http') ? 'noopener noreferrer' : ''}">${link.text}</a>`).join('')}
             </div>
             ` : ''}
             <h1>${uiConfig.header.title}</h1>

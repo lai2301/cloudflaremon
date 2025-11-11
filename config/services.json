@@ -36,7 +36,7 @@
       "id": "unraid-n1",
       "name": "Unraid N1",
       "enabled": true,
-      "stalenessThreshold": 600,
+      "stalenessThreshold": 300,
       "notifications": {
         "enabled": true,
         "channels": ["telegram"],

@@ -10,9 +10,9 @@ A push-based Cloudflare Worker heartbeat monitoring solution for internal networ
 
 - 📤 **Push-Based Architecture**: Internal services send heartbeats to the worker (not vice versa)
 - 🔒 **Zero Exposure**: No need to expose internal services publicly
-- 📊 **Beautiful Dashboard**: Web-based UI to view service status in real-time with 90-day uptime history
+- 📊 **Beautiful Dashboard**: Web-based UI to view service status in real-time with 120-day uptime history
 - 📁 **Service Groups**: Organize services into logical groups with inherited configurations
-- 💾 **Ultra-Efficient Storage**: Single KV entry for all monitoring data
+- 💾 **Ultra-Efficient Storage**: Minimal KV operations with separated data keys
 - ⚡ **Fast & Reliable**: Leverages Cloudflare's global network
 - 🔐 **API Key Authentication**: Secure heartbeat endpoints with unified JSON secret
 - ⏱️ **Staleness Detection**: Automatically detects when services stop sending heartbeats
@@ -27,7 +27,7 @@ A push-based Cloudflare Worker heartbeat monitoring solution for internal networ
 
 This is a **push-based** monitoring system:
 
-1. Internal services run a lightweight heartbeat client (provided in `examples/`)
+1. Internal services run a lightweight heartbeat client (provided in `heartbeat-clients`)
 2. The client periodically sends a POST request to the Cloudflare Worker
 3. The worker receives and logs the heartbeat in Cloudflare KV storage
 4. A scheduled task checks for "stale" heartbeats (services that stopped reporting)
@@ -91,8 +91,9 @@ npm run deploy
 
 ### 4. Customize Dashboard (Optional)
 
-Edit `config/ui.json` to customize the dashboard appearance:
+Edit `config/dashboard.json` and `config/settings.json` to customize the dashboard:
 
+**Dashboard appearance** (`config/dashboard.json`):
 ```json
 {
   "header": {
@@ -306,19 +307,19 @@ Your worker will be available at: `https://heartbeat-monitor.your-subdomain.work
 
 ### 2. Set Up Heartbeat Clients
 
-Choose a client script from the `examples/` directory and configure it on your internal services.
+Choose a client script from the `heartbeat-clients` directory and configure it on your internal services.
 
 #### Option A: Using Bash Script
 
-1. Copy `examples/heartbeat-client.sh` to your server
+1. Copy `heartbeat-clientsheartbeat-client.sh` to your server
 2. Edit the configuration variables (WORKER_URL, SERVICE_ID, API_KEY)
 3. Make it executable: `chmod +x heartbeat-client.sh`
 4. Test it: `./heartbeat-client.sh`
-5. Schedule it with cron (see `examples/crontab.example`)
+5. Schedule it with cron (see `heartbeat-clientscrontab.example`)
 
 #### Option B: Using Python Script
 
-1. Copy `examples/heartbeat-client.py` to your server
+1. Copy `heartbeat-clientsheartbeat-client.py` to your server
 2. Edit the configuration variables
 3. Make it executable: `chmod +x heartbeat-client.py`
 4. Install requests: `pip install requests`
@@ -326,15 +327,15 @@ Choose a client script from the `examples/` directory and configure it on your i
 
 #### Option C: Using Node.js Script
 
-1. Copy `examples/heartbeat-client.js` to your server
+1. Copy `heartbeat-clientsheartbeat-client.js` to your server
 2. Edit the configuration variables
 3. Make it executable: `chmod +x heartbeat-client.js`
 4. Schedule with cron or systemd timer
 
 #### Option D: Using systemd Timer (Recommended for Linux)
 
-1. Copy `examples/systemd/heartbeat.service` to `/etc/systemd/system/`
-2. Copy `examples/systemd/heartbeat.timer` to `/etc/systemd/system/`
+1. Copy `heartbeat-clientssystemd/heartbeat.service` to `/etc/systemd/system/`
+2. Copy `heartbeat-clientssystemd/heartbeat.timer` to `/etc/systemd/system/`
 3. Edit service file to point to your heartbeat script
 4. Enable and start:
 ```bash
@@ -345,7 +346,7 @@ sudo systemctl status heartbeat.timer
 
 #### Option E: Using Docker
 
-See `examples/docker-compose.yml` for a containerized heartbeat sender.
+See `heartbeat-clientsdocker-compose.yml` for a containerized heartbeat sender.
 
 ### 3. Access the Dashboard
 
@@ -541,21 +542,24 @@ Your internal services only need:
 
 ### KV Storage Structure
 
-**Single Consolidated Entry:**
-- `monitor:data`: Single JSON entry containing:
-  - `latest`: Latest heartbeat timestamps for all services
+**Optimized KV Structure:**
+- `monitor:latest`: Latest heartbeat timestamps for all services (updated by heartbeats)
+- `monitor:data`: Combined entry containing:
   - `uptime`: Daily uptime statistics for all services
-  - `summary`: Current status summary for all services
+  - `summary`: Current status summary for all services (updated by cron)
 
-This ultra-efficient design uses only **1 KV entry** for all monitoring data, drastically reducing KV operations and storage costs.
+This optimized design uses **2 KV entries** with separated concerns, eliminating race conditions between heartbeat updates and cron status checks while minimizing KV operations.
 
 ### Data Retention
 
-**Configurable Retention Period** (default: 90 days):
+**Configurable Retention Period** (default: 120 days):
 
-Set in `ui.json`:
+Set in `config/settings.json`:
 ```json
 {
+  "uptime": {
+    "retentionDays": 120
+  }
   "features": {
     "uptimeRetentionDays": 90
   }
@@ -727,7 +731,7 @@ npx wrangler secret put API_KEYS
 - **[Permissions Guide](docs/PERMISSIONS.md)** - GitHub Actions permissions
 - **[Contributing Guide](.github/CONTRIBUTING.md)** - How to contribute
 - **[Terraform Guide](terraform/README.md)** - Infrastructure as code
-- **[Heartbeat Clients](examples/README.md)** - Client implementation examples
+- **[Heartbeat Clients](heartbeat-clientsREADME.md)** - Client implementation examples
 - **[Workflows Documentation](.github/workflows/README.md)** - CI/CD details
 
 ## License

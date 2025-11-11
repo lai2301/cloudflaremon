@@ -16,6 +16,11 @@
       {
         "text": "Documentation",
         "url": "https://github.com/your-username/cloudflaremon"
+      },
+      {
+        "text": "Contact Us",
+        "url": "https://example.com/contact",
+        "highlight": true
       }
     ]
   },
