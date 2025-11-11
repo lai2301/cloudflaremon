@@ -147,8 +147,9 @@ Add navigation links at the top of the header (above title):
         "url": "https://github.com/your-username/cloudflaremon"
       },
       {
-        "text": "Support",
-        "url": "/support"
+        "text": "Contact Us",
+        "url": "/support",
+        "highlight": true
       }
     ]
   }
@@ -158,16 +159,22 @@ Add navigation links at the top of the header (above title):
 **Visual Layout:**
 ```
 ┌──────────────────────────────┐
-│  [Home] [Docs] [Support]     │ ← Navigation Links (top)
-│                              │
+│  [Home] [Docs] [Contact Us]  │ ← Navigation Links (top)
+│                              │   (Contact Us highlighted)
 │    Service Monitor           │ ← Title
 │  Real-time monitoring        │ ← Subtitle
 └──────────────────────────────┘
 ```
 
+**Link Properties:**
+- `text` (required) - Display text for the link
+- `url` (required) - Destination URL
+- `highlight` (optional) - Set to `true` to highlight the link with gradient background
+
 **Link Behavior:**
 - External URLs (starting with `http`) open in new tab
 - Internal URLs open in same tab
+- Highlighted links have a purple gradient background and stand out visually
 - Links are styled as buttons with hover effects
 - Responsive: wraps on smaller screens
 
