@@ -228,6 +228,25 @@ Simply update the API_KEYS JSON to include the new service:
 
 No need to create new secrets - just update the existing one!
 
+## Security Enhacment With Cloudflare Access
+
+Create Service Token for API Access (Zero Trust > Access > Service Auth > Create Service Token)
+![Tokens](assets/screenshot_auth_token.png)
+
+Create Application in Cloudflare (Zero Trust > Access > Applications)
+
+Target Endpoint to be protected. I protected api/heartbeat and api/alert personally. Will review if other endpoints required to protect as well.
+![Path](assets/screenshot_path.png)
+
+Set the Policy as bypass
+![Policy](assets/screenshot_policy.png)
+
+Set the Rules with the token just created
+![Rules](assets/screenshot_application_rule.png)
+
+
+Then you ca
+
 ## Questions?
 
 If you have security concerns or questions, please:

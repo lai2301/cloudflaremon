@@ -1,6 +1,6 @@
 # Cloudflare Heartbeat Monitor
 
-[![Deploy to Cloudflare Workers](https://github.com/your-username/cloudflaremon/actions/workflows/deploy.yml/badge.svg)](https://github.com/your-username/cloudflaremon/actions/workflows/deploy.yml)
+[![Deploy to Cloudflare Workers](https://github.com/lai2301/cloudflaremon/actions/workflows/deploy.yml/badge.svg)](https://github.com/lai2301/cloudflaremon/actions/workflows/deploy.yml)
 
 A push-based Cloudflare Worker heartbeat monitoring solution for internal network services. Your internal services send heartbeats TO the Cloudflare Worker, eliminating the need to expose your services to the public internet.
 
@@ -22,6 +22,15 @@ A push-based Cloudflare Worker heartbeat monitoring solution for internal networ
 - 🎯 **Color-Coded Uptime**: Configurable thresholds with visual indicators (excellent/good/fair/poor)
 - 📥 **CSV Export**: Download uptime data with custom date ranges and service selection
 - 📦 **Multiple Client Examples**: Bash, Python, Node.js, systemd, cron, Docker
+
+## DEMO
+Please refer to for my DEMO: https://mon.pipdor.com
+
+**ScreenShot of the Full Page**
+![Screenshot_FullPage](docs/assets/screenshot_fullpage.png)
+
+**ScreenShot of the Notification**
+![Screenshot_Notification ](docs/assets/screenshot_notifications.gif)
 
 ## How It Works
 
@@ -738,15 +747,31 @@ npx wrangler secret put API_KEYS
 
 MIT
 
+## Testing Check List
+
+Notification Channels:
+- [ ] Discord
+- [ ] Slack
+- [x] Telegram
+- [ ] Email
+- [ ] Custom Webhook
+- [ ] Pushover
+- [ ] PagerDuty
+
+Currently, Only the Telegram is being tested, will update this README.md if other channels are being tested.
+
 ## Support
 
 For issues or questions:
 - Check the documentation above
 - [Cloudflare Workers Docs](https://developers.cloudflare.com/workers/)
 - [Cloudflare KV Docs](https://developers.cloudflare.com/kv/)
-- [Open an issue](https://github.com/your-username/cloudflaremon/issues)
+- [Open an issue](https://github.com/lai2301/cloudflaremon/issues)
 
 ---
-
+## Credit
+This repository is inspired by [Uptimeflare](https://github.com/lyc8503/UptimeFlare/tree/main)
+Please go checkout this repo if you are interested in monitoring with Cloudflare Worker
+ 
 **Happy Monitoring! 🚀**
 

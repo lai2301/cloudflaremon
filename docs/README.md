@@ -78,6 +78,6 @@ Complete documentation for the Cloudflare Heartbeat Monitor.
 1. Check the relevant documentation above
 2. Review the [troubleshooting section](DEPLOYMENT.md#troubleshooting) in the Deployment Guide
 3. Look at [example implementations](../examples/README.md)
-4. Check [GitHub issues](https://github.com/your-username/cloudflaremon/issues)
+4. Check [GitHub issues](https://github.com/lai2301/cloudflaremon/issues)
 5. Review [Cloudflare Workers documentation](https://developers.cloudflare.com/workers/)
 
