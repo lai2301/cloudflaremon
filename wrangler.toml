@@ -1,5 +1,5 @@
 name = "cloudflare-worker-monitor"
-main = "src/index.js"
+main = "~/projects/cloudflaremon_lite/slim/src/index.js"
 compatibility_date = "2024-01-01"
 [[routes]]
 pattern = "mon.pipdor.com"

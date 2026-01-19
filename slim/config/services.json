@@ -1,0 +1,48 @@
+{
+  "groups": [
+    {
+      "id": "k3s-cluster",
+      "name": "K3s Cluster",
+      "services": ["gmk-m6","raspi4-8g","um760"],
+      "uptimeThresholdSet": "strict",
+      "stalenessThreshold": 300,
+      "auth": {
+        "required": true
+      },
+      "notifications": {
+        "enabled": true,
+        "channels": ["telegram"],
+        "events": ["down", "up", "degraded"]
+      }
+    }
+  ],
+  "services": [
+    {
+      "id": "gmk-m6",
+      "name": "GMK M6",
+      "enabled": true
+    },
+    {
+      "id": "raspi4-8g",
+      "name": "Raspberry Pi 4 8GB",
+      "enabled": true
+    },
+    {
+      "id": "um760",
+      "name": "UM760",
+      "enabled": true
+    },
+    {
+      "id": "unraid-n1",
+      "name": "Unraid N1",
+      "enabled": true,
+      "stalenessThreshold": 300,
+      "notifications": {
+        "enabled": true,
+        "channels": ["telegram"],
+        "events": ["down", "up", "degraded"]
+      }
+    }
+  ]
+}
+
