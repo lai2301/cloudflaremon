@@ -1,0 +1,111 @@
+{
+  "enabled": true,
+  "channels": [
+    {
+      "type": "discord",
+      "name": "Discord Webhook",
+      "enabled": false,
+      "config": {},
+      "events": ["down", "up", "degraded"]
+    },
+    {
+      "type": "slack",
+      "name": "Slack Webhook",
+      "enabled": false,
+      "config": {},
+      "events": ["down", "up"]
+    },
+    {
+      "type": "telegram",
+      "name": "Telegram Bot",
+      "enabled": true,
+      "config": {},
+      "events": ["down", "up", "degraded"]
+    },
+    {
+      "type": "email",
+      "name": "Email via Mailgun",
+      "enabled": false,
+      "config": {
+        "provider": "mailgun",
+        "from": "alerts@yourdomain.com",
+        "to": ["admin@yourdomain.com"]
+      },
+      "events": ["down", "up"]
+    },
+    {
+      "type": "webhook",
+      "name": "Custom Webhook",
+      "enabled": false,
+      "config": {
+        "method": "POST",
+        "headers": {}
+      },
+      "events": ["down", "up", "degraded"]
+    },
+    {
+      "type": "pushover",
+      "name": "Pushover",
+      "enabled": false,
+      "config": {},
+      "events": ["down", "up"]
+    },
+    {
+      "type": "pagerduty",
+      "name": "PagerDuty",
+      "enabled": false,
+      "config": {},
+      "events": ["down", "up"]
+    }
+  ],
+  "settings": {
+    "cooldownMinutes": 5,
+    "repeatAlertMinutes": 60,
+    "includeMetadata": true,
+    "timezone": "UTC",
+    "alertHistory": {
+      "maxAlerts": 100,
+      "maxAgeDays": 7,
+      "cleanupOnAdd": true
+    }
+  },
+  "templates": {
+    "discord": {
+      "title": "{{emoji}} Service {{eventType}}: {{serviceName}}",
+      "description": "Service **{{serviceName}}** is now **{{eventType}}**",
+      "fields": [
+        {"name": "Service ID", "value": "{{serviceId}}", "inline": true},
+        {"name": "Status", "value": "{{eventType}}", "inline": true},
+        {"name": "Last Seen", "value": "{{lastSeen}}", "inline": false},
+        {"name": "Timestamp", "value": "{{timestamp}}", "inline": false}
+      ],
+      "footer": "Cloudflare Heartbeat Monitor"
+    },
+    "slack": {
+      "text": "{{emoji}} Service Alert: {{serviceName}}",
+      "fields": [
+        {"title": "Service", "value": "{{serviceName}}", "short": true},
+        {"title": "Status", "value": "{{eventType}}", "short": true},
+        {"title": "Service ID", "value": "{{serviceId}}", "short": true},
+        {"title": "Last Seen", "value": "{{lastSeen}}", "short": true}
+      ],
+      "footer": "Cloudflare Heartbeat Monitor"
+    },
+    "telegram": {
+      "message": "{{emoji}} *Service {{eventType}}*\n\n*Service:* {{serviceName}}\n*Status:* {{eventType}}\n*Last Seen:* {{lastSeen}}\n*Time:* {{timestamp}}"
+    },
+    "email": {
+      "subject": "[{{eventType}}] {{serviceName}} - Heartbeat Monitor Alert",
+      "body": "Service: {{serviceName}}\nStatus: {{eventType}}\nService ID: {{serviceId}}\nLast Seen: {{lastSeen}}\nTimestamp: {{timestamp}}"
+    },
+    "pushover": {
+      "title": "Heartbeat Monitor Alert",
+      "message": "Service {{serviceName}} is {{eventType}}"
+    },
+    "pagerduty": {
+      "summary": "Service {{serviceName}} is {{eventType}}",
+      "severity": "critical"
+    }
+  }
+}
+
