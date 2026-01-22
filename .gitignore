@@ -1,6 +1,27 @@
+# Dependencies
 node_modules/
-venv/
-.env
+
+# Cloudflare Workers
+.wrangler/
+.mf/
 dist/
-secrets.*
-.dev.vars*
+
+# Environment & Secrets
+.dev.vars
+.env
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+
+# Terraform
+terraform/.terraform/
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+terraform/terraform.tfvars
+terraform/*.tfvars
+!terraform/terraform.tfvars.example
+
+.api_keys_generated.txt
