@@ -1,9 +1,9 @@
 {
   "groups": [
     {
-      "id": "k3s-cluster",
-      "name": "K3s Cluster",
-      "services": ["gmk-m6","raspi4-8g","um760"],
+      "id": "office-computers",
+      "name": "Office Computets",
+      "services": ["showroom-pc","shop-mac","um760"],
       "uptimeThresholdSet": "strict",
       "stalenessThreshold": 300,
       "auth": {
@@ -18,13 +18,13 @@
   ],
   "services": [
     {
-      "id": "gmk-m6",
-      "name": "GMK M6",
+      "id": "showroom-pc",
+      "name": "Showroom PC",
       "enabled": true
     },
     {
-      "id": "raspi4-8g",
-      "name": "Raspberry Pi 4 8GB",
+      "id": "shop-mac",
+      "name": "Shop Mac",
       "enabled": true
     },
     {
