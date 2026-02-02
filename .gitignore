@@ -25,3 +25,4 @@ terraform/*.tfvars
 !terraform/terraform.tfvars.example
 
 .api_keys_generated.txt
+slim/venv/
