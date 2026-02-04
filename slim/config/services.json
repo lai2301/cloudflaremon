@@ -2,8 +2,8 @@
   "groups": [
     {
       "id": "k3s-cluster",
-      "name": "Test",
-      "services": ["gmk-m6","raspi4-8g","um760"],
+      "name": "K3s Cluster",
+      "services": ["test-service","raspi4-8g","um760"],
       "uptimeThresholdSet": "strict",
       "stalenessThreshold": 300,
       "auth": {
@@ -18,7 +18,7 @@
   ],
   "services": [
     {
-      "id": "gmk-m6",
+      "id": "test-service",
       "name": "GMK M6",
       "enabled": true
     },
