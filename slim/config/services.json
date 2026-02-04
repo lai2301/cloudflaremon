@@ -2,7 +2,7 @@
   "groups": [
     {
       "id": "k3s-cluster",
-      "name": "K3s Cluster",
+      "name": "Test",
       "services": ["gmk-m6","raspi4-8g","um760"],
       "uptimeThresholdSet": "strict",
       "stalenessThreshold": 300,
