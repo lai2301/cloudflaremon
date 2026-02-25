@@ -49,7 +49,7 @@ export async function checkHeartbeatStaleness(env) {
     // Get latest heartbeat timestamp
     const lastHeartbeatTime = latestData[service.id];
     
-    const stalenessThreshold = (service.stalenessThreshold || 300) * 1000; // Default 5 minutes
+    const stalenessThreshold = (service.stalenessThreshold || 3600) * 1000; // Changed to 60 minutes
     
     let status, lastSeen, timeSinceLastHeartbeat;
     
