@@ -5,7 +5,7 @@
       "name": "Office Computers",
       "services": ["showroom-pc","shop-mac"],
       "uptimeThresholdSet": "strict",
-      "stalenessThreshold": 300,
+      "stalenessThreshold": 3600,
       "auth": {
         "required": true
       },
