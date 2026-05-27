@@ -85,7 +85,8 @@ export function getUiConfig() {
       enableBrowserNotifications: true
     },
     uptimeThresholds: settingsConfig.uptimeThresholds,
-    uptimeRetentionDays: settingsConfig.uptime?.retentionDays || legacyUiConfig.features?.uptimeRetentionDays || 120
+    uptimeRetentionDays: settingsConfig.uptime?.retentionDays || legacyUiConfig.features?.uptimeRetentionDays || 120,
+    allowedOrigins: Array.isArray(settingsConfig.allowedOrigins) ? settingsConfig.allowedOrigins : (Array.isArray(legacyUiConfig.allowedOrigins) ? legacyUiConfig.allowedOrigins : [])
   };
   
   // Use new config structure if dashboard.json exists, otherwise fall back to ui.json

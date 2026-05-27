@@ -4,8 +4,9 @@
 // real network requests and isolates the auth/routing logic under test.
 
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { handleCustomAlert } from '../../src/handlers/alert.js';
+import { handleCustomAlert, handleGetRecentAlerts } from '../../src/handlers/alert.js';
 import { withEnv, jsonRequest } from '../helpers/env.js';
+import { env } from 'cloudflare:test';
 
 const url = 'http://localhost/api/alert';
 
@@ -75,5 +76,15 @@ describe('handleCustomAlert fail-closed auth', () => {
     // Should still contain a message or error field
     expect(body.success).toBe(false);
     expect(body.message || body.error).toBeDefined();
+  });
+});
+
+describe('handleGetRecentAlerts CORS', () => {
+  it('does not return Access-Control-Allow-Origin: * when no Origin header is sent', async () => {
+    const alertsUrl = new URL('http://localhost/api/alerts/recent');
+    // No Origin header on the request — allowedOrigins defaults to [] so no CORS header emitted
+    const req = new Request('http://localhost/api/alerts/recent');
+    const res = await handleGetRecentAlerts(env, alertsUrl, {}, req);
+    expect(res.headers.get('Access-Control-Allow-Origin')).not.toBe('*');
   });
 });

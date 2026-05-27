@@ -4,6 +4,7 @@
  */
 
 import { timingSafeEqualStrings } from './heartbeat.js';
+import { corsHeaders } from '../core/cors.js';
 
 /**
  * Clean up old alerts based on configuration
@@ -75,16 +76,16 @@ export async function storeRecentAlert(env, alertData) {
 /**
  * Get recent alerts
  */
-export async function handleGetRecentAlerts(env, url, uiConfig = {}) {
+export async function handleGetRecentAlerts(env, url, uiConfig = {}, request) {
   try {
     const since = url.searchParams.get('since'); // Optional: get alerts since timestamp
     const limit = parseInt(url.searchParams.get('limit') || uiConfig.alertHistory?.defaultLimit?.toString() || '20');
     const periodHours = parseFloat(url.searchParams.get('hours') || uiConfig.alertHistory?.defaultRecentPeriodHours?.toString() || '24');
-    
+
     // Get alerts from KV
     const alertsJson = await env.HEARTBEAT_LOGS.get('recent:alerts');
     let alerts = alertsJson ? JSON.parse(alertsJson) : [];
-    
+
     // Filter by 'since' timestamp if provided
     if (since) {
       alerts = alerts.filter(alert => alert.timestamp > since);
@@ -93,19 +94,19 @@ export async function handleGetRecentAlerts(env, url, uiConfig = {}) {
       const cutoffTime = new Date(Date.now() - periodHours * 60 * 60 * 1000).toISOString();
       alerts = alerts.filter(alert => alert.timestamp > cutoffTime);
     }
-    
+
     // Limit results
     alerts = alerts.slice(0, limit);
-    
+
     return new Response(JSON.stringify({
       success: true,
       alerts: alerts,
       count: alerts.length,
       periodHours: periodHours
     }, null, 2), {
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
+        ...corsHeaders(request),
         'Access-Control-Allow-Methods': 'GET, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
         'Cache-Control': 'no-cache, no-store, must-revalidate'
@@ -113,16 +114,16 @@ export async function handleGetRecentAlerts(env, url, uiConfig = {}) {
     });
   } catch (error) {
     console.error('Error fetching recent alerts:', error);
-    return new Response(JSON.stringify({ 
+    return new Response(JSON.stringify({
       success: false,
       error: error.message,
       alerts: [],
       count: 0
     }), {
       status: 500,
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
+        ...corsHeaders(request)
       }
     });
   }
