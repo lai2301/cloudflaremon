@@ -168,44 +168,35 @@ export async function checkAndSendNotifications(env, currentResults, monitorData
     for (const result of currentResults) {
       const serviceId = result.serviceId;
       const currentState = result.status;
-      const previousState = previousStatus[serviceId]?.status || 'unknown';
-      const lastAlertTime = previousStatus[serviceId]?.lastAlert || 0;
+      const previousEntry = previousStatus[serviceId];
+      const previousState = previousEntry?.status || 'unknown';
+      const lastAlertTime = previousEntry?.lastAlert || 0;
 
-      // Detect status change
       const statusChanged = currentState !== previousState && previousState !== 'unknown';
-      const shouldAlert = statusChanged && (now - lastAlertTime) > cooldownMs;
+      const cooldownPassed = (now - lastAlertTime) > cooldownMs;
 
-      if (shouldAlert) {
-        // Determine event type
-        let eventType = null;
-        if (currentState === 'down') eventType = 'down';
-        else if (currentState === 'up' && previousState === 'down') eventType = 'up';
-        else if (currentState === 'degraded') eventType = 'degraded';
-
-        if (eventType) {
-          // Get service config for notification settings
-          const serviceConfig = servicesConfig.services.find(s => s.id === serviceId);
-          
-          // Send notifications to external channels (Discord, Slack, etc.)
-          await sendNotifications(env, eventType, result, serviceConfig);
-          
-          // Store alert for dashboard notifications
-          await storeServiceAlert(env, eventType, result);
-          
-          // Update last alert time
-          previousStatus[serviceId] = {
-            status: currentState,
-            lastAlert: now
-          };
-        }
-      } else if (!statusChanged) {
-        // Update current status without alert
-        if (!previousStatus[serviceId]) {
-          previousStatus[serviceId] = { status: currentState, lastAlert: 0 };
-        } else {
-          previousStatus[serviceId].status = currentState;
-        }
+      // Always update tracked status so dedup state never gets stuck.
+      // lastAlert is only bumped when we actually send.
+      if (!previousEntry) {
+        previousStatus[serviceId] = { status: currentState, lastAlert: 0 };
+      } else {
+        previousStatus[serviceId].status = currentState;
       }
+
+      if (!statusChanged || !cooldownPassed) continue;
+
+      let eventType = null;
+      if (currentState === 'down') eventType = 'down';
+      else if (currentState === 'up') eventType = 'up';           // covers down->up AND degraded->up
+      else if (currentState === 'degraded') eventType = 'degraded';
+
+      if (!eventType) continue;
+
+      const serviceConfig = servicesConfig.services.find(s => s.id === serviceId);
+      await sendNotifications(env, eventType, result, serviceConfig);
+      await storeServiceAlert(env, eventType, result);
+
+      previousStatus[serviceId].lastAlert = now;
     }
 
     // Save updated status
