@@ -1,6 +1,7 @@
 export function renderStyles(uiConfig) {
   return `    <style>
         :root {
+            /* Operator-overridable branding / theme tokens */
             --bg-primary: ${uiConfig.theme.colors.light.primary};
             --bg-secondary: ${uiConfig.theme.colors.light.secondary};
             --bg-hover: #f3f4f6;
@@ -20,11 +21,53 @@ export function renderStyles(uiConfig) {
             --status-unknown: #6b7280;
             --status-unknown-bg: #e5e7eb;
             --status-unknown-text: #374151;
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+
+            /* Typography */
+            --font-xs: 12px;
+            --font-sm: 14px;
+            --font-base: 16px;
+            --font-lg: 20px;
+            --font-xl: 28px;
+            --font-2xl: 40px;
+            --font-weight-medium: 500;
+            --font-weight-semibold: 600;
+            --font-weight-bold: 700;
+
+            /* Spacing */
+            --space-1: 4px;
+            --space-2: 8px;
+            --space-3: 12px;
+            --space-4: 16px;
+            --space-6: 24px;
+            --space-8: 32px;
+            --space-12: 48px;
+
+            /* Radius */
+            --radius: 10px;
+            --radius-sm: 6px;
+
+            /* Shadows */
+            --shadow-none: none;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,.05);
+            --shadow-md: 0 4px 12px rgba(0,0,0,.08);
+
+            /* Status tints */
+            --up-fg: #047857;
+            --up-bg: #ecfdf5;
+            --up-border: #a7f3d0;
+            --deg-fg: #b45309;
+            --deg-bg: #fffbeb;
+            --deg-border: #fde68a;
+            --down-fg: #b91c1c;
+            --down-bg: #fef2f2;
+            --down-border: #fecaca;
+            --unk-fg: #4b5563;
+            --unk-bg: #f3f4f6;
+            --unk-border: #e5e7eb;
         }
 
         [data-theme="dark"] {
+            /* Operator-overridable branding / theme tokens (dark) */
             --bg-primary: ${uiConfig.theme.colors.dark.primary};
             --bg-secondary: ${uiConfig.theme.colors.dark.secondary};
             --bg-hover: #036358;
@@ -43,6 +86,18 @@ export function renderStyles(uiConfig) {
             --status-degraded-text: #fcd34d;
             --status-unknown-bg: #374151;
             --status-unknown-text: #d1d5db;
+
+            /* Design token dark overrides */
+            --up-bg:     #064e3b;
+            --up-border: #065f46;
+            --deg-bg:    #78350f;
+            --deg-border:#92400e;
+            --down-bg:   #7f1d1d;
+            --down-border:#991b1b;
+            --unk-bg:    #1f2937;
+            --unk-border:#374151;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+            --shadow-md: 0 4px 12px rgba(0,0,0,.5);
         }
 
         @media (prefers-color-scheme: dark) {
@@ -65,6 +120,18 @@ export function renderStyles(uiConfig) {
                 --status-degraded-text: #fcd34d;
                 --status-unknown-bg: #374151;
                 --status-unknown-text: #d1d5db;
+
+                /* Design token dark overrides */
+                --up-bg:     #064e3b;
+                --up-border: #065f46;
+                --deg-bg:    #78350f;
+                --deg-border:#92400e;
+                --down-bg:   #7f1d1d;
+                --down-border:#991b1b;
+                --unk-bg:    #1f2937;
+                --unk-border:#374151;
+                --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+                --shadow-md: 0 4px 12px rgba(0,0,0,.5);
             }
         }
         
@@ -113,11 +180,11 @@ export function renderStyles(uiConfig) {
         .header-links a {
             color: var(--text-secondary);
             text-decoration: none;
-            font-size: 14px;
-            font-weight: 500;
+            font-size: var(--font-sm);
+            font-weight: var(--font-weight-medium);
             transition: color 0.2s;
-            padding: 8px 16px;
-            border-radius: 6px;
+            padding: var(--space-2) var(--space-4);
+            border-radius: var(--radius-sm);
             background: var(--bg-primary);
             border: 1px solid var(--border-color);
         }
@@ -131,7 +198,7 @@ export function renderStyles(uiConfig) {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border-color: transparent;
-            font-weight: 600;
+            font-weight: var(--font-weight-semibold);
             box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
         }
         
@@ -143,26 +210,26 @@ export function renderStyles(uiConfig) {
         
         h1 {
             font-size: 32px;
-            font-weight: 700;
-            margin-bottom: 8px;
+            font-weight: var(--font-weight-bold);
+            margin-bottom: var(--space-2);
             color: var(--text-primary);
         }
-        
+
         .subtitle {
             color: var(--text-secondary);
-            font-size: 16px;
+            font-size: var(--font-base);
             margin-bottom: 0;
         }
         
         .overall-status {
             background: var(--bg-primary);
-            padding: 32px;
-            border-radius: 12px;
+            padding: var(--space-8);
+            border-radius: var(--radius);
             border: 1px solid var(--border-color);
-            margin-bottom: 24px;
+            margin-bottom: var(--space-6);
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: var(--space-4);
         }
         
         .status-indicator {
@@ -193,16 +260,16 @@ export function renderStyles(uiConfig) {
         
         .status-title {
             font-size: 18px;
-            font-weight: 600;
+            font-weight: var(--font-weight-semibold);
             color: var(--text-primary);
-            margin-bottom: 4px;
+            margin-bottom: var(--space-1);
         }
-        
+
         .status-description {
-            font-size: 14px;
+            font-size: var(--font-sm);
             color: var(--text-secondary);
         }
-        
+
         .last-checked {
             font-size: 13px;
             color: var(--text-tertiary);
@@ -210,10 +277,10 @@ export function renderStyles(uiConfig) {
         
         .services-container {
             background: var(--bg-primary);
-            border-radius: 12px;
+            border-radius: var(--radius);
             border: 1px solid var(--border-color);
             overflow: hidden;
-            margin-bottom: 24px;
+            margin-bottom: var(--space-6);
         }
         
         .services-container:last-child {
@@ -221,34 +288,34 @@ export function renderStyles(uiConfig) {
         }
         
         .services-header {
-            padding: 24px 32px;
+            padding: var(--space-6) var(--space-8);
             border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 16px;
+            gap: var(--space-4);
         }
-        
+
         .services-title {
-            font-size: 20px;
-            font-weight: 600;
+            font-size: var(--font-lg);
+            font-weight: var(--font-weight-semibold);
             color: var(--text-primary);
         }
         
         .threshold-legend {
             display: flex;
-            gap: 12px;
+            gap: var(--space-3);
             flex-wrap: wrap;
             font-size: 13px;
         }
-        
+
         .threshold-item {
             display: flex;
             align-items: center;
             gap: 6px;
         }
-        
+
         .threshold-badge {
             width: 16px;
             height: 16px;
@@ -257,7 +324,7 @@ export function renderStyles(uiConfig) {
         }
         
         .service-item {
-            padding: 24px 32px;
+            padding: var(--space-6) var(--space-8);
             border-bottom: 1px solid var(--border-color);
             transition: background-color 0.15s ease;
         }
@@ -273,8 +340,8 @@ export function renderStyles(uiConfig) {
         .service-main {
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
+            gap: var(--space-3);
+            margin-bottom: var(--space-4);
         }
         
         .service-status-icon {
@@ -285,42 +352,42 @@ export function renderStyles(uiConfig) {
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
+            font-size: var(--font-xs);
         }
         
         .service-status-icon.up {
-            background: var(--status-up);
+            background: var(--up-fg);
             color: white;
         }
-        
+
         .service-status-icon.down {
-            background: var(--status-down);
+            background: var(--down-fg);
             color: white;
         }
-        
+
         .service-status-icon.degraded {
-            background: var(--status-degraded);
+            background: var(--deg-fg);
             color: white;
         }
-        
+
         .service-status-icon.unknown {
-            background: var(--status-unknown);
+            background: var(--unk-fg);
             color: white;
         }
         
         .service-name {
-            font-size: 16px;
-            font-weight: 500;
+            font-size: var(--font-base);
+            font-weight: var(--font-weight-medium);
             color: var(--text-primary);
             flex: 1;
         }
-        
+
         .service-uptime {
-            font-size: 14px;
-            font-weight: 600;
+            font-size: var(--font-sm);
+            font-weight: var(--font-weight-semibold);
             color: var(--text-secondary);
-            padding: 4px 8px;
-            border-radius: 6px;
+            padding: var(--space-1) var(--space-2);
+            border-radius: var(--radius-sm);
             transition: all 0.2s;
         }
         
@@ -333,7 +400,7 @@ export function renderStyles(uiConfig) {
         }`)).join('\n')}
         
         .uptime-bar-container {
-            margin-bottom: 12px;
+            margin-bottom: var(--space-3);
         }
         
         .uptime-bar-wrapper {
@@ -419,14 +486,14 @@ export function renderStyles(uiConfig) {
             position: fixed;
             background: var(--text-primary);
             color: var(--bg-primary);
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 12px;
+            padding: var(--space-2) var(--space-3);
+            border-radius: var(--radius-sm);
+            font-size: var(--font-xs);
             line-height: 1.4;
             pointer-events: none;
             z-index: 1000;
             white-space: nowrap;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            box-shadow: var(--shadow-md);
             opacity: 0;
             transition: opacity 0.1s ease;
         }
@@ -444,7 +511,7 @@ export function renderStyles(uiConfig) {
         
         .service-meta {
             display: flex;
-            gap: 24px;
+            gap: var(--space-6);
             font-size: 13px;
             color: var(--text-secondary);
         }
@@ -472,7 +539,7 @@ export function renderStyles(uiConfig) {
             border-top-color: var(--text-primary);
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin: 0 auto 16px;
+            margin: 0 auto var(--space-4);
         }
         
         @keyframes spin {
@@ -484,17 +551,17 @@ export function renderStyles(uiConfig) {
             top: 20px;
             right: 20px;
             display: flex;
-            gap: 8px;
+            gap: var(--space-2);
         }
-        
+
         .theme-toggle, .export-btn, .auto-refresh-btn, .alert-history-btn {
             background: var(--bg-primary);
             color: var(--text-primary);
             border: 1px solid var(--border-color);
-            padding: 8px 12px;
-            border-radius: 8px;
+            padding: var(--space-2) var(--space-3);
+            border-radius: var(--space-2);
             cursor: pointer;
-            font-size: 20px;
+            font-size: var(--font-lg);
             transition: all 0.2s;
             display: inline-flex;
             align-items: center;
@@ -523,10 +590,10 @@ export function renderStyles(uiConfig) {
             position: absolute;
             bottom: -2px;
             right: -2px;
-            background: #10b981;
+            background: var(--up-fg);
             color: white;
             font-size: 9px;
-            font-weight: 600;
+            font-weight: var(--font-weight-semibold);
             padding: 2px 4px;
             border-radius: 4px;
             min-width: 18px;
@@ -541,10 +608,10 @@ export function renderStyles(uiConfig) {
             right: 0;
             background: var(--bg-primary);
             border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 8px;
+            border-radius: var(--space-2);
+            padding: var(--space-2);
             min-width: 180px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            box-shadow: var(--shadow-md);
             z-index: 1000;
             animation: slideDown 0.2s ease-out;
         }
@@ -554,10 +621,10 @@ export function renderStyles(uiConfig) {
         }
         
         .auto-refresh-menu-item {
-            padding: 8px 12px;
-            border-radius: 6px;
+            padding: var(--space-2) var(--space-3);
+            border-radius: var(--radius-sm);
             cursor: pointer;
-            font-size: 14px;
+            font-size: var(--font-sm);
             color: var(--text-primary);
             display: flex;
             align-items: center;
@@ -583,18 +650,18 @@ export function renderStyles(uiConfig) {
         .auto-refresh-menu-divider {
             height: 1px;
             background: var(--border-color);
-            margin: 8px 0;
+            margin: var(--space-2) 0;
         }
-        
+
         .refresh-btn {
             background: var(--bg-primary);
             color: var(--text-primary);
             border: 1px solid var(--border-color);
-            padding: 8px 16px;
-            border-radius: 8px;
+            padding: var(--space-2) var(--space-4);
+            border-radius: var(--space-2);
             cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
+            font-size: var(--font-sm);
+            font-weight: var(--font-weight-medium);
             display: inline-flex;
             align-items: center;
             gap: 6px;
@@ -617,8 +684,8 @@ export function renderStyles(uiConfig) {
             right: 20px;
             background: var(--bg-primary);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 24px;
+            border-radius: var(--radius);
+            padding: var(--space-6);
             width: 450px;
             max-width: calc(100vw - 40px);
             max-height: calc(100vh - 100px);
@@ -668,15 +735,15 @@ export function renderStyles(uiConfig) {
         
         .export-dialog-title {
             font-size: 18px;
-            font-weight: 600;
+            font-weight: var(--font-weight-semibold);
             color: var(--text-primary);
             margin: 0;
         }
-        
+
         .export-dialog-close {
             background: none;
             border: none;
-            font-size: 20px;
+            font-size: var(--font-lg);
             cursor: pointer;
             color: var(--text-secondary);
             padding: 0;
@@ -685,7 +752,7 @@ export function renderStyles(uiConfig) {
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 6px;
+            border-radius: var(--radius-sm);
             transition: all 0.2s;
         }
         
@@ -702,22 +769,22 @@ export function renderStyles(uiConfig) {
         .export-form-group {
             margin-bottom: 20px;
         }
-        
+
         .export-form-label {
             display: block;
-            font-weight: 500;
+            font-weight: var(--font-weight-medium);
             color: var(--text-primary);
-            margin-bottom: 8px;
+            margin-bottom: var(--space-2);
         }
-        
+
         .export-form-input, .export-form-select {
             width: 100%;
-            padding: 10px 12px;
+            padding: 10px var(--space-3);
             background: var(--bg-secondary);
             border: 1px solid var(--border-color);
-            border-radius: 8px;
+            border-radius: var(--space-2);
             color: var(--text-primary);
-            font-size: 14px;
+            font-size: var(--font-sm);
             box-sizing: border-box;
         }
         
@@ -730,17 +797,17 @@ export function renderStyles(uiConfig) {
             max-height: 200px;
             overflow-y: auto;
             border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 12px;
+            border-radius: var(--space-2);
+            padding: var(--space-3);
             background: var(--bg-secondary);
         }
-        
+
         .export-service-item {
             display: flex;
             align-items: center;
-            padding: 8px;
+            padding: var(--space-2);
             margin-bottom: 4px;
-            border-radius: 6px;
+            border-radius: var(--radius-sm);
             transition: background 0.2s;
         }
         
@@ -761,16 +828,16 @@ export function renderStyles(uiConfig) {
         
         .export-actions {
             display: flex;
-            gap: 12px;
-            margin-top: 24px;
+            gap: var(--space-3);
+            margin-top: var(--space-6);
         }
-        
+
         .export-btn-primary, .export-btn-secondary {
             flex: 1;
             padding: 10px 20px;
-            border-radius: 8px;
+            border-radius: var(--space-2);
             cursor: pointer;
-            font-weight: 500;
+            font-weight: var(--font-weight-medium);
             transition: all 0.2s;
             border: none;
         }
@@ -803,21 +870,21 @@ export function renderStyles(uiConfig) {
         .export-date-range {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
+            gap: var(--space-3);
         }
-        
+
         .export-quick-ranges {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 8px;
+            gap: var(--space-2);
+            margin-top: var(--space-2);
         }
-        
+
         .export-quick-btn {
-            padding: 6px 12px;
+            padding: 6px var(--space-3);
             background: var(--bg-secondary);
             border: 1px solid var(--border-color);
-            border-radius: 6px;
+            border-radius: var(--radius-sm);
             cursor: pointer;
             font-size: 13px;
             color: var(--text-secondary);
@@ -855,31 +922,31 @@ export function renderStyles(uiConfig) {
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 12px;
-            margin-bottom: 24px;
+            gap: var(--space-3);
+            margin-bottom: var(--space-6);
         }
 
         .stat-card {
             background: var(--bg-primary);
-            padding: 16px;
-            border-radius: 8px;
+            padding: var(--space-4);
+            border-radius: var(--radius-sm);
             border: 1px solid var(--border-color);
             text-align: center;
         }
 
         .stat-value {
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 4px;
+            font-size: var(--font-xl);
+            font-weight: var(--font-weight-bold);
+            margin-bottom: var(--space-1);
         }
 
-        .stat-value.up { color: var(--status-up); }
-        .stat-value.down { color: var(--status-down); }
-        .stat-value.degraded { color: var(--status-degraded); }
-        .stat-value.unknown { color: var(--status-unknown); }
+        .stat-value.up { color: var(--up-fg); }
+        .stat-value.down { color: var(--down-fg); }
+        .stat-value.degraded { color: var(--deg-fg); }
+        .stat-value.unknown { color: var(--unk-fg); }
 
         .stat-label {
-            font-size: 12px;
+            font-size: var(--font-xs);
             color: var(--text-tertiary);
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -887,28 +954,28 @@ export function renderStyles(uiConfig) {
         
         footer {
             margin-top: 80px;
-            padding-top: 32px;
+            padding-top: var(--space-8);
             border-top: 1px solid var(--border-color);
             text-align: center;
         }
-        
+
         footer p {
             color: var(--text-tertiary);
-            font-size: 14px;
-            margin-bottom: 12px;
+            font-size: var(--font-sm);
+            margin-bottom: var(--space-3);
         }
-        
+
         .footer-links {
             display: flex;
-            gap: 24px;
+            gap: var(--space-6);
             justify-content: center;
             flex-wrap: wrap;
         }
-        
+
         .footer-links a {
             color: var(--text-secondary);
             text-decoration: none;
-            font-size: 14px;
+            font-size: var(--font-sm);
             transition: color 0.2s;
         }
         
@@ -924,20 +991,20 @@ export function renderStyles(uiConfig) {
             z-index: 10001;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: var(--space-3);
             max-width: 400px;
         }
-        
+
         .alert-toast {
             background: var(--bg-primary);
             border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 16px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border-radius: var(--space-2);
+            padding: var(--space-4);
+            box-shadow: var(--shadow-md);
             animation: slideInRight 0.3s ease-out;
             position: relative;
             display: flex;
-            gap: 12px;
+            gap: var(--space-3);
         }
         
         @keyframes slideInRight {
@@ -978,35 +1045,35 @@ export function renderStyles(uiConfig) {
         }
         
         .alert-toast-title {
-            font-weight: 600;
-            font-size: 14px;
-            margin-bottom: 4px;
+            font-weight: var(--font-weight-semibold);
+            font-size: var(--font-sm);
+            margin-bottom: var(--space-1);
             color: var(--text-primary);
         }
-        
+
         .alert-toast-message {
             font-size: 13px;
             color: var(--text-secondary);
             word-wrap: break-word;
         }
-        
+
         .alert-toast-time {
             font-size: 11px;
             color: var(--text-tertiary);
-            margin-top: 4px;
+            margin-top: var(--space-1);
         }
         
         .alert-toast-close {
             position: absolute;
-            top: 8px;
-            right: 8px;
+            top: var(--space-2);
+            right: var(--space-2);
             background: none;
             border: none;
             color: var(--text-tertiary);
             cursor: pointer;
             font-size: 18px;
             line-height: 1;
-            padding: 4px;
+            padding: var(--space-1);
             border-radius: 4px;
             transition: all 0.2s;
         }
@@ -1041,14 +1108,14 @@ export function renderStyles(uiConfig) {
             align-items: center;
             justify-content: center;
         }
-        
+
         .alert-history-modal.active {
             display: flex;
         }
-        
+
         .alert-history-content {
             background: var(--bg-primary);
-            border-radius: 12px;
+            border-radius: var(--radius);
             max-width: 900px;
             width: 90%;
             max-height: 80vh;
@@ -1056,21 +1123,21 @@ export function renderStyles(uiConfig) {
             flex-direction: column;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
         }
-        
+
         .alert-history-header {
-            padding: 20px 24px;
+            padding: 20px var(--space-6);
             border-bottom: 1px solid var(--border-color);
             display: flex;
             align-items: center;
             justify-content: space-between;
         }
-        
+
         .alert-history-header h2 {
             margin: 0;
-            font-size: 20px;
+            font-size: var(--font-lg);
             color: var(--text-primary);
         }
-        
+
         .alert-history-close {
             background: none;
             border: none;
@@ -1082,7 +1149,7 @@ export function renderStyles(uiConfig) {
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 6px;
+            border-radius: var(--radius-sm);
             transition: all 0.2s;
         }
         
@@ -1092,16 +1159,16 @@ export function renderStyles(uiConfig) {
         }
         
         .alert-history-filters {
-            padding: 16px 24px;
+            padding: var(--space-4) var(--space-6);
             border-bottom: 1px solid var(--border-color);
             display: flex;
-            gap: 12px;
+            gap: var(--space-3);
             flex-wrap: wrap;
         }
-        
+
         .filter-btn {
-            padding: 6px 12px;
-            border-radius: 6px;
+            padding: 6px var(--space-3);
+            border-radius: var(--radius-sm);
             border: 1px solid var(--border-color);
             background: var(--bg-secondary);
             color: var(--text-primary);
@@ -1121,23 +1188,23 @@ export function renderStyles(uiConfig) {
         }
         
         .alert-history-body {
-            padding: 16px 24px;
+            padding: var(--space-4) var(--space-6);
             overflow-y: auto;
             flex: 1;
         }
-        
+
         .alert-history-item {
             background: var(--bg-secondary);
-            border-radius: 8px;
-            padding: 16px;
-            margin-bottom: 12px;
+            border-radius: var(--space-2);
+            padding: var(--space-4);
+            margin-bottom: var(--space-3);
             border-left: 4px solid #6b7280;
             transition: all 0.2s;
         }
-        
+
         .alert-history-item:hover {
             transform: translateX(4px);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: var(--shadow-sm);
         }
         
         .alert-history-item.severity-critical {
@@ -1160,31 +1227,31 @@ export function renderStyles(uiConfig) {
         }
         
         .alert-history-item-title {
-            font-weight: 600;
+            font-weight: var(--font-weight-semibold);
             color: var(--text-primary);
             font-size: 15px;
             flex: 1;
         }
-        
+
         .alert-history-item-badge {
-            padding: 2px 8px;
+            padding: 2px var(--space-2);
             border-radius: 4px;
             font-size: 11px;
-            font-weight: 600;
+            font-weight: var(--font-weight-semibold);
             text-transform: uppercase;
-            margin-left: 12px;
+            margin-left: var(--space-3);
         }
         
         .alert-history-item-badge.critical {
-            background: #fee2e2;
-            color: #991b1b;
+            background: var(--down-bg);
+            color: var(--down-fg);
         }
-        
+
         .alert-history-item-badge.warning {
-            background: #fef3c7;
-            color: #92400e;
+            background: var(--deg-bg);
+            color: var(--deg-fg);
         }
-        
+
         .alert-history-item-badge.info {
             background: #dbeafe;
             color: #1e40af;
@@ -1207,15 +1274,15 @@ export function renderStyles(uiConfig) {
         
         .alert-history-item-message {
             color: var(--text-secondary);
-            font-size: 14px;
+            font-size: var(--font-sm);
             line-height: 1.5;
-            margin-bottom: 8px;
+            margin-bottom: var(--space-2);
         }
-        
+
         .alert-history-item-footer {
             display: flex;
-            gap: 16px;
-            font-size: 12px;
+            gap: var(--space-4);
+            font-size: var(--font-xs);
             color: var(--text-secondary);
         }
         
@@ -1230,10 +1297,10 @@ export function renderStyles(uiConfig) {
             padding: 40px 20px;
             color: var(--text-secondary);
         }
-        
+
         .alert-history-empty-icon {
             font-size: 48px;
-            margin-bottom: 12px;
+            margin-bottom: var(--space-3);
         }
         
         @media (max-width: 768px) {

@@ -63,4 +63,10 @@ describe('renderStyles', () => {
     const out = renderStyles(withCss);
     expect(out).toContain('.custom { color: red; }');
   });
+  it('exposes the design token set', () => {
+    const out = renderStyles(defaults);
+    for (const t of ['--font-sm','--font-base','--space-4','--space-6','--radius','--up-fg','--up-bg','--down-fg','--down-bg']) {
+      expect(out).toContain(t);
+    }
+  });
 });
