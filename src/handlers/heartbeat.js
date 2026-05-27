@@ -5,6 +5,20 @@
 
 import { buildServicesWithGroups } from '../config/loader.js';
 
+export async function timingSafeEqualStrings(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  const enc = new TextEncoder();
+  const aBuf = enc.encode(a);
+  const bBuf = enc.encode(b);
+  if (aBuf.byteLength !== bBuf.byteLength) {
+    await crypto.subtle.digest('SHA-256', aBuf);
+    return false;
+  }
+  let diff = 0;
+  for (let i = 0; i < aBuf.length; i++) diff |= aBuf[i] ^ bBuf[i];
+  return diff === 0;
+}
+
 /**
  * Handle heartbeat POST request
  * Supports both single service and batch processing
@@ -159,7 +173,7 @@ export async function handleHeartbeat(request, env) {
           providedToken = sharedAuthHeader;
         }
 
-        if (providedToken !== `Bearer ${expectedApiKey}`) {
+        if (!(await timingSafeEqualStrings(providedToken, `Bearer ${expectedApiKey}`))) {
           results.push({
             serviceId: serviceId,
             success: false,

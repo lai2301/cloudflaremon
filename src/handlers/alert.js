@@ -3,6 +3,8 @@
  * Handles alert-related API endpoints
  */
 
+import { timingSafeEqualStrings } from './heartbeat.js';
+
 /**
  * Clean up old alerts based on configuration
  */
@@ -204,7 +206,7 @@ export async function handleCustomAlert(env, request) {
 
   const authHeader = request.headers.get('Authorization');
   const providedKey = authHeader?.replace('Bearer ', '');
-  if (!providedKey || providedKey !== env.ALERT_API_KEY) { // TODO(task-7): replace with timingSafeEqualStrings
+  if (!providedKey || !(await timingSafeEqualStrings(providedKey, env.ALERT_API_KEY))) {
     return new Response(JSON.stringify({
       success: false,
       message: 'Unauthorized - Invalid or missing API key'

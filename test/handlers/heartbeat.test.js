@@ -1,6 +1,23 @@
 import { describe, it, expect } from 'vitest';
-import { handleHeartbeat } from '../../src/handlers/heartbeat.js';
+import { handleHeartbeat, timingSafeEqualStrings } from '../../src/handlers/heartbeat.js';
 import { withEnv, jsonRequest } from '../helpers/env.js';
+
+describe('timingSafeEqualStrings', () => {
+  it('returns true for equal strings', async () => {
+    expect(await timingSafeEqualStrings('abc', 'abc')).toBe(true);
+  });
+  it('returns false for different strings of equal length', async () => {
+    expect(await timingSafeEqualStrings('abc', 'abd')).toBe(false);
+  });
+  it('returns false for strings of different length', async () => {
+    expect(await timingSafeEqualStrings('abc', 'abcd')).toBe(false);
+  });
+  it('returns false when either argument is not a string', async () => {
+    expect(await timingSafeEqualStrings(null, 'abc')).toBe(false);
+    expect(await timingSafeEqualStrings('abc', undefined)).toBe(false);
+    expect(await timingSafeEqualStrings(123, 'abc')).toBe(false);
+  });
+});
 
 // All services in config/services.json belong to the k3s-cluster group which
 // has auth.required: true, and the remaining service (unraid-n1) has no
