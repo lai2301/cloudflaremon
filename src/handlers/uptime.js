@@ -65,7 +65,7 @@ export async function handleGetUptime(env, url) {
           upChecks: 0,
           downChecks: 0,
           degradedChecks: 0,
-          unknownChecksAll: 0,
+          unknownChecks: 0,
           uptimePercentage: null
         });
       }
