@@ -29,12 +29,16 @@ export async function handleGetUptime(env, url, request) {
   }
 
   try {
-    // Get all monitor data in a single read
+    // Prefer the focused uptime:<serviceId> key (written since Task 17).
+    // Fall back to the legacy monitor:data blob during the migration window.
     // Note: KV has minimum 60s edge caching, but HTTP cache headers prevent client/CDN caching
-    const monitorDataJson = await env.HEARTBEAT_LOGS.get('monitor:data');
-    const monitorData = monitorDataJson ? JSON.parse(monitorDataJson) : { uptime: {} };
-    const allUptimeData = monitorData.uptime || {};
-    const serviceData = allUptimeData[serviceId] || { days: {} };
+    const perServiceJson = await env.HEARTBEAT_LOGS.get(`uptime:${serviceId}`);
+    let serviceData = perServiceJson ? JSON.parse(perServiceJson) : null;
+    if (!serviceData) {
+      const legacyJson = await env.HEARTBEAT_LOGS.get('monitor:data');
+      const legacy = legacyJson ? JSON.parse(legacyJson) : null;
+      serviceData = legacy?.uptime?.[serviceId] || { days: {} };
+    }
 
     // Fill in missing days with null data up to retention period
     const retentionDays = uiConfig.uptimeRetentionDays || uiConfig.features?.uptimeRetentionDays || 90;

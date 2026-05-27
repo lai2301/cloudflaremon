@@ -97,6 +97,50 @@ describe('checkAndSendNotifications state machine', () => {
     expect(prevStatus['svc-a'].lastAlert).toBeGreaterThanOrEqual(before);
   });
 
+  // Case 7: batched write — N services flip at once -> recent:alerts written exactly once
+  it('writes recent:alerts exactly once when multiple services flip state', async () => {
+    const services = ['svc-a', 'svc-b', 'svc-c'];
+    // Seed all three as 'down' so they can flip to 'up' (status change, cooldown passed)
+    const prevStatus = Object.fromEntries(
+      services.map(id => [id, { status: 'down', lastAlert: 0 }])
+    );
+    await env.HEARTBEAT_LOGS.put('notifications:previous_status', JSON.stringify(prevStatus));
+
+    // Track put calls for recent:alerts
+    let writeCount = 0;
+    const realPut = env.HEARTBEAT_LOGS.put.bind(env.HEARTBEAT_LOGS);
+    env.HEARTBEAT_LOGS.put = (key, val) => {
+      if (key === 'recent:alerts') writeCount++;
+      return realPut(key, val);
+    };
+
+    const servicesConfig3 = { services: services.map(id => ({ id, name: id })) };
+    const results = services.map(id => ({
+      serviceId: id,
+      serviceName: id,
+      status: 'up',
+      lastSeen: new Date().toISOString(),
+      timestamp: Date.now()
+    }));
+
+    await checkAndSendNotifications(env, results, {}, servicesConfig3);
+
+    // Restore original put
+    env.HEARTBEAT_LOGS.put = realPut;
+
+    // Exactly one write to recent:alerts
+    expect(writeCount).toBe(1);
+
+    // All three alerts should be in the list
+    const raw = await env.HEARTBEAT_LOGS.get('recent:alerts');
+    const alerts = raw ? JSON.parse(raw) : [];
+    expect(alerts).toHaveLength(3);
+    const ids = new Set(alerts.map(a => a.serviceId));
+    for (const id of services) {
+      expect(ids.has(id)).toBe(true);
+    }
+  });
+
   // Case 6: same alert twice within cooldown window only fires once
   it('respects cooldown: same transition within cooldown fires only once', async () => {
     await env.HEARTBEAT_LOGS.put('notifications:previous_status', JSON.stringify({

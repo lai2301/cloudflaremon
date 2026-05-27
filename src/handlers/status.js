@@ -10,10 +10,15 @@ import { corsHeaders } from '../core/cors.js';
  * Returns summary of all service statuses
  */
 export async function handleGetStatus(env, request) {
+  // Prefer the focused monitor:summary key (written since Task 17).
+  // Fall back to the legacy monitor:data blob during the migration window.
   // Note: KV has edge caching (minimum 60s), but HTTP cache headers prevent client/CDN caching
-  const monitorDataJson = await env.HEARTBEAT_LOGS.get('monitor:data');
-  const monitorData = monitorDataJson ? JSON.parse(monitorDataJson) : { summary: null };
-  const summary = monitorData.summary || null;
+  const summaryJson = await env.HEARTBEAT_LOGS.get('monitor:summary');
+  let summary = summaryJson ? JSON.parse(summaryJson) : null;
+  if (!summary) {
+    const legacyJson = await env.HEARTBEAT_LOGS.get('monitor:data');
+    summary = legacyJson ? JSON.parse(legacyJson).summary : null;
+  }
 
   return new Response(JSON.stringify({ summary }, null, 2), {
     headers: {

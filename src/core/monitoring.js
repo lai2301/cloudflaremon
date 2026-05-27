@@ -217,15 +217,24 @@ async function updateMonitorData(env, monitorData, results, timestamp) {
       }
     }
 
-    // Store only summary and uptime (latest is stored separately by heartbeat handler)
-    // This structure eliminates race conditions with concurrent heartbeat updates
+    // Dual-write: keep monitor:data for backward compat + write focused keys in parallel.
+    // Per-service uptime:<id> keys shrink the per-read payload from O(services*days)
+    // to O(days) and allow readers to opt into smaller reads.
     const dataToStore = {
       summary: monitorData.summary,
       uptime: monitorData.uptime
     };
-    
-    await env.HEARTBEAT_LOGS.put('monitor:data', JSON.stringify(dataToStore));
-    console.log(`Cron: Wrote monitor:data - Summary timestamp: ${timestamp}, Uptime services: ${Object.keys(monitorData.uptime || {}).length}`);
+
+    const writes = [
+      env.HEARTBEAT_LOGS.put('monitor:summary', JSON.stringify(monitorData.summary)),
+      env.HEARTBEAT_LOGS.put('monitor:data', JSON.stringify(dataToStore)),
+      ...Object.entries(monitorData.uptime).map(([id, val]) =>
+        env.HEARTBEAT_LOGS.put(`uptime:${id}`, JSON.stringify(val))
+      ),
+    ];
+    await Promise.all(writes);
+
+    console.log(`Cron: Wrote monitor:summary + monitor:data + ${Object.keys(monitorData.uptime).length} uptime:<id> keys at ${timestamp}`);
     console.log(`Monitor data updated successfully at ${timestamp}`);
   } catch (error) {
     console.error('Error updating monitor data:', error);

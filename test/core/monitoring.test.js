@@ -4,9 +4,46 @@
  * so it can be unit-tested without the full cron machinery (notification
  * dispatch, fetch stubs, service config, etc.).
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { env } from 'cloudflare:test';
-import { aggregateLatestKeys } from '../../src/core/monitoring.js';
+import { aggregateLatestKeys, checkHeartbeatStaleness } from '../../src/core/monitoring.js';
+
+describe('checkHeartbeatStaleness dual-write KV keys', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 200 })));
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('writes monitor:summary, monitor:data (dual-write), and uptime:<id> after cron runs', async () => {
+    // Seed a recent heartbeat for a known service so it shows as 'up'.
+    const recentTs = new Date(Date.now() - 30_000).toISOString(); // 30 s ago, within threshold
+    await env.HEARTBEAT_LOGS.put('latest:gmk-m6', recentTs);
+
+    await checkHeartbeatStaleness(env);
+
+    // monitor:summary must exist and parse to a summary object
+    const summaryRaw = await env.HEARTBEAT_LOGS.get('monitor:summary');
+    expect(summaryRaw).not.toBeNull();
+    const summary = JSON.parse(summaryRaw);
+    expect(summary).toHaveProperty('totalServices');
+    expect(typeof summary.totalServices).toBe('number');
+
+    // monitor:data must still exist (dual-write preserved)
+    const dataRaw = await env.HEARTBEAT_LOGS.get('monitor:data');
+    expect(dataRaw).not.toBeNull();
+    const data = JSON.parse(dataRaw);
+    expect(data).toHaveProperty('summary');
+    expect(data).toHaveProperty('uptime');
+
+    // At least the seeded service should have a per-service uptime key
+    const uptimeRaw = await env.HEARTBEAT_LOGS.get('uptime:gmk-m6');
+    expect(uptimeRaw).not.toBeNull();
+    const uptimeData = JSON.parse(uptimeRaw);
+    expect(uptimeData).toHaveProperty('days');
+  });
+});
 
 describe('aggregateLatestKeys', () => {
   // Case 4: pre-seeded per-service keys are merged into monitor:latest
