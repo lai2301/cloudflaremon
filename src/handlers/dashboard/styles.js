@@ -184,7 +184,7 @@ export function renderStyles(uiConfig) {
         }
 
         .status-banner--up      { background: var(--up-bg);   border-color: var(--up-border);   color: var(--up-fg); }
-        .status-banner--degraded{ background: var(--deg-bg);  border-color: var(--deg-border);  color: var(--deg-fg); }
+        .status-banner--degraded{ background: var(--down-bg); border-color: var(--down-border); color: var(--down-fg); }
         .status-banner--down    { background: var(--down-bg); border-color: var(--down-border); color: var(--down-fg); }
         .status-banner--unknown { background: var(--unk-bg);  border-color: var(--unk-border);  color: var(--unk-fg); }
 
