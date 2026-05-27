@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { env } from 'cloudflare:test';
-import { checkAndSendNotifications, sendCustomAlert, normaliseSeverity, escapeTelegramMarkdown } from '../../src/core/notifications.js';
+import { checkAndSendNotifications, sendCustomAlert, normaliseSeverity, escapeTelegramMarkdown, isHttpsUrl, sanitiseHeaders } from '../../src/core/notifications.js';
 
 const servicesConfig = { services: [{ id: 'svc-a', name: 'svc-a' }] };
 
@@ -212,6 +212,37 @@ describe('escapeTelegramMarkdown', () => {
   });
   it('passes through plain text unchanged', () => {
     expect(escapeTelegramMarkdown('Service svc-a is down')).toBe('Service svc-a is down');
+  });
+});
+
+describe('isHttpsUrl', () => {
+  it('accepts https', () => {
+    expect(isHttpsUrl('https://api.example/x')).toBe(true);
+  });
+  it('rejects http', () => {
+    expect(isHttpsUrl('http://api.example/x')).toBe(false);
+  });
+  it('rejects malformed', () => {
+    expect(isHttpsUrl('not a url')).toBe(false);
+    expect(isHttpsUrl(null)).toBe(false);
+    expect(isHttpsUrl(undefined)).toBe(false);
+  });
+});
+
+describe('sanitiseHeaders', () => {
+  it('keeps allow-listed headers', () => {
+    expect(sanitiseHeaders({ Authorization: 'Bearer x', 'X-Api-Key': 'k' }))
+      .toEqual({ Authorization: 'Bearer x', 'X-Api-Key': 'k' });
+  });
+  it('drops disallowed headers', () => {
+    expect(sanitiseHeaders({ 'X-Evil': 'foo' })).toEqual({});
+  });
+  it('drops non-string values', () => {
+    expect(sanitiseHeaders({ Authorization: 12345 })).toEqual({});
+  });
+  it('returns empty for non-object', () => {
+    expect(sanitiseHeaders(null)).toEqual({});
+    expect(sanitiseHeaders('str')).toEqual({});
   });
 });
 

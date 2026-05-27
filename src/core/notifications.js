@@ -19,6 +19,30 @@ export function escapeTelegramMarkdown(s) {
   return s.replace(/([_*`\[])/g, '\\$1');
 }
 
+export function isHttpsUrl(u) {
+  try {
+    const parsed = new URL(u);
+    return parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+const HEADER_ALLOW_LIST = new Set([
+  'authorization', 'content-type', 'x-api-key', 'x-auth-token', 'user-agent',
+]);
+
+export function sanitiseHeaders(headers) {
+  const out = {};
+  if (!headers || typeof headers !== 'object') return out;
+  for (const [k, v] of Object.entries(headers)) {
+    if (HEADER_ALLOW_LIST.has(String(k).toLowerCase()) && typeof v === 'string') {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
 /**
  * Render a template string with variables
  */
@@ -499,6 +523,11 @@ async function sendWebhookNotification(env, channel, eventType, serviceData) {
     return;
   }
 
+  if (!isHttpsUrl(url)) {
+    console.error(`Webhook channel ${channel.name}: url is not https`);
+    return;
+  }
+
   const payload = {
     event: eventType,
     service: {
@@ -513,7 +542,7 @@ async function sendWebhookNotification(env, channel, eventType, serviceData) {
   // Build headers, replacing tokens from env if available
   const headers = {
     'Content-Type': 'application/json',
-    ...channel.config.headers
+    ...sanitiseHeaders(channel.config?.headers)
   };
 
   // Replace authorization token if available in env
@@ -971,9 +1000,14 @@ async function sendWebhookCustomAlert(env, channel, alertData) {
     return;
   }
 
+  if (!isHttpsUrl(url)) {
+    console.error(`Webhook channel ${channel.name}: url is not https`);
+    return;
+  }
+
   const headers = {
     'Content-Type': 'application/json',
-    ...channel.config.headers
+    ...sanitiseHeaders(channel.config?.headers)
   };
 
   const authToken = getCredential(env, channel, 'authToken');
