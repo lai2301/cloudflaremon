@@ -181,27 +181,16 @@ export async function handleHeartbeat(request, env) {
       });
     }
 
-    // Update heartbeat timestamps for all valid services
-    // Using separate monitor:latest key to avoid race conditions with cron
+    // Update heartbeat timestamps for all valid services.
+    // Write per-service keys `latest:<serviceId>` to avoid the
+    // read-modify-write race on the shared `monitor:latest` blob.
+    // The cron handler aggregates these keys into `monitor:latest` (single-writer).
     if (validServiceIds.length > 0) {
       try {
-        // Read only the latest timestamps (small object)
-        const latestJson = await env.HEARTBEAT_LOGS.get('monitor:latest');
-        const latest = latestJson ? JSON.parse(latestJson) : {};
-        
-        const existingCount = Object.keys(latest).length;
-        console.log(`Heartbeat: Read monitor:latest - ${existingCount} service(s) tracked`);
-        
-        // Update timestamps for all valid services
-        for (const serviceId of validServiceIds) {
-          latest[serviceId] = timestamp;
-        }
-        
-        // Write back only the latest timestamps (no race condition with cron)
-        await env.HEARTBEAT_LOGS.put('monitor:latest', JSON.stringify(latest));
-        
+        await Promise.all(validServiceIds.map(serviceId =>
+          env.HEARTBEAT_LOGS.put(`latest:${serviceId}`, String(timestamp))
+        ));
         console.log(`Batch heartbeat: ${validServiceIds.length} service(s) updated - ${validServiceIds.join(', ')}`);
-        console.log(`Heartbeat: Wrote monitor:latest - Total tracked: ${Object.keys(latest).length}`);
       } catch (error) {
         console.error('Error updating heartbeat timestamps:', error);
         return new Response(JSON.stringify({ error: 'Failed to update heartbeat data' }), {
