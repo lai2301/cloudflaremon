@@ -6,6 +6,44 @@
 import notificationsConfig from '../../config/notifications.json';
 
 /**
+ * Normalize severity: convert to lowercase, default to 'warning' if null/undefined/non-string
+ */
+export function normaliseSeverity(sev) {
+  return (typeof sev === 'string' ? sev : 'warning').toLowerCase();
+}
+
+// Telegram legacy Markdown (parse_mode: 'Markdown') treats _ * ` [ as special.
+// Escape them in untrusted fields to prevent link/format injection.
+export function escapeTelegramMarkdown(s) {
+  if (typeof s !== 'string') return '';
+  return s.replace(/([_*`\[])/g, '\\$1');
+}
+
+export function isHttpsUrl(u) {
+  try {
+    const parsed = new URL(u);
+    return parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+const HEADER_ALLOW_LIST = new Set([
+  'authorization', 'content-type', 'x-api-key', 'x-auth-token', 'user-agent',
+]);
+
+export function sanitiseHeaders(headers) {
+  const out = {};
+  if (!headers || typeof headers !== 'object') return out;
+  for (const [k, v] of Object.entries(headers)) {
+    if (HEADER_ALLOW_LIST.has(String(k).toLowerCase()) && typeof v === 'string') {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
+/**
  * Render a template string with variables
  */
 function renderTemplate(template, variables) {
@@ -168,44 +206,35 @@ export async function checkAndSendNotifications(env, currentResults, monitorData
     for (const result of currentResults) {
       const serviceId = result.serviceId;
       const currentState = result.status;
-      const previousState = previousStatus[serviceId]?.status || 'unknown';
-      const lastAlertTime = previousStatus[serviceId]?.lastAlert || 0;
+      const previousEntry = previousStatus[serviceId];
+      const previousState = previousEntry?.status || 'unknown';
+      const lastAlertTime = previousEntry?.lastAlert || 0;
 
-      // Detect status change
       const statusChanged = currentState !== previousState && previousState !== 'unknown';
-      const shouldAlert = statusChanged && (now - lastAlertTime) > cooldownMs;
+      const cooldownPassed = (now - lastAlertTime) > cooldownMs;
 
-      if (shouldAlert) {
-        // Determine event type
-        let eventType = null;
-        if (currentState === 'down') eventType = 'down';
-        else if (currentState === 'up' && previousState === 'down') eventType = 'up';
-        else if (currentState === 'degraded') eventType = 'degraded';
-
-        if (eventType) {
-          // Get service config for notification settings
-          const serviceConfig = servicesConfig.services.find(s => s.id === serviceId);
-          
-          // Send notifications to external channels (Discord, Slack, etc.)
-          await sendNotifications(env, eventType, result, serviceConfig);
-          
-          // Store alert for dashboard notifications
-          await storeServiceAlert(env, eventType, result);
-          
-          // Update last alert time
-          previousStatus[serviceId] = {
-            status: currentState,
-            lastAlert: now
-          };
-        }
-      } else if (!statusChanged) {
-        // Update current status without alert
-        if (!previousStatus[serviceId]) {
-          previousStatus[serviceId] = { status: currentState, lastAlert: 0 };
-        } else {
-          previousStatus[serviceId].status = currentState;
-        }
+      // Always update tracked status so dedup state never gets stuck.
+      // lastAlert is only bumped when we actually send.
+      if (!previousEntry) {
+        previousStatus[serviceId] = { status: currentState, lastAlert: 0 };
+      } else {
+        previousStatus[serviceId].status = currentState;
       }
+
+      if (!statusChanged || !cooldownPassed) continue;
+
+      let eventType = null;
+      if (currentState === 'down') eventType = 'down';
+      else if (currentState === 'up') eventType = 'up';           // covers down->up AND degraded->up
+      else if (currentState === 'degraded') eventType = 'degraded';
+
+      if (!eventType) continue;
+
+      const serviceConfig = servicesConfig.services.find(s => s.id === serviceId);
+      await sendNotifications(env, eventType, result, serviceConfig);
+      await storeServiceAlert(env, eventType, result);
+
+      previousStatus[serviceId].lastAlert = now;
     }
 
     // Save updated status
@@ -417,11 +446,11 @@ async function sendTelegramNotification(env, channel, eventType, serviceData) {
   const variables = prepareVariables(eventType, serviceData);
   const template = notificationsConfig.templates?.telegram || {};
   
-  const message = renderTemplate(template.message, variables) || 
+  const message = renderTemplate(template.message, variables) ||
     `${variables.emoji} *Service ${variables.eventType}*\n\n` +
-    `*Service:* ${variables.serviceName}\n` +
+    `*Service:* ${escapeTelegramMarkdown(variables.serviceName)}\n` +
     `*Status:* ${variables.eventType}\n` +
-    `*Last Seen:* ${variables.lastSeen}\n` +
+    `*Last Seen:* ${escapeTelegramMarkdown(variables.lastSeen)}\n` +
     `*Time:* ${variables.timestamp}`;
 
   const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
@@ -494,6 +523,11 @@ async function sendWebhookNotification(env, channel, eventType, serviceData) {
     return;
   }
 
+  if (!isHttpsUrl(url)) {
+    console.error(`Webhook channel ${channel.name}: url is not https`);
+    return;
+  }
+
   const payload = {
     event: eventType,
     service: {
@@ -508,7 +542,7 @@ async function sendWebhookNotification(env, channel, eventType, serviceData) {
   // Build headers, replacing tokens from env if available
   const headers = {
     'Content-Type': 'application/json',
-    ...channel.config.headers
+    ...sanitiseHeaders(channel.config?.headers)
   };
 
   // Replace authorization token if available in env
@@ -616,8 +650,8 @@ export async function sendCustomAlert(env, alertData) {
     'info': 'up',
     'ok': 'up'
   };
-  
-  const eventType = severityMap[alertData.severity.toLowerCase()] || 'degraded';
+
+  const eventType = severityMap[normaliseSeverity(alertData.severity)] || 'degraded';
   
   // Prepare service data format expected by notification functions
   const serviceData = {
@@ -889,12 +923,12 @@ async function sendTelegramCustomAlert(env, channel, variables, template, alertD
     return;
   }
 
-  let message = `${variables.emoji} *${alertData.title}*\n\n`;
-  message += `${alertData.message}\n\n`;
-  message += `*Source:* ${alertData.source || 'External'}\n`;
-  message += `*Severity:* ${alertData.severity}\n`;
+  let message = `${variables.emoji} *${escapeTelegramMarkdown(alertData.title)}*\n\n`;
+  message += `${escapeTelegramMarkdown(alertData.message)}\n\n`;
+  message += `*Source:* ${escapeTelegramMarkdown(alertData.source || 'External')}\n`;
+  message += `*Severity:* ${escapeTelegramMarkdown(alertData.severity)}\n`;
   if (alertData.status) {
-    message += `*Status:* ${alertData.status}\n`;
+    message += `*Status:* ${escapeTelegramMarkdown(alertData.status)}\n`;
   }
   message += `*Time:* ${variables.timestamp}`;
 
@@ -966,9 +1000,14 @@ async function sendWebhookCustomAlert(env, channel, alertData) {
     return;
   }
 
+  if (!isHttpsUrl(url)) {
+    console.error(`Webhook channel ${channel.name}: url is not https`);
+    return;
+  }
+
   const headers = {
     'Content-Type': 'application/json',
-    ...channel.config.headers
+    ...sanitiseHeaders(channel.config?.headers)
   };
 
   const authToken = getCredential(env, channel, 'authToken');
@@ -996,7 +1035,7 @@ async function sendPushoverCustomAlert(env, channel, variables, template, alertD
   }
 
   const priorityMap = { critical: 1, error: 1, warning: 0, info: -1 };
-  const priority = priorityMap[alertData.severity.toLowerCase()] || 0;
+  const priority = priorityMap[normaliseSeverity(alertData.severity)] || 0;
 
   const formData = new FormData();
   formData.append('token', apiToken);

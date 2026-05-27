@@ -9,7 +9,9 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "tail": "wrangler tail"
+    "tail": "wrangler tail",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": [
     "cloudflare",
@@ -20,6 +22,8 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.10.15",
+    "vitest": "^3.2.4",
     "wrangler": "^4.47.0"
   }
 }

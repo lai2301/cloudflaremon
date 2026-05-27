@@ -4,20 +4,21 @@
  */
 
 import { getUiConfig } from '../config/loader.js';
+import { corsHeaders } from '../core/cors.js';
 
 /**
  * Handle GET /api/uptime request
  * Returns uptime history for a specific service
  */
-export async function handleGetUptime(env, url) {
+export async function handleGetUptime(env, url, request) {
   const serviceId = url.searchParams.get('serviceId');
-  
+
   if (!serviceId) {
     return new Response(JSON.stringify({ error: 'serviceId parameter required' }), {
       status: 400,
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
+        ...corsHeaders(request),
         'Access-Control-Allow-Methods': 'GET, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
         'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
@@ -65,7 +66,7 @@ export async function handleGetUptime(env, url) {
           upChecks: 0,
           downChecks: 0,
           degradedChecks: 0,
-          unknownChecksAll: 0,
+          unknownChecks: 0,
           uptimePercentage: null
         });
       }
@@ -85,9 +86,9 @@ export async function handleGetUptime(env, url) {
       totalDays: historicalDays.filter(d => d.totalChecks > 0).length,
       retentionDays: retentionDays
     }, null, 2), {
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
+        ...corsHeaders(request),
         'Access-Control-Allow-Methods': 'GET, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
         'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
@@ -97,11 +98,11 @@ export async function handleGetUptime(env, url) {
     });
   } catch (error) {
     console.error('Error fetching uptime data:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
+        ...corsHeaders(request),
         'Access-Control-Allow-Methods': 'GET, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
         'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',

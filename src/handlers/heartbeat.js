@@ -5,6 +5,20 @@
 
 import { buildServicesWithGroups } from '../config/loader.js';
 
+export async function timingSafeEqualStrings(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  const enc = new TextEncoder();
+  const aBuf = enc.encode(a);
+  const bBuf = enc.encode(b);
+  if (aBuf.byteLength !== bBuf.byteLength) {
+    await crypto.subtle.digest('SHA-256', aBuf);
+    return false;
+  }
+  let diff = 0;
+  for (let i = 0; i < aBuf.length; i++) diff |= aBuf[i] ^ bBuf[i];
+  return diff === 0;
+}
+
 /**
  * Handle heartbeat POST request
  * Supports both single service and batch processing
@@ -106,16 +120,25 @@ export async function handleHeartbeat(request, env) {
 
       // Check if authentication is required for this service
       const authRequired = service.auth?.required ?? true; // Default to true if not specified
-      
-      // Validate API key if required and configured
-      if (authRequired && apiKeys) {
+
+      if (authRequired) {
+        if (!apiKeys) {
+          console.error(`Service ${serviceId} requires auth but API_KEYS secret is not configured - rejecting`);
+          results.push({
+            serviceId: serviceId,
+            success: false,
+            error: 'Server misconfigured: API_KEYS not set'
+          });
+          continue;
+        }
+
         // Look up API key with fallback chain:
         // 1. Exact service ID match (highest priority)
         // 2. Group ID match (shared key for group)
         // 3. Wildcard "*" (shared key for all services)
         let expectedApiKey = null;
         let keySource = null;
-        
+
         if (apiKeys[serviceId]) {
           // Exact match: service-specific key
           expectedApiKey = apiKeys[serviceId];
@@ -129,37 +152,38 @@ export async function handleHeartbeat(request, env) {
           expectedApiKey = apiKeys['*'];
           keySource = 'wildcard';
         }
-        
-        if (expectedApiKey) {
-          // Use per-service token if provided, otherwise use shared Authorization header
-          let providedToken = null;
-          if (entry.token) {
-            // Per-service token provided in payload
-            providedToken = `Bearer ${entry.token}`;
-          } else {
-            // Use shared Authorization header
-            providedToken = sharedAuthHeader;
-          }
-          
-          if (providedToken !== `Bearer ${expectedApiKey}`) {
-            results.push({
-              serviceId: serviceId,
-              success: false,
-              error: 'Invalid API key'
-            });
-            continue;
-          }
-          
-          // Log successful auth with key source
-          console.log(`Service ${serviceId} authenticated using ${keySource} key`);
-        } else {
-          // Auth is required but no API key is configured for this service
-          // This is a configuration warning, but allow the heartbeat
-          console.warn(`Service ${serviceId} requires auth but has no API key configured (checked: service, group, wildcard)`);
+
+        if (!expectedApiKey) {
+          console.error(`Service ${serviceId} requires auth but no key configured (service/group/wildcard all missing) - rejecting`);
+          results.push({
+            serviceId: serviceId,
+            success: false,
+            error: 'No API key configured for this service'
+          });
+          continue;
         }
-      } else if (!authRequired) {
-        // Auth not required for this service - skip validation
-        console.log(`Service ${serviceId} has auth disabled - skipping authentication`);
+
+        // Use per-service token if provided, otherwise use shared Authorization header
+        let providedToken = null;
+        if (entry.token) {
+          // Per-service token provided in payload
+          providedToken = `Bearer ${entry.token}`;
+        } else {
+          // Use shared Authorization header
+          providedToken = sharedAuthHeader;
+        }
+
+        if (!(await timingSafeEqualStrings(providedToken, `Bearer ${expectedApiKey}`))) {
+          results.push({
+            serviceId: serviceId,
+            success: false,
+            error: 'Invalid API key'
+          });
+          continue;
+        }
+
+        // Log successful auth with key source
+        console.log(`Service ${serviceId} authenticated using ${keySource} key`);
       }
 
       // Service is valid
@@ -171,27 +195,16 @@ export async function handleHeartbeat(request, env) {
       });
     }
 
-    // Update heartbeat timestamps for all valid services
-    // Using separate monitor:latest key to avoid race conditions with cron
+    // Update heartbeat timestamps for all valid services.
+    // Write per-service keys `latest:<serviceId>` to avoid the
+    // read-modify-write race on the shared `monitor:latest` blob.
+    // The cron handler aggregates these keys into `monitor:latest` (single-writer).
     if (validServiceIds.length > 0) {
       try {
-        // Read only the latest timestamps (small object)
-        const latestJson = await env.HEARTBEAT_LOGS.get('monitor:latest');
-        const latest = latestJson ? JSON.parse(latestJson) : {};
-        
-        const existingCount = Object.keys(latest).length;
-        console.log(`Heartbeat: Read monitor:latest - ${existingCount} service(s) tracked`);
-        
-        // Update timestamps for all valid services
-        for (const serviceId of validServiceIds) {
-          latest[serviceId] = timestamp;
-        }
-        
-        // Write back only the latest timestamps (no race condition with cron)
-        await env.HEARTBEAT_LOGS.put('monitor:latest', JSON.stringify(latest));
-        
+        await Promise.all(validServiceIds.map(serviceId =>
+          env.HEARTBEAT_LOGS.put(`latest:${serviceId}`, String(timestamp))
+        ));
         console.log(`Batch heartbeat: ${validServiceIds.length} service(s) updated - ${validServiceIds.join(', ')}`);
-        console.log(`Heartbeat: Wrote monitor:latest - Total tracked: ${Object.keys(latest).length}`);
       } catch (error) {
         console.error('Error updating heartbeat timestamps:', error);
         return new Response(JSON.stringify({ error: 'Failed to update heartbeat data' }), {
@@ -242,7 +255,7 @@ export async function handleHeartbeat(request, env) {
 
   } catch (error) {
     console.error('Heartbeat handler error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });

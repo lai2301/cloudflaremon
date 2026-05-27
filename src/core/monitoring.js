@@ -7,6 +7,31 @@ import { buildServicesWithGroups, getUiConfig } from '../config/loader.js';
 import { checkAndSendNotifications } from './notifications.js';
 
 /**
+ * Aggregate per-service `latest:<serviceId>` KV keys written by the heartbeat
+ * hot path into the shared `monitor:latest` blob.
+ *
+ * The heartbeat handler writes individual keys to avoid the read-modify-write
+ * race on a shared blob.  This function is called exclusively from the cron
+ * handler, which is single-writer, so there is no race here.
+ *
+ * Merge order: `{ ...existing, ...aggregated }` so the freshly-written
+ * per-service values win over any stale entries already in the blob (desired
+ * migration behaviour).
+ */
+export async function aggregateLatestKeys(env) {
+  const list = await env.HEARTBEAT_LOGS.list({ prefix: 'latest:' });
+  const aggregated = {};
+  await Promise.all(list.keys.map(async (k) => {
+    const v = await env.HEARTBEAT_LOGS.get(k.name);
+    if (v) aggregated[k.name.slice('latest:'.length)] = v;
+  }));
+  const existingJson = await env.HEARTBEAT_LOGS.get('monitor:latest');
+  const existing = existingJson ? JSON.parse(existingJson) : {};
+  const merged = { ...existing, ...aggregated };
+  await env.HEARTBEAT_LOGS.put('monitor:latest', JSON.stringify(merged));
+}
+
+/**
  * Check for stale heartbeats and update service status
  * This function runs on every cron schedule and checks ALL enabled services,
  * regardless of their current status (up, down, degraded, or unknown).
@@ -17,6 +42,10 @@ export async function checkHeartbeatStaleness(env) {
   const results = [];
   const now = Date.now();
   const timestamp = new Date().toISOString();
+
+  // Aggregate per-service heartbeat keys into monitor:latest before reading it.
+  // Single-writer (cron) -> no race here.
+  await aggregateLatestKeys(env);
 
   // Read from separate KV keys to avoid race conditions
   const [latestJson, dataJson] = await Promise.all([

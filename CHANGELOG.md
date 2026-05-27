@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Breaking
+
+- `API_KEYS` is now required when any service has `auth.required: true`. Previously, missing `API_KEYS` silently disabled auth. Heartbeats for those services now return an error until `API_KEYS` is set.
+- `ALERT_API_KEY` is now required for `POST /api/alert`. Previously, missing `ALERT_API_KEY` left the endpoint open. Set the secret with `wrangler secret put ALERT_API_KEY` before deploying.
+
 ## [1.0.0] - 2025-11-05
 
 ### Added

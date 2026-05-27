@@ -188,11 +188,11 @@ Edit `config/services.json` to add your services to monitor. Services can be org
 - Service-level settings override group-level settings
 - Services without a group use "Ungrouped" in the dashboard
 
-### 6. 🔒 Configure API Keys (Recommended)
+### 6. 🔒 Configure API Keys (Required in Production)
 
-**IMPORTANT:** Never store API keys in your repository! Use **one secret** containing all keys.
+**REQUIRED:** `API_KEYS` is required in production when any service has authentication enabled. API keys must be stored as a single Cloudflare Worker secret (JSON format), never in your repository.
 
-Set API keys as a single Cloudflare Worker secret named `API_KEYS` (JSON format):
+Set API keys as a single Cloudflare Worker secret named `API_KEYS`:
 
 ```bash
 # Using Wrangler CLI
@@ -462,7 +462,7 @@ curl -X POST https://your-worker.workers.dev/api/alert \
 
 **📖 See [External Alert Integration Guide](docs/EXTERNAL_ALERTS.md) for detailed integration examples with Alertmanager, Grafana, and custom scripts.**
 
-**Security:** The `/api/alert` endpoint supports optional API key authentication. Set `ALERT_API_KEY` as a Cloudflare secret to require authentication:
+**Security:** The `/api/alert` endpoint requires API key authentication. Set `ALERT_API_KEY` as a Cloudflare secret before deploying:
 
 ```bash
 # Generate a strong API key
@@ -474,7 +474,7 @@ npx wrangler secret put ALERT_API_KEY
 # Or add to GitHub Secrets and it will be auto-configured on deploy
 ```
 
-If `ALERT_API_KEY` is not configured, the endpoint is public. See [Security Considerations](docs/EXTERNAL_ALERTS.md#security-considerations) for alternative protection methods.
+Set this secret before deploying to production. See [Security Considerations](docs/EXTERNAL_ALERTS.md#security-considerations) for additional security recommendations.
 
 ### Scheduled Staleness Checks
 

@@ -3,6 +3,9 @@
  * Handles alert-related API endpoints
  */
 
+import { timingSafeEqualStrings } from './heartbeat.js';
+import { corsHeaders } from '../core/cors.js';
+
 /**
  * Clean up old alerts based on configuration
  */
@@ -73,16 +76,16 @@ export async function storeRecentAlert(env, alertData) {
 /**
  * Get recent alerts
  */
-export async function handleGetRecentAlerts(env, url, uiConfig = {}) {
+export async function handleGetRecentAlerts(env, url, uiConfig = {}, request) {
   try {
     const since = url.searchParams.get('since'); // Optional: get alerts since timestamp
     const limit = parseInt(url.searchParams.get('limit') || uiConfig.alertHistory?.defaultLimit?.toString() || '20');
     const periodHours = parseFloat(url.searchParams.get('hours') || uiConfig.alertHistory?.defaultRecentPeriodHours?.toString() || '24');
-    
+
     // Get alerts from KV
     const alertsJson = await env.HEARTBEAT_LOGS.get('recent:alerts');
     let alerts = alertsJson ? JSON.parse(alertsJson) : [];
-    
+
     // Filter by 'since' timestamp if provided
     if (since) {
       alerts = alerts.filter(alert => alert.timestamp > since);
@@ -91,19 +94,19 @@ export async function handleGetRecentAlerts(env, url, uiConfig = {}) {
       const cutoffTime = new Date(Date.now() - periodHours * 60 * 60 * 1000).toISOString();
       alerts = alerts.filter(alert => alert.timestamp > cutoffTime);
     }
-    
+
     // Limit results
     alerts = alerts.slice(0, limit);
-    
+
     return new Response(JSON.stringify({
       success: true,
       alerts: alerts,
       count: alerts.length,
       periodHours: periodHours
     }, null, 2), {
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
+        ...corsHeaders(request),
         'Access-Control-Allow-Methods': 'GET, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
         'Cache-Control': 'no-cache, no-store, must-revalidate'
@@ -111,16 +114,16 @@ export async function handleGetRecentAlerts(env, url, uiConfig = {}) {
     });
   } catch (error) {
     console.error('Error fetching recent alerts:', error);
-    return new Response(JSON.stringify({ 
+    return new Response(JSON.stringify({
       success: false,
       error: error.message,
       alerts: [],
       count: 0
     }), {
       status: 500,
-      headers: { 
+      headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
+        ...corsHeaders(request)
       }
     });
   }
@@ -191,20 +194,27 @@ function parseGrafanaPayload(body) {
  * Handle custom alert from external tools (Alertmanager, Grafana, etc.)
  */
 export async function handleCustomAlert(env, request) {
-  // Optional authentication - if ALERT_API_KEY is set, require it
-  if (env.ALERT_API_KEY) {
-    const authHeader = request.headers.get('Authorization');
-    const providedKey = authHeader?.replace('Bearer ', '');
-    
-    if (!providedKey || providedKey !== env.ALERT_API_KEY) {
-      return new Response(JSON.stringify({
-        success: false,
-        message: 'Unauthorized - Invalid or missing API key'
-      }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
+  if (!env.ALERT_API_KEY) {
+    console.error('ALERT_API_KEY not configured - rejecting alert');
+    return new Response(JSON.stringify({
+      success: false,
+      message: 'Server misconfigured: ALERT_API_KEY not set'
+    }), {
+      status: 503,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  const authHeader = request.headers.get('Authorization');
+  const providedKey = authHeader?.replace('Bearer ', '');
+  if (!providedKey || !(await timingSafeEqualStrings(providedKey, env.ALERT_API_KEY))) {
+    return new Response(JSON.stringify({
+      success: false,
+      message: 'Unauthorized - Invalid or missing API key'
+    }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
   
   try {
@@ -291,7 +301,7 @@ export async function handleCustomAlert(env, request) {
     console.error('Custom alert error:', error);
     return new Response(JSON.stringify({
       success: false,
-      message: error.message
+      message: 'Internal server error'
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }

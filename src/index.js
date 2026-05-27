@@ -14,6 +14,7 @@ import { handleGetUptime } from './handlers/uptime.js';
 
 // Core
 import { checkHeartbeatStaleness } from './core/monitoring.js';
+import { corsHeaders } from './core/cors.js';
 
 // Notifications
 import { testNotification } from './core/notifications.js';
@@ -42,7 +43,7 @@ export default {
     if (request.method === 'OPTIONS') {
       return new Response(null, {
         headers: {
-          'Access-Control-Allow-Origin': '*',
+          ...corsHeaders(request),
           'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
           'Access-Control-Allow-Headers': 'Content-Type, Authorization'
         }
@@ -75,7 +76,7 @@ export default {
       
       if (url.pathname === '/api/alerts/recent' && request.method === 'GET') {
         if (uiConfig.api?.enableAlertHistoryEndpoint !== false) {
-          return await handleGetRecentAlerts(env, url, uiConfig);
+          return await handleGetRecentAlerts(env, url, uiConfig, request);
         }
         return new Response(JSON.stringify({ error: 'Alert history API is disabled' }), {
           status: 403,
@@ -85,7 +86,7 @@ export default {
       
       if (url.pathname === '/api/status' && request.method === 'GET') {
         if (uiConfig.api?.enableStatusEndpoint !== false) {
-          return await handleGetStatus(env);
+          return await handleGetStatus(env, request);
         }
         return new Response(JSON.stringify({ error: 'Status API is disabled' }), {
           status: 403,
@@ -95,7 +96,7 @@ export default {
       
       if (url.pathname === '/api/uptime' && request.method === 'GET') {
         if (uiConfig.api?.enableUptimeEndpoint !== false) {
-          return await handleGetUptime(env, url);
+          return await handleGetUptime(env, url, request);
         }
         return new Response(JSON.stringify({ error: 'Uptime API is disabled' }), {
           status: 403,
@@ -117,9 +118,9 @@ export default {
       if (url.pathname === '/api/services' && request.method === 'GET') {
         if (uiConfig.api?.enableServicesEndpoint !== false) {
           return new Response(JSON.stringify(processedServices, null, 2), {
-            headers: { 
+            headers: {
               'Content-Type': 'application/json',
-              'Access-Control-Allow-Origin': '*',
+              ...corsHeaders(request),
               'Access-Control-Allow-Methods': 'GET, OPTIONS',
               'Access-Control-Allow-Headers': 'Content-Type'
             }
@@ -140,9 +141,8 @@ export default {
       
     } catch (error) {
       console.error('Error handling request:', error);
-      return new Response(JSON.stringify({ 
-        error: 'Internal server error',
-        message: error.message 
+      return new Response(JSON.stringify({
+        error: 'Internal server error'
       }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' }
@@ -1937,7 +1937,7 @@ async function handleDashboard(env) {
                             <div class="status-description">Waiting for first status check...</div>
                         </div>
                     \`;
-                    document.getElementById('services').innerHTML = '<div class="loading"><p>No services data yet. Wait for the cron job to run.</p></div>';
+                    document.getElementById('servicesGroups').innerHTML = '<div class="loading"><p>No services data yet. Wait for the cron job to run.</p></div>';
                     document.getElementById('statsGrid').style.display = 'none';
                     return;
                 }
@@ -2145,7 +2145,7 @@ async function handleDashboard(env) {
                         <div class="status-description">Failed to fetch status information. Check console for details.</div>
                     </div>
                 \`;
-                document.getElementById('services').innerHTML = \`
+                document.getElementById('servicesGroups').innerHTML = \`
                     <div class="loading">
                         <p>Error: \${error.message}</p>
                         <p>Check browser console for more details</p>
