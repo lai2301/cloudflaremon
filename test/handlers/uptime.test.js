@@ -18,3 +18,17 @@ describe('handleGetUptime placeholder', () => {
     expect(day).not.toHaveProperty('unknownChecksAll');
   });
 });
+
+describe('handleGetUptime error responses', () => {
+  it('does not leak error.message on internal failure', async () => {
+    // Force a throw by corrupting KV data that causes parse error
+    await env.HEARTBEAT_LOGS.put('monitor:data', 'not-valid-json');
+    const res = await handleGetUptime(env, url);
+    const body = await res.json();
+    const bodyStr = JSON.stringify(body);
+    // Should not contain JSON parse error details
+    expect(bodyStr).not.toMatch(/Unexpected token|SyntaxError|JSON\.parse/i);
+    // Should still contain an error field
+    expect(body.error).toBeDefined();
+  });
+});

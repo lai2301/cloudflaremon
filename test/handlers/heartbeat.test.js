@@ -105,3 +105,25 @@ describe('handleHeartbeat fail-closed auth', () => {
     }
   });
 });
+
+describe('handleHeartbeat error responses', () => {
+  it('does not leak error.message on internal failure', async () => {
+    // Force a throw by sending malformed JSON body
+    const env = withEnv({ API_KEYS: JSON.stringify({ '*': 'key' }) });
+    const req = new Request(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer key'
+      },
+      body: 'not-valid-json',
+    });
+    const res = await handleHeartbeat(req, env);
+    const body = await res.json();
+    const bodyStr = JSON.stringify(body);
+    // Should not contain JSON parse error details
+    expect(bodyStr).not.toMatch(/Unexpected token|SyntaxError|JSON\.parse/i);
+    // Should still contain an error field
+    expect(body.error).toBeDefined();
+  });
+});

@@ -300,7 +300,7 @@ export async function handleCustomAlert(env, request) {
     console.error('Custom alert error:', error);
     return new Response(JSON.stringify({
       success: false,
-      message: error.message
+      message: 'Internal server error'
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }

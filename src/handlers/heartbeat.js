@@ -255,7 +255,7 @@ export async function handleHeartbeat(request, env) {
 
   } catch (error) {
     console.error('Heartbeat handler error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });

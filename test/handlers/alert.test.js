@@ -55,4 +55,25 @@ describe('handleCustomAlert fail-closed auth', () => {
     expect(res.status).toBe(200);
     expect(body.success).toBe(true);
   });
+
+  it('does not leak error.message on internal failure', async () => {
+    // Force a throw by sending malformed JSON body
+    const env = withEnv({ ALERT_API_KEY: 'secret' });
+    const req = new Request(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer secret'
+      },
+      body: 'not-valid-json',
+    });
+    const res = await handleCustomAlert(env, req);
+    const body = await res.json();
+    const bodyStr = JSON.stringify(body);
+    // Should not contain JSON parse error details
+    expect(bodyStr).not.toMatch(/Unexpected token|SyntaxError|JSON\.parse/i);
+    // Should still contain a message or error field
+    expect(body.success).toBe(false);
+    expect(body.message || body.error).toBeDefined();
+  });
 });
