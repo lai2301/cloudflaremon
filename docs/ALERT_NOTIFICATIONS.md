@@ -327,7 +327,7 @@ GET /api/alerts/recent?since=2025-11-08T10:00:00Z&limit=10
 Default: Every 10 seconds
 
 **To change:**
-Edit line 2547 in `src/index.js`:
+Edit `src/core/notifications.js` (see `prepareVariables()` and notification sending functions):
 ```javascript
 const ALERT_CHECK_INTERVAL = 10000; // milliseconds
 ```
@@ -337,7 +337,7 @@ const ALERT_CHECK_INTERVAL = 10000; // milliseconds
 Default: 10 seconds
 
 **To change:**
-Edit line 2589 in `src/index.js`:
+Edit the dashboard script in `src/handlers/dashboard/index.js` (see alert rendering and event handling):
 ```javascript
 setTimeout(() => {
     closeToast(toast);
