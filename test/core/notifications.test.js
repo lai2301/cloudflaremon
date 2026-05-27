@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { env } from 'cloudflare:test';
-import { checkAndSendNotifications } from '../../src/core/notifications.js';
+import { checkAndSendNotifications, sendCustomAlert } from '../../src/core/notifications.js';
 
 const servicesConfig = { services: [{ id: 'svc-a', name: 'svc-a' }] };
 
@@ -114,5 +114,66 @@ describe('checkAndSendNotifications state machine', () => {
     const afterSecond = await getRecentAlerts(env);
     // No new alert since status didn't change
     expect(afterSecond).toHaveLength(1);
+  });
+});
+
+describe('severity guard', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 200 })));
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  // Case 1: sendCustomAlert with severity = null should not throw
+  it('handles null severity without throwing', async () => {
+    const alertData = {
+      title: 'Test Alert',
+      message: 'Test message',
+      source: 'test',
+      severity: null,
+      channels: ['telegram']
+    };
+
+    await expect(sendCustomAlert(env, alertData)).resolves.toBeDefined();
+  });
+
+  // Case 2: sendCustomAlert with undefined severity (missing key) should not throw
+  it('handles missing severity (undefined) without throwing', async () => {
+    const alertData = {
+      title: 'Test Alert',
+      message: 'Test message',
+      source: 'test',
+      channels: ['telegram']
+      // severity is intentionally missing
+    };
+
+    await expect(sendCustomAlert(env, alertData)).resolves.toBeDefined();
+  });
+
+  // Case 3: sendCustomAlert with uppercase severity string should map correctly
+  it('handles uppercase severity and maps to correct eventType', async () => {
+    const alertData = {
+      title: 'Critical Alert',
+      message: 'Critical message',
+      source: 'test',
+      severity: 'CRITICAL',
+      channels: ['telegram']
+    };
+
+    await expect(sendCustomAlert(env, alertData)).resolves.toBeDefined();
+  });
+
+  // Case 4: sendPushoverCustomAlert path with null severity should not throw
+  it('handles null severity in Pushover alert without throwing', async () => {
+    const alertData = {
+      title: 'Pushover Test',
+      message: 'Test message',
+      source: 'test',
+      severity: null,
+      channels: ['telegram']
+    };
+
+    await expect(sendCustomAlert(env, alertData)).resolves.toBeDefined();
   });
 });

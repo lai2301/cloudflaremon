@@ -6,6 +6,13 @@
 import notificationsConfig from '../../config/notifications.json';
 
 /**
+ * Normalize severity: convert to lowercase, default to 'warning' if null/undefined/non-string
+ */
+function normaliseSeverity(sev) {
+  return (typeof sev === 'string' ? sev : 'warning').toLowerCase();
+}
+
+/**
  * Render a template string with variables
  */
 function renderTemplate(template, variables) {
@@ -607,8 +614,8 @@ export async function sendCustomAlert(env, alertData) {
     'info': 'up',
     'ok': 'up'
   };
-  
-  const eventType = severityMap[alertData.severity.toLowerCase()] || 'degraded';
+
+  const eventType = severityMap[normaliseSeverity(alertData.severity)] || 'degraded';
   
   // Prepare service data format expected by notification functions
   const serviceData = {
@@ -987,7 +994,7 @@ async function sendPushoverCustomAlert(env, channel, variables, template, alertD
   }
 
   const priorityMap = { critical: 1, error: 1, warning: 0, info: -1 };
-  const priority = priorityMap[alertData.severity.toLowerCase()] || 0;
+  const priority = priorityMap[normaliseSeverity(alertData.severity)] || 0;
 
   const formData = new FormData();
   formData.append('token', apiToken);
