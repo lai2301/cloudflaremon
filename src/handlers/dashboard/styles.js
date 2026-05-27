@@ -576,7 +576,7 @@ export function renderStyles(uiConfig) {
         }
         
         .auto-refresh-menu-item.active::after {
-            content: '✓';
+            content: '\\2713 ';
             margin-left: 8px;
         }
         

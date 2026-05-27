@@ -9,6 +9,23 @@ export function renderScripts({ uiConfig, processedServices, monitorData }) {
         // Alert notification configuration
         const ALERT_NOTIFICATION_CONFIG = ${JSON.stringify(uiConfig.alertNotifications)};
         
+        // Client-side icon SVG strings (referenced from DOM-building template literals)
+        const ICONS = {
+            bell: '<svg class="icon" aria-hidden="true"><use href="#icon-bell"/></svg>',
+            moon: '<svg class="icon" aria-hidden="true"><use href="#icon-moon"/></svg>',
+            sun: '<svg class="icon" aria-hidden="true"><use href="#icon-sun"/></svg>',
+            check: '<svg class="icon" aria-hidden="true"><use href="#icon-check"/></svg>',
+            x: '<svg class="icon" aria-hidden="true"><use href="#icon-x"/></svg>',
+            'alert-octagon': '<svg class="icon" aria-hidden="true"><use href="#icon-alert-octagon"/></svg>',
+            'alert-triangle': '<svg class="icon" aria-hidden="true"><use href="#icon-alert-triangle"/></svg>',
+            info: '<svg class="icon" aria-hidden="true"><use href="#icon-info"/></svg>',
+            activity: '<svg class="icon" aria-hidden="true"><use href="#icon-activity"/></svg>',
+            radio: '<svg class="icon" aria-hidden="true"><use href="#icon-radio"/></svg>',
+            inbox: '<svg class="icon icon--xl" aria-hidden="true"><use href="#icon-inbox"/></svg>',
+            clock: '<svg class="icon" aria-hidden="true"><use href="#icon-clock"/></svg>',
+            'refresh-cw': '<svg class="icon" aria-hidden="true"><use href="#icon-refresh-cw"/></svg>',
+        };
+        
         // Theme management
         const THEME_KEY = 'theme-preference';
         const defaultTheme = '${uiConfig.theme.defaultMode}';
@@ -34,7 +51,7 @@ export function renderScripts({ uiConfig, processedServices, monitorData }) {
         function updateThemeIcon(theme) {
             const icon = document.getElementById('themeIcon');
             if (icon) {
-                icon.textContent = theme === 'dark' ? '☀️' : '🌙';
+                icon.innerHTML = theme === 'dark' ? ICONS.sun : ICONS.moon;
             }
         }
         
@@ -387,7 +404,7 @@ export function renderScripts({ uiConfig, processedServices, monitorData }) {
                     
                     const servicesHtml = groupData.services.map(({ service, uptimeData }) => {
                     try {
-                        const icon = service.status === 'up' ? '✓' : (service.status === 'down' ? '✕' : '●');
+                        const icon = service.status === 'up' ? ICONS.check : (service.status === 'down' ? ICONS.x : '');
                         const timeSince = service.lastSeen ? formatDuration(Date.now() - new Date(service.lastSeen).getTime()) : 'Never';
                         const uptime = uptimeData && uptimeData.overallUptime > 0 ? \`\${uptimeData.overallUptime}%\` : 'N/A';
                         
@@ -649,13 +666,13 @@ export function renderScripts({ uiConfig, processedServices, monitorData }) {
         
         function getSeverityIcon(severity) {
             const icons = {
-                'critical': '🚨',
-                'error': '❌',
-                'warning': '⚠️',
-                'info': 'ℹ️',
-                'success': '✅'
+                'critical': ICONS['alert-octagon'],
+                'error': ICONS.x,
+                'warning': ICONS['alert-triangle'],
+                'info': ICONS.info,
+                'success': ICONS.check
             };
-            return icons[severity?.toLowerCase()] || '🔔';
+            return icons[severity?.toLowerCase()] || ICONS.bell;
         }
         
         function showToastNotification(alert) {
@@ -1053,7 +1070,7 @@ export function renderScripts({ uiConfig, processedServices, monitorData }) {
         
         async function loadAlertHistory() {
             const bodyElement = document.getElementById('alertHistoryBody');
-            bodyElement.innerHTML = '<div class="alert-history-empty"><div class="alert-history-empty-icon">⏳</div><div>Loading alerts...</div></div>';
+            bodyElement.innerHTML = \`<div class="alert-history-empty"><div class="alert-history-empty-icon">\${ICONS.clock}</div><div>Loading alerts...</div></div>\`;
             
             try {
                 const response = await fetch('/api/alerts/recent?limit=1000');
@@ -1063,11 +1080,11 @@ export function renderScripts({ uiConfig, processedServices, monitorData }) {
                     allAlerts = data.alerts || [];
                     renderAlertHistory();
                 } else {
-                    bodyElement.innerHTML = '<div class="alert-history-empty"><div class="alert-history-empty-icon">❌</div><div>Failed to load alerts</div></div>';
+                    bodyElement.innerHTML = \`<div class="alert-history-empty"><div class="alert-history-empty-icon">\${ICONS.x}</div><div>Failed to load alerts</div></div>\`;
                 }
             } catch (error) {
                 console.error('Error loading alert history:', error);
-                bodyElement.innerHTML = '<div class="alert-history-empty"><div class="alert-history-empty-icon">❌</div><div>Error loading alerts</div></div>';
+                bodyElement.innerHTML = \`<div class="alert-history-empty"><div class="alert-history-empty-icon">\${ICONS.x}</div><div>Error loading alerts</div></div>\`;
             }
         }
         
@@ -1090,7 +1107,7 @@ export function renderScripts({ uiConfig, processedServices, monitorData }) {
             const bodyElement = document.getElementById('alertHistoryBody');
             
             if (allAlerts.length === 0) {
-                bodyElement.innerHTML = '<div class="alert-history-empty"><div class="alert-history-empty-icon">📭</div><div>No alerts found</div></div>';
+                bodyElement.innerHTML = \`<div class="alert-history-empty"><div class="alert-history-empty-icon">\${ICONS.inbox}</div><div>No alerts found</div></div>\`;
                 return;
             }
             
@@ -1111,7 +1128,7 @@ export function renderScripts({ uiConfig, processedServices, monitorData }) {
             }
             
             if (filteredAlerts.length === 0) {
-                bodyElement.innerHTML = '<div class="alert-history-empty"><div class="alert-history-empty-icon">🔍</div><div>No alerts match this filter</div></div>';
+                bodyElement.innerHTML = \`<div class="alert-history-empty"><div class="alert-history-empty-icon">\${ICONS.info}</div><div>No alerts match this filter</div></div>\`;
                 return;
             }
             
@@ -1119,9 +1136,9 @@ export function renderScripts({ uiConfig, processedServices, monitorData }) {
             const html = filteredAlerts.map(alert => {
                 const timestamp = new Date(alert.timestamp);
                 const formattedDate = timestamp.toLocaleString();
-                const severityIcon = alert.severity === 'critical' ? '🚨' : 
-                                     alert.severity === 'warning' ? '⚠️' : 'ℹ️';
-                const sourceIcon = alert.source === 'heartbeat-monitor' ? '💓' : '📡';
+                const severityIcon = alert.severity === 'critical' ? ICONS['alert-octagon'] :
+                                     alert.severity === 'warning' ? ICONS['alert-triangle'] : ICONS.info;
+                const sourceIcon = alert.source === 'heartbeat-monitor' ? ICONS.activity : ICONS.radio;
                 const sourceName = alert.source === 'heartbeat-monitor' ? 'Service Monitor' : 
                                   alert.source === 'grafana' ? 'Grafana' :
                                   alert.source === 'alertmanager' ? 'Alertmanager' :
@@ -1146,7 +1163,7 @@ export function renderScripts({ uiConfig, processedServices, monitorData }) {
                                 <span>\${sourceName}</span>
                             </div>
                             <div>
-                                <span>🕐</span>
+                                <span>\${ICONS.clock}</span>
                                 <span>\${formattedDate}</span>
                             </div>
                         </div>

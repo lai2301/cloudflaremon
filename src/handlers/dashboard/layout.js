@@ -1,4 +1,4 @@
-import { ICON_SYMBOLS } from './icons.js';
+import { ICON_SYMBOLS, icon } from './icons.js';
 
 export function renderLayout({ uiConfig, processedServices, monitorData }) {
   return `${ICON_SYMBOLS}
@@ -9,20 +9,20 @@ export function renderLayout({ uiConfig, processedServices, monitorData }) {
     <div class="alert-history-modal" id="alertHistoryModal">
         <div class="alert-history-content">
             <div class="alert-history-header">
-                <h2>📋 Alert History</h2>
+                <h2>${icon('clipboard-list')} Alert History</h2>
                 <button class="alert-history-close" onclick="closeAlertHistory()" aria-label="Close">×</button>
             </div>
             <div class="alert-history-filters">
                 <button class="filter-btn active" data-filter="all" onclick="filterAlerts('all')">All</button>
-                <button class="filter-btn" data-filter="critical" onclick="filterAlerts('critical')">🚨 Critical</button>
-                <button class="filter-btn" data-filter="warning" onclick="filterAlerts('warning')">⚠️ Warning</button>
-                <button class="filter-btn" data-filter="info" onclick="filterAlerts('info')">ℹ️ Info</button>
-                <button class="filter-btn" data-filter="heartbeat-monitor" onclick="filterAlerts('heartbeat-monitor')">💓 Service Status</button>
-                <button class="filter-btn" data-filter="external" onclick="filterAlerts('external')">📡 External</button>
+                <button class="filter-btn" data-filter="critical" onclick="filterAlerts('critical')">${icon('alert-octagon')} Critical</button>
+                <button class="filter-btn" data-filter="warning" onclick="filterAlerts('warning')">${icon('alert-triangle')} Warning</button>
+                <button class="filter-btn" data-filter="info" onclick="filterAlerts('info')">${icon('info')} Info</button>
+                <button class="filter-btn" data-filter="heartbeat-monitor" onclick="filterAlerts('heartbeat-monitor')">${icon('activity')} Service Status</button>
+                <button class="filter-btn" data-filter="external" onclick="filterAlerts('external')">${icon('radio')} External</button>
             </div>
             <div class="alert-history-body" id="alertHistoryBody">
                 <div class="alert-history-empty">
-                    <div class="alert-history-empty-icon">📭</div>
+                    <div class="alert-history-empty-icon">${icon('inbox', 'icon--xl')}</div>
                     <div>Loading alerts...</div>
                 </div>
             </div>
@@ -34,17 +34,17 @@ export function renderLayout({ uiConfig, processedServices, monitorData }) {
         <div class="theme-toggle-container">
             ${uiConfig.features.showExportButton !== false && uiConfig.api?.enableUptimeEndpoint !== false ? `
             <button class="export-btn" id="exportBtn" aria-label="Export data" title="Export CSV">
-                <span>📊</span>
+                <span>${icon('download')}</span>
             </button>
             ` : ''}
             ${uiConfig.features.showAlertHistoryButton !== false && uiConfig.api?.enableAlertHistoryEndpoint !== false ? `
             <button class="alert-history-btn" id="alertHistoryBtn" aria-label="Alert history" title="Alert History">
-                <span>🔔</span>
+                <span>${icon('bell')}</span>
             </button>
             ` : ''}
             ${uiConfig.features.showRefreshButton !== false && (uiConfig.api?.enableStatusEndpoint !== false || uiConfig.api?.enableUptimeEndpoint !== false) ? `
             <button class="auto-refresh-btn" id="autoRefreshBtn" aria-label="Toggle auto-refresh" title="Auto-refresh">
-                <span id="autoRefreshIcon">🔄</span>
+                <span id="autoRefreshIcon">${icon('refresh-cw')}</span>
                 <span class="auto-refresh-timer" id="autoRefreshTimer" style="display: none;"></span>
             </button>
             ` : ''}
@@ -71,7 +71,7 @@ export function renderLayout({ uiConfig, processedServices, monitorData }) {
             </div>
             ${uiConfig.theme.showToggle ? `
             <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
-                <span id="themeIcon">🌙</span>
+                <span id="themeIcon">${icon('moon')}</span>
             </button>
             ` : ''}
         </div>
