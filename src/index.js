@@ -1937,7 +1937,7 @@ async function handleDashboard(env) {
                             <div class="status-description">Waiting for first status check...</div>
                         </div>
                     \`;
-                    document.getElementById('services').innerHTML = '<div class="loading"><p>No services data yet. Wait for the cron job to run.</p></div>';
+                    document.getElementById('servicesGroups').innerHTML = '<div class="loading"><p>No services data yet. Wait for the cron job to run.</p></div>';
                     document.getElementById('statsGrid').style.display = 'none';
                     return;
                 }
@@ -2145,7 +2145,7 @@ async function handleDashboard(env) {
                         <div class="status-description">Failed to fetch status information. Check console for details.</div>
                     </div>
                 \`;
-                document.getElementById('services').innerHTML = \`
+                document.getElementById('servicesGroups').innerHTML = \`
                     <div class="loading">
                         <p>Error: \${error.message}</p>
                         <p>Check browser console for more details</p>
