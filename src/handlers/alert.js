@@ -191,20 +191,27 @@ function parseGrafanaPayload(body) {
  * Handle custom alert from external tools (Alertmanager, Grafana, etc.)
  */
 export async function handleCustomAlert(env, request) {
-  // Optional authentication - if ALERT_API_KEY is set, require it
-  if (env.ALERT_API_KEY) {
-    const authHeader = request.headers.get('Authorization');
-    const providedKey = authHeader?.replace('Bearer ', '');
-    
-    if (!providedKey || providedKey !== env.ALERT_API_KEY) {
-      return new Response(JSON.stringify({
-        success: false,
-        message: 'Unauthorized - Invalid or missing API key'
-      }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
+  if (!env.ALERT_API_KEY) {
+    console.error('ALERT_API_KEY not configured - rejecting alert');
+    return new Response(JSON.stringify({
+      success: false,
+      message: 'Server misconfigured: ALERT_API_KEY not set'
+    }), {
+      status: 503,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  const authHeader = request.headers.get('Authorization');
+  const providedKey = authHeader?.replace('Bearer ', '');
+  if (!providedKey || providedKey !== env.ALERT_API_KEY) { // TODO(task-7): replace with timingSafeEqualStrings
+    return new Response(JSON.stringify({
+      success: false,
+      message: 'Unauthorized - Invalid or missing API key'
+    }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
   
   try {
