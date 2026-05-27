@@ -386,13 +386,16 @@ export function renderScripts({ uiConfig, processedServices, monitorData }) {
                         }
                         
                         return \`
-                        <div class="service-item">
-                            <div class="service-main">
-                                <div class="service-status-icon \${service.status}">\${icon}</div>
-                                <div class="service-name">\${service.serviceName}</div>
-                                <div class="service-uptime \${uptimeClass}">\${uptime}</div>
+                        <div class="service-card">
+                            <div class="service-card__row">
+                                <span class="status-dot status-dot--\${service.status}"></span>
+                                <div class="service-card__identity">
+                                    <div class="service-card__name">\${service.serviceName}</div>
+                                    <div class="service-card__meta">Last check \${timeSince}</div>
+                                </div>
+                                <div class="service-card__pct \${uptimeClass}">\${uptime}</div>
                             </div>
-                            <div class="uptime-bar-container">
+                            <div class="service-card__bar">
                                 <div class="uptime-bar-wrapper">
                                     <div class="uptime-bar">
                                         \${generateUptimeBar(uptimeData)}
@@ -403,27 +406,11 @@ export function renderScripts({ uiConfig, processedServices, monitorData }) {
                                     <span>Today</span>
                                 </div>
                             </div>
-                            <div class="service-meta">
-                                <div class="meta-item">
-                                    <span class="meta-label">Last check:</span>
-                                    <span>\${timeSince}</span>
-                                </div>
-                                <div class="meta-item">
-                                    <span class="meta-label">Threshold:</span>
-                                    <span>\${Math.floor(service.stalenessThreshold / 1000 / 60)}m</span>
-                                </div>
-                                \${uptimeData && uptimeData.totalDays > 0 ? \`
-                                <div class="meta-item">
-                                    <span class="meta-label">Tracked days:</span>
-                                    <span>\${uptimeData.totalDays}/\${uptimeData.retentionDays || ${uiConfig.uptimeRetentionDays || uiConfig.features?.uptimeRetentionDays || 90}}</span>
-                                </div>
-                                \` : ''}
-                            </div>
                         </div>
                         \`;
                     } catch (error) {
                         console.error('Error rendering service:', service.serviceName, error);
-                        return \`<div class="service-item"><div class="service-name">Error loading \${service.serviceName}</div></div>\`;
+                        return \`<div class="service-card"><div class="service-card__name">Error loading \${service.serviceName}</div></div>\`;
                     }
                     }).join('');
                     

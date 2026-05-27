@@ -335,77 +335,82 @@ export function renderStyles(uiConfig) {
             border: 1px solid;
         }
         
-        .service-item {
-            padding: var(--space-6) var(--space-8);
+        /* Service card — status-page two-row layout */
+        .service-card {
+            padding: var(--space-3) 0;
             border-bottom: 1px solid var(--border-color);
             transition: background-color 0.15s ease;
         }
-        
-        .service-item:last-child {
-            border-bottom: none;
+
+        .service-card:last-child {
+            border-bottom: 0;
         }
-        
-        .service-item:hover {
+
+        .service-card:hover {
             background: var(--bg-hover);
         }
-        
-        .service-main {
+
+        .service-card__row {
             display: flex;
             align-items: center;
             gap: var(--space-3);
-            margin-bottom: var(--space-4);
-        }
-        
-        .service-status-icon {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: var(--font-xs);
-        }
-        
-        .service-status-icon.up {
-            background: var(--up-fg);
-            color: white;
+            padding: 0 var(--space-4);
         }
 
-        .service-status-icon.down {
-            background: var(--down-fg);
-            color: white;
+        .service-card__identity {
+            flex: 1 1 auto;
+            min-width: 0;
         }
 
-        .service-status-icon.degraded {
-            background: var(--deg-fg);
-            color: white;
-        }
-
-        .service-status-icon.unknown {
-            background: var(--unk-fg);
-            color: white;
-        }
-        
-        .service-name {
+        .service-card__name {
             font-size: var(--font-base);
             font-weight: var(--font-weight-medium);
             color: var(--text-primary);
-            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .service-uptime {
+        .service-card__meta {
+            font-size: var(--font-xs);
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .service-card__pct {
             font-size: var(--font-sm);
             font-weight: var(--font-weight-semibold);
-            color: var(--text-secondary);
+            color: var(--text-primary);
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
             padding: var(--space-1) var(--space-2);
             border-radius: var(--radius-sm);
             transition: all 0.2s;
         }
+
+        .service-card__bar {
+            margin-top: var(--space-2);
+            padding: 0 var(--space-4);
+        }
+
+        /* Status dot */
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            background: currentColor;
+        }
+
+        .status-dot--up       { color: var(--up-fg); }
+        .status-dot--degraded { color: var(--deg-fg); }
+        .status-dot--down     { color: var(--down-fg); }
+        .status-dot--unknown  { color: var(--unk-fg); }
         
-        ${Object.values(uiConfig.uptimeThresholds).flatMap(thresholdSet => 
+        ${Object.values(uiConfig.uptimeThresholds).flatMap(thresholdSet =>
             thresholdSet.map(threshold => `
-        .service-uptime.uptime-${threshold.name} {
+        .service-uptime.uptime-${threshold.name},
+        .service-card__pct.uptime-${threshold.name} {
             color: ${threshold.color};
             background: ${threshold.color}15;
             border: 1px solid ${threshold.color}40;
