@@ -322,6 +322,7 @@ export function renderScripts({ uiConfig, processedServices, monitorData }) {
                 // Update banner
                 const bannerEl = document.getElementById('overallStatus');
                 bannerEl.className = \`status-banner status-banner--\${bannerState}\`;
+                bannerEl.removeAttribute('aria-busy');
                 bannerEl.querySelector('.status-banner__title').textContent = bannerTitle;
                 bannerEl.querySelector('.status-banner__meta').textContent =
                     'Updated ' + formatDuration(Date.now() - new Date(summary.timestamp).getTime());
@@ -438,7 +439,9 @@ export function renderScripts({ uiConfig, processedServices, monitorData }) {
                     \`;
                 }).join('');
                 
-                document.getElementById('servicesGroups').innerHTML = groupsHtml;
+                const servicesGroupsEl = document.getElementById('servicesGroups');
+                servicesGroupsEl.removeAttribute('aria-busy');
+                servicesGroupsEl.innerHTML = groupsHtml;
                 document.getElementById('lastUpdate').textContent = \`Last updated: \${new Date(summary.timestamp).toLocaleString()}\`;
                 
                 // Scroll all uptime bars to the right (most recent dates)

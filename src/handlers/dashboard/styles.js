@@ -1309,6 +1309,29 @@ export function renderStyles(uiConfig) {
             }
         }
         
+        /* Skeleton loading states */
+        @keyframes skeleton-pulse {
+          0%, 100% { opacity: .7; }
+          50%      { opacity: .35; }
+        }
+        .skeleton {
+          background: var(--bg-secondary);
+          border-radius: var(--radius-sm);
+          animation: skeleton-pulse 1.4s ease-in-out infinite;
+        }
+        .skeleton--text   { height: 14px; border-radius: 4px; }
+        .skeleton--title  { height: 28px; border-radius: 6px; width: 60%; }
+        .skeleton--bar    { height: 22px; width: 100%; }
+        .skeleton-card    { padding: var(--space-4); border: 1px solid var(--border-color); border-radius: var(--radius); margin-bottom: var(--space-4); }
+        .skeleton-row     { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) 0; }
+        .skeleton-row + .skeleton-row { border-top: 1px solid var(--border-color); }
+        .skeleton-row__dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+        .skeleton-row__id  { flex: 1; height: 14px; max-width: 200px; border-radius: 4px; }
+        .skeleton-row__pct { width: 60px; height: 14px; border-radius: 4px; }
+        @media (prefers-reduced-motion: reduce) {
+          .skeleton { animation: none; }
+        }
+
         /* Custom CSS from config */
         ${uiConfig.customCss}
 

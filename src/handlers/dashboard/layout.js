@@ -96,10 +96,10 @@ export function renderLayout({ uiConfig, processedServices, monitorData }) {
     <div class="container">
         ${uiConfig.header.subtitle ? `<p class="page-subtitle">${uiConfig.header.subtitle}</p>` : ''}
 
-        <section id="overallStatus" class="status-banner status-banner--unknown" aria-live="polite">
+        <section id="overallStatus" class="status-banner status-banner--unknown" aria-live="polite" aria-busy="true">
           <div class="status-banner__inner">
-            <div class="status-banner__title">Loading status...</div>
-            <div class="status-banner__meta">Fetching data...</div>
+            <div class="status-banner__title"><span class="skeleton skeleton--title" style="display:inline-block; min-width:280px;">&nbsp;</span></div>
+            <div class="status-banner__meta"><span class="skeleton skeleton--text" style="display:inline-block; width:140px;">&nbsp;</span></div>
           </div>
         </section>
 
@@ -111,11 +111,20 @@ export function renderLayout({ uiConfig, processedServices, monitorData }) {
           <div class="summary-pill summary-pill--unknown"><span class="summary-pill__count" data-stat="unknown">0</span><span class="summary-pill__label">Unknown</span></div>
         </div>
 
-        <div id="servicesGroups">
-            <div class="loading">
-                <div class="loading-spinner"></div>
-                <p>Loading services...</p>
+        <div id="servicesGroups" aria-busy="true">
+          ${[0,1,2].map(() => `
+            <div class="skeleton-card">
+              <div class="skeleton skeleton--title" style="margin-bottom: var(--space-3);"></div>
+              ${[0,1,2].map(() => `
+                <div class="skeleton-row">
+                  <div class="skeleton-row__dot skeleton"></div>
+                  <div class="skeleton-row__id skeleton"></div>
+                  <div class="skeleton-row__pct skeleton"></div>
+                </div>
+              `).join('')}
+              <div class="skeleton skeleton--bar" style="margin-top: var(--space-3);"></div>
             </div>
+          `).join('')}
         </div>
 
         <footer>
