@@ -29,64 +29,72 @@ export function renderLayout({ uiConfig, processedServices, monitorData }) {
         </div>
     </div>
 
-    <div class="container">
-        ${uiConfig.theme.showToggle || uiConfig.features.showExportButton !== false || uiConfig.features.showAlertHistoryButton !== false ? `
-        <div class="theme-toggle-container">
-            ${uiConfig.features.showExportButton !== false && uiConfig.api?.enableUptimeEndpoint !== false ? `
-            <button class="export-btn" id="exportBtn" aria-label="Export data" title="Export CSV">
-                <span>${icon('download')}</span>
-            </button>
-            ` : ''}
-            ${uiConfig.features.showAlertHistoryButton !== false && uiConfig.api?.enableAlertHistoryEndpoint !== false ? `
-            <button class="alert-history-btn" id="alertHistoryBtn" aria-label="Alert history" title="Alert History">
-                <span>${icon('bell')}</span>
-            </button>
-            ` : ''}
-            ${uiConfig.features.showRefreshButton !== false && (uiConfig.api?.enableStatusEndpoint !== false || uiConfig.api?.enableUptimeEndpoint !== false) ? `
-            <button class="auto-refresh-btn" id="autoRefreshBtn" aria-label="Toggle auto-refresh" title="Auto-refresh">
-                <span id="autoRefreshIcon">${icon('refresh-cw')}</span>
-                <span class="auto-refresh-timer" id="autoRefreshTimer" style="display: none;"></span>
-            </button>
-            ` : ''}
-            <div class="auto-refresh-menu" id="autoRefreshMenu">
-                <div class="auto-refresh-menu-item" data-seconds="0">
-                    <span>Off</span>
-                </div>
-                <div class="auto-refresh-menu-divider"></div>
-                <div class="auto-refresh-menu-item" data-seconds="10">
-                    <span>10 seconds</span>
-                </div>
-                <div class="auto-refresh-menu-item" data-seconds="30">
-                    <span>30 seconds</span>
-                </div>
-                <div class="auto-refresh-menu-item" data-seconds="60">
-                    <span>1 minute</span>
-                </div>
-                <div class="auto-refresh-menu-item" data-seconds="300">
-                    <span>5 minutes</span>
-                </div>
-                <div class="auto-refresh-menu-item" data-seconds="600">
-                    <span>10 minutes</span>
-                </div>
-            </div>
-            ${uiConfig.theme.showToggle ? `
-            <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
-                <span id="themeIcon">${icon('moon')}</span>
-            </button>
-            ` : ''}
-        </div>
+    <!-- App Bar -->
+    <header class="appbar">
+      <div class="appbar__inner">
+        <a class="appbar__brand" href="#">
+          ${uiConfig.header.showLogo && uiConfig.header.logoUrl ? `<img src="${uiConfig.header.logoUrl}" alt="${uiConfig.header.logoAlt}" class="appbar__logo">` : ''}
+          <span class="appbar__title">${uiConfig.header.title}</span>
+        </a>
+        ${uiConfig.header.links && uiConfig.header.links.length > 0 ? `
+        <nav class="appbar__nav">
+          ${uiConfig.header.links.map(link => `<a href="${link.url}" class="appbar__link${link.highlight ? ' appbar__link--highlight' : ''}" target="${link.url.startsWith('http') ? '_blank' : '_self'}" rel="${link.url.startsWith('http') ? 'noopener noreferrer' : ''}">${link.text}</a>`).join('')}
+        </nav>
         ` : ''}
-        <header>
-            ${uiConfig.header.showLogo && uiConfig.header.logoUrl ? `<img src="${uiConfig.header.logoUrl}" alt="${uiConfig.header.logoAlt}" class="logo" />` : ''}
-            ${uiConfig.header.links && uiConfig.header.links.length > 0 ? `
-            <div class="header-links">
-                ${uiConfig.header.links.map(link => `<a href="${link.url}" class="${link.highlight ? 'highlight' : ''}" target="${link.url.startsWith('http') ? '_blank' : '_self'}" rel="${link.url.startsWith('http') ? 'noopener noreferrer' : ''}">${link.text}</a>`).join('')}
+        <div class="appbar__actions">
+          ${uiConfig.features.showExportButton !== false && uiConfig.api?.enableUptimeEndpoint !== false ? `
+          <button id="exportBtn" class="appbar__action" type="button" aria-label="Export data" title="Export CSV">
+            ${icon('download')}<span>Export</span>
+          </button>
+          ` : ''}
+          ${uiConfig.features.showAlertHistoryButton !== false && uiConfig.api?.enableAlertHistoryEndpoint !== false ? `
+          <button id="alertHistoryBtn" class="appbar__action" type="button" aria-label="Alert history" title="Alert History">
+            ${icon('bell')}<span>History</span>
+          </button>
+          ` : ''}
+          ${uiConfig.features.showRefreshButton !== false && (uiConfig.api?.enableStatusEndpoint !== false || uiConfig.api?.enableUptimeEndpoint !== false) ? `
+          <div class="appbar__refresh-wrap">
+            <button class="appbar__action" id="autoRefreshBtn" type="button" aria-label="Toggle auto-refresh" title="Auto-refresh">
+              <span id="autoRefreshIcon">${icon('refresh-cw')}</span>
+              <span>Refresh</span>
+              <span class="auto-refresh-timer" id="autoRefreshTimer" style="display: none;"></span>
+            </button>
+            <div class="auto-refresh-menu" id="autoRefreshMenu">
+              <div class="auto-refresh-menu-item" data-seconds="0">
+                <span>Off</span>
+              </div>
+              <div class="auto-refresh-menu-divider"></div>
+              <div class="auto-refresh-menu-item" data-seconds="10">
+                <span>10 seconds</span>
+              </div>
+              <div class="auto-refresh-menu-item" data-seconds="30">
+                <span>30 seconds</span>
+              </div>
+              <div class="auto-refresh-menu-item" data-seconds="60">
+                <span>1 minute</span>
+              </div>
+              <div class="auto-refresh-menu-item" data-seconds="300">
+                <span>5 minutes</span>
+              </div>
+              <div class="auto-refresh-menu-item" data-seconds="600">
+                <span>10 minutes</span>
+              </div>
             </div>
-            ` : ''}
-            <h1>${uiConfig.header.title}</h1>
-            <p class="subtitle">${uiConfig.header.subtitle}</p>
-            ${uiConfig.customHtml.headerExtra}
-        </header>
+          </div>
+          ` : ''}
+          ${uiConfig.theme.showToggle ? `
+          <button id="themeToggle" class="appbar__action appbar__action--icon" type="button" aria-label="Toggle theme">
+            <span id="themeIcon">${icon('moon')}</span>
+          </button>
+          ` : ''}
+        </div>
+      </div>
+    </header>
+
+    ${uiConfig.customHtml.headerExtra ? `<div class="page-header-extra">${uiConfig.customHtml.headerExtra}</div>` : ''}
+
+    <div class="container">
+        ${uiConfig.header.subtitle ? `<p class="page-subtitle">${uiConfig.header.subtitle}</p>` : ''}
 
         <section id="overallStatus" class="status-banner status-banner--unknown" aria-live="polite">
           <div class="status-banner__inner">

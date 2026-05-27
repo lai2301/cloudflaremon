@@ -155,70 +155,16 @@ export function renderStyles(uiConfig) {
             padding: 40px 20px;
         }
         
-        header {
-            margin-bottom: 48px;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        
-        .logo {
-            max-width: 120px;
-            max-height: 80px;
-            margin-bottom: 16px;
-        }
-        
-        .header-links {
-            display: flex;
-            gap: 24px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-bottom: 32px;
-        }
-        
-        .header-links a {
+        .page-subtitle {
             color: var(--text-secondary);
-            text-decoration: none;
             font-size: var(--font-sm);
-            font-weight: var(--font-weight-medium);
-            transition: color 0.2s;
-            padding: var(--space-2) var(--space-4);
-            border-radius: var(--radius-sm);
-            background: var(--bg-primary);
-            border: 1px solid var(--border-color);
-        }
-        
-        .header-links a:hover {
-            color: var(--text-primary);
-            border-color: var(--text-tertiary);
-        }
-        
-        .header-links a.highlight {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-color: transparent;
-            font-weight: var(--font-weight-semibold);
-            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
-        }
-        
-        .header-links a.highlight:hover {
-            background: linear-gradient(135deg, #5568d3 0%, #653a8a 100%);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-            color: white;
-        }
-        
-        h1 {
-            font-size: 32px;
-            font-weight: var(--font-weight-bold);
-            margin-bottom: var(--space-2);
-            color: var(--text-primary);
+            margin-bottom: var(--space-4);
         }
 
-        .subtitle {
-            color: var(--text-secondary);
-            font-size: var(--font-base);
-            margin-bottom: 0;
+        .page-header-extra {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 var(--space-4);
         }
         
         /* Status banner */
@@ -563,65 +509,120 @@ export function renderStyles(uiConfig) {
             to { transform: rotate(360deg); }
         }
         
-        .theme-toggle-container {
-            position: absolute;
-            top: 20px;
-            right: 20px;
+        /* App Bar */
+        .appbar {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border-color);
+            backdrop-filter: saturate(180%) blur(8px);
+        }
+
+        .appbar__inner {
             display: flex;
+            align-items: center;
+            gap: var(--space-4);
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 var(--space-4);
+            height: 56px;
+        }
+
+        .appbar__brand {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: var(--font-weight-semibold);
+            flex-shrink: 0;
+        }
+
+        .appbar__logo { height: 24px; width: auto; }
+
+        .appbar__title { font-size: var(--font-base); }
+
+        .appbar__nav {
+            display: flex;
+            gap: var(--space-3);
+            margin-left: var(--space-4);
+        }
+
+        .appbar__link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: var(--font-sm);
+        }
+
+        .appbar__link:hover { color: var(--text-primary); }
+
+        .appbar__link--highlight {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: var(--space-1) var(--space-3);
+            border-radius: var(--radius-sm);
+        }
+
+        .appbar__link--highlight:hover { color: white; opacity: .9; }
+
+        .appbar__actions {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
             gap: var(--space-2);
         }
 
-        .theme-toggle, .export-btn, .auto-refresh-btn, .alert-history-btn {
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            border: 1px solid var(--border-color);
-            padding: var(--space-2) var(--space-3);
-            border-radius: var(--space-2);
-            cursor: pointer;
-            font-size: var(--font-lg);
-            transition: all 0.2s;
+        .appbar__action {
             display: inline-flex;
             align-items: center;
+            gap: var(--space-2);
+            height: 36px;
+            padding: 0 var(--space-3);
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: var(--font-sm);
+            position: relative;
+            transition: background 0.15s, border-color 0.15s;
+        }
+
+        .appbar__action:hover {
+            background: var(--bg-hover);
+            border-color: var(--border-color);
+        }
+
+        .appbar__action.active {
+            background: #3b82f620;
+            border-color: #3b82f6;
+            color: #3b82f6;
+        }
+
+        .appbar__action--icon {
+            padding: 0;
+            width: 36px;
             justify-content: center;
-            width: 44px;
-            height: 44px;
+        }
+
+        /* Auto-refresh wrapper: anchors the dropdown */
+        .appbar__refresh-wrap {
             position: relative;
         }
-        
-        .theme-toggle:hover, .export-btn:hover, .auto-refresh-btn:hover, .alert-history-btn:hover {
-            background: var(--bg-hover);
-            transform: scale(1.05);
-        }
-        
-        .auto-refresh-btn.active {
-            background: #3b82f6;
-            color: white;
-            border-color: #163d92;
-        }
-        
-        .auto-refresh-btn.active:hover {
-            background:#163d92;
-        }
-        
+
         .auto-refresh-timer {
-            position: absolute;
-            bottom: -2px;
-            right: -2px;
-            background: var(--up-fg);
-            color: white;
-            font-size: 9px;
+            font-size: var(--font-xs);
+            font-variant-numeric: tabular-nums;
+            color: var(--up-fg);
             font-weight: var(--font-weight-semibold);
-            padding: 2px 4px;
-            border-radius: 4px;
-            min-width: 18px;
-            text-align: center;
         }
-        
+
         /* Auto-refresh dropdown menu */
         .auto-refresh-menu {
             display: none;
             position: absolute;
-            top: 52px;
+            top: calc(100% + 6px);
             right: 0;
             background: var(--bg-primary);
             border: 1px solid var(--border-color);
@@ -629,7 +630,7 @@ export function renderStyles(uiConfig) {
             padding: var(--space-2);
             min-width: 180px;
             box-shadow: var(--shadow-md);
-            z-index: 1000;
+            z-index: 200;
             animation: slideDown 0.2s ease-out;
         }
         
@@ -696,8 +697,8 @@ export function renderStyles(uiConfig) {
         /* Export Dialog Styles */
         .export-dialog {
             display: none;
-            position: absolute;
-            top: 60px;
+            position: fixed;
+            top: 64px;
             right: 20px;
             background: var(--bg-primary);
             border: 1px solid var(--border-color);
@@ -778,7 +779,7 @@ export function renderStyles(uiConfig) {
             color: var(--text-primary);
         }
         
-        .export-btn.active {
+        #exportBtn.active {
             background: var(--bg-hover);
             border-color: #3b82f6;
         }

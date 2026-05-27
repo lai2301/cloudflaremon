@@ -97,7 +97,7 @@ describe('renderLayout', () => {
       },
     };
     const out = renderLayout(args);
-    expect(out).toContain('header-links');
+    expect(out).toContain('appbar__nav');
     expect(out).toContain('https://example.com');
     expect(out).toContain('Docs');
   });
