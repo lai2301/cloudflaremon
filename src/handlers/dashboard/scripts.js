@@ -406,6 +406,7 @@ export function renderScripts({ uiConfig, processedServices, monitorData }) {
                                     <span>\${uptimeData?.retentionDays || ${uiConfig.uptimeRetentionDays || uiConfig.features?.uptimeRetentionDays || 90}} days ago</span>
                                     <span>Today</span>
                                 </div>
+                                <button class="uptime-bar-toggle" type="button">View 90 days</button>
                             </div>
                         </div>
                         \`;
@@ -1135,6 +1136,49 @@ export function renderScripts({ uiConfig, processedServices, monitorData }) {
             bodyElement.innerHTML = html;
         }
         
+        // Mobile app-bar overflow menu
+        (function attachAppbarMenu() {
+            const btn = document.getElementById('appbarMenuBtn');
+            const menu = document.getElementById('appbarMenu');
+            if (!btn || !menu) return;
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const open = !menu.hidden;
+                menu.hidden = open;
+                btn.setAttribute('aria-expanded', String(!open));
+            });
+            document.addEventListener('click', (e) => {
+                if (!menu.hidden && !menu.contains(e.target) && e.target !== btn) {
+                    menu.hidden = true;
+                    btn.setAttribute('aria-expanded', 'false');
+                }
+            });
+            menu.querySelector('[data-action="export"]')?.addEventListener('click', () => {
+                menu.hidden = true;
+                btn.setAttribute('aria-expanded', 'false');
+                document.getElementById('exportBtn')?.click();
+            });
+            menu.querySelector('[data-action="history"]')?.addEventListener('click', () => {
+                menu.hidden = true;
+                btn.setAttribute('aria-expanded', 'false');
+                document.getElementById('alertHistoryBtn')?.click();
+            });
+        })();
+
+        // Uptime bar 30/90-day toggle
+        document.addEventListener('click', (e) => {
+            const toggle = e.target.closest('.uptime-bar-toggle');
+            if (!toggle) return;
+            const wrapper = toggle.closest('.service-card__bar')?.querySelector('.uptime-bar-wrapper');
+            if (!wrapper) return;
+            const full = wrapper.classList.toggle('uptime-bar-wrapper--full');
+            toggle.textContent = full ? 'View 30 days' : 'View 90 days';
+            if (full) {
+                // Scroll to end so most recent days are visible
+                requestAnimationFrame(() => { wrapper.scrollLeft = wrapper.scrollWidth; });
+            }
+        });
+
         // Alert history button click handler
         document.getElementById('alertHistoryBtn')?.addEventListener('click', openAlertHistory);
         

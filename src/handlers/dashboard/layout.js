@@ -51,6 +51,15 @@ export function renderLayout({ uiConfig, processedServices, monitorData }) {
             ${icon('bell')}<span>History</span>
           </button>
           ` : ''}
+          ${(uiConfig.features.showExportButton !== false && uiConfig.api?.enableUptimeEndpoint !== false) || (uiConfig.features.showAlertHistoryButton !== false && uiConfig.api?.enableAlertHistoryEndpoint !== false) ? `
+          <button id="appbarMenuBtn" class="appbar__action appbar__action--icon appbar__action--mobile" aria-label="More" aria-expanded="false" type="button">
+            ${icon('menu')}
+          </button>
+          <div id="appbarMenu" class="appbar-menu" role="menu" hidden>
+            ${uiConfig.features.showExportButton !== false && uiConfig.api?.enableUptimeEndpoint !== false ? `<button class="appbar-menu__item" data-action="export" type="button">${icon('download')}<span>Export</span></button>` : ''}
+            ${uiConfig.features.showAlertHistoryButton !== false && uiConfig.api?.enableAlertHistoryEndpoint !== false ? `<button class="appbar-menu__item" data-action="history" type="button">${icon('bell')}<span>Alert History</span></button>` : ''}
+          </div>
+          ` : ''}
           ${uiConfig.features.showRefreshButton !== false && (uiConfig.api?.enableStatusEndpoint !== false || uiConfig.api?.enableUptimeEndpoint !== false) ? `
           <div class="appbar__refresh-wrap">
             <button class="appbar__action" id="autoRefreshBtn" type="button" aria-label="Toggle auto-refresh" title="Auto-refresh">

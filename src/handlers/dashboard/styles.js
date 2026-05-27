@@ -402,10 +402,73 @@ export function renderStyles(uiConfig) {
             min-width: 720px;
         }
         
-        @media (max-width: 768px) {
+        /* Mobile overflow menu — hidden by default, shown only on phone */
+        .appbar__action--mobile { display: none; }
+
+        /* Phone breakpoint: <=640px */
+        @media (max-width: 640px) {
+            .appbar__action--mobile { display: inline-flex; }
+            #exportBtn, #alertHistoryBtn, .appbar__nav { display: none; }
+            .appbar__inner { gap: var(--space-2); padding: 0 var(--space-3); }
+            .appbar__title { font-size: var(--font-sm); }
+
+            .uptime-bar {
+                min-width: 540px;
+            }
+
+            .uptime-bar-wrapper:not(.uptime-bar-wrapper--full) .uptime-day:nth-last-child(n + 31) {
+                display: none;
+            }
+            .uptime-bar-wrapper--full {
+                overflow-x: auto;
+            }
+
+            .uptime-bar-toggle { display: inline-block; }
+        }
+
+        /* Tablet breakpoint: 641px–1023px */
+        @media (min-width: 641px) and (max-width: 1023px) {
+            .appbar__action:not(.appbar__action--icon) > span { display: none; }
+            .appbar__action:not(.appbar__action--icon) { width: 36px; padding: 0; justify-content: center; }
+            .appbar__nav { display: none; }
+
             .uptime-bar {
                 min-width: 600px;
             }
+        }
+
+        /* Appbar overflow popover menu */
+        .appbar-menu {
+            position: absolute; top: 56px; right: var(--space-3);
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-md);
+            padding: var(--space-2);
+            min-width: 200px;
+            z-index: 100;
+        }
+        .appbar-menu[hidden] { display: none; }
+        .appbar-menu__item {
+            display: flex; align-items: center; gap: var(--space-2);
+            width: 100%; padding: var(--space-2) var(--space-3);
+            background: transparent; border: 0; border-radius: var(--radius-sm);
+            cursor: pointer; color: var(--text-primary); text-align: left;
+            font-size: var(--font-sm);
+        }
+        .appbar-menu__item:hover { background: var(--bg-hover); }
+
+        /* Uptime bar toggle — hidden on desktop/tablet, shown on mobile via media query */
+        .uptime-bar-toggle {
+            display: none;
+            margin-top: var(--space-2);
+            padding: var(--space-1) var(--space-2);
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            color: var(--text-secondary);
+            font-size: var(--font-xs);
+            cursor: pointer;
         }
         
         .uptime-day {
@@ -571,6 +634,7 @@ export function renderStyles(uiConfig) {
             display: flex;
             align-items: center;
             gap: var(--space-2);
+            position: relative;
         }
 
         .appbar__action {
@@ -915,7 +979,7 @@ export function renderStyles(uiConfig) {
             border-color: #3b82f6;
         }
         
-        @media (max-width: 768px) {
+        @media (max-width: 640px) {
             .export-dialog {
                 top: 50%;
                 left: 50%;
@@ -924,7 +988,7 @@ export function renderStyles(uiConfig) {
                 width: calc(100vw - 40px);
                 max-height: calc(100vh - 60px);
             }
-            
+
             .export-dialog.active {
                 transform: translate(-50%, -50%);
             }
