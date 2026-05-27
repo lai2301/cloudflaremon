@@ -47,6 +47,8 @@ export function buildServicesWithGroups() {
       groupId: group.id,
       groupName: group.name,
       uptimeThresholdSet: service.uptimeThresholdSet || group.uptimeThresholdSet || 'default',
+      stalenessThreshold: service.stalenessThreshold || group.stalenessThreshold,
+      notifications: service.notifications || group.notifications,
       auth: {
         required: service.auth?.required ?? group.auth?.required ?? true
       }

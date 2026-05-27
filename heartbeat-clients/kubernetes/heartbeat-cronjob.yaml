@@ -195,8 +195,8 @@ spec:
       labels:
         app: heartbeat-client
     spec:
-      # Timeout: 30 seconds
-      activeDeadlineSeconds: 30
+      # Timeout: 120 seconds (includes pod startup + package install + script execution)
+      activeDeadlineSeconds: 120
       
       # Backoff limit
       backoffLimit: 2

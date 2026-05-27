@@ -2,9 +2,9 @@
   "header": {
     "title": "Service Monitor",
     "subtitle": "Real-time service health monitoring",
-    "logoUrl": "",
-    "logoAlt": "Service Monitor",
-    "showLogo": false,
+    "logoUrl": "/assets/banner_1.png",
+    "logoAlt": "Cloudflare Mon",
+    "showLogo": true,
     "links": [
       {
         "text": "Home",
@@ -23,7 +23,7 @@
   },
   "branding": {
     "pageTitle": "Service Monitor Dashboard",
-    "favicon": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>📊</text></svg>",
+    "favicon": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>\ud83d\udcca</text></svg>",
     "primaryColor": "#3b82f6",
     "accentColor": "#10b981"
   },
@@ -72,4 +72,3 @@
     "footerExtra": ""
   }
 }
-

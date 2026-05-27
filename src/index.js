@@ -199,6 +199,7 @@ export default {
  * Handle dashboard page
  * Embeds monitor data directly to avoid API calls and caching issues
  */
+
 async function handleDashboard(env) {
   // Fetch monitor data from separate KV keys to avoid race conditions
   const [latestJson, dataJson] = await Promise.all([
