@@ -4,14 +4,14 @@
  * An empty allowedOrigins list means no CORS header is emitted (same-origin only).
  *
  * The optional second argument `config` allows callers (and tests) to inject a
- * pre-loaded config object. When omitted the live getUiConfig() is used.
+ * pre-loaded config object. When omitted the cached uiConfig is used.
  */
 
-import { getUiConfig } from '../config/loader.js';
+import { uiConfig } from '../config/loader.js';
 
 export function corsHeaders(request, config) {
   if (!request) return {};
-  const cfg = config !== undefined ? config : getUiConfig();
+  const cfg = config !== undefined ? config : uiConfig;
   const origin = request.headers.get('Origin');
   if (!origin) return {};
   const allowed = Array.isArray(cfg.allowedOrigins) ? cfg.allowedOrigins : [];

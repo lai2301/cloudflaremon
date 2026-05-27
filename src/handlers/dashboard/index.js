@@ -1,11 +1,10 @@
 // Configuration
-import { getUiConfig, buildServicesWithGroups } from '../../config/loader.js';
+import { uiConfig, servicesWithGroups } from '../../config/loader.js';
 import { renderStyles } from './styles.js';
 import { renderScripts } from './scripts.js';
 import { renderLayout } from './layout.js';
 
-const uiConfig = getUiConfig();
-const processedServices = buildServicesWithGroups();
+const processedServices = servicesWithGroups;
 
 export async function handleDashboard(env) {
   // Fetch monitor data from separate KV keys to avoid race conditions

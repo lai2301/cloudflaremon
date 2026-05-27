@@ -3,7 +3,7 @@
  * Handles POST /api/heartbeat requests for single and batch heartbeats
  */
 
-import { buildServicesWithGroups } from '../config/loader.js';
+import { servicesWithGroups } from '../config/loader.js';
 
 export async function timingSafeEqualStrings(a, b) {
   if (typeof a !== 'string' || typeof b !== 'string') return false;
@@ -28,8 +28,8 @@ export async function handleHeartbeat(request, env) {
     const data = await request.json();
     const timestamp = new Date().toISOString();
     
-    // Build services with merged group config
-    const processedServices = buildServicesWithGroups();
+    // Use cached services with merged group config
+    const processedServices = servicesWithGroups;
     
     // Determine if this is a batch or single heartbeat
     let serviceEntries = [];

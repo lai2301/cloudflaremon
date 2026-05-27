@@ -3,7 +3,7 @@
  * Handles heartbeat staleness checking and status updates
  */
 
-import { buildServicesWithGroups, getUiConfig } from '../config/loader.js';
+import { servicesWithGroups, uiConfig } from '../config/loader.js';
 import { checkAndSendNotifications } from './notifications.js';
 
 /**
@@ -38,7 +38,7 @@ export async function aggregateLatestKeys(env) {
  * This ensures continuous monitoring and accurate uptime statistics.
  */
 export async function checkHeartbeatStaleness(env) {
-  const processedServices = buildServicesWithGroups();
+  const processedServices = servicesWithGroups;
   const results = [];
   const now = Date.now();
   const timestamp = new Date().toISOString();
@@ -138,7 +138,6 @@ export async function checkHeartbeatStaleness(env) {
  * for services that remain down over multiple check cycles.
  */
 async function updateMonitorData(env, monitorData, results, timestamp) {
-  const uiConfig = getUiConfig();
   const today = new Date(timestamp).toISOString().split('T')[0]; // YYYY-MM-DD format
 
   try {

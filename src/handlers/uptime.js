@@ -3,7 +3,7 @@
  * Returns uptime statistics and history
  */
 
-import { getUiConfig } from '../config/loader.js';
+import { uiConfig } from '../config/loader.js';
 import { corsHeaders } from '../core/cors.js';
 
 /**
@@ -29,8 +29,6 @@ export async function handleGetUptime(env, url, request) {
   }
 
   try {
-    const uiConfig = getUiConfig();
-    
     // Get all monitor data in a single read
     // Note: KV has minimum 60s edge caching, but HTTP cache headers prevent client/CDN caching
     const monitorDataJson = await env.HEARTBEAT_LOGS.get('monitor:data');
