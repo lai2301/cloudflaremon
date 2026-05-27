@@ -4,7 +4,7 @@
  */
 
 // Configuration
-import { getUiConfig, buildServicesWithGroups } from './config/loader.js';
+import { uiConfig, servicesWithGroups } from './config/loader.js';
 
 // Handlers
 import { handleHeartbeat } from './handlers/heartbeat.js';
@@ -20,11 +20,8 @@ import { corsHeaders } from './core/cors.js';
 // Notifications
 import { testNotification } from './core/notifications.js';
 
-// Get UI config for dashboard
-const uiConfig = getUiConfig();
-
-// Build the merged services list (now imported from config/loader.js)
-const processedServices = buildServicesWithGroups();
+// Use cached config values from module init
+const processedServices = servicesWithGroups;
 
 export default {
   async fetch(request, env, ctx) {

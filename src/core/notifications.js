@@ -4,6 +4,7 @@
  */
 
 import notificationsConfig from '../../config/notifications.json';
+import { appendAlert, cleanupAlerts } from './alertStore.js';
 
 /**
  * Normalize severity: convert to lowercase, default to 'warning' if null/undefined/non-string
@@ -97,97 +98,54 @@ function prepareVariables(eventType, serviceData) {
 }
 
 /**
- * Check for status changes and send notifications
+ * Build the alert object shape for a service status-change event.
+ * Pure function — no KV access. Used both by the legacy storeServiceAlert
+ * and the batched cron path in checkAndSendNotifications.
  */
-/**
- * Clean up old alerts based on configuration
- */
-function cleanupAlerts(alerts, config = {}) {
-  // Default settings
-  const maxAlerts = config.maxAlerts || 100;
-  const maxAgeDays = config.maxAgeDays || 7;
-  const now = Date.now();
-  const maxAgeMs = maxAgeDays * 24 * 60 * 60 * 1000;
-  
-  let cleaned = alerts;
-  
-  // Remove alerts older than maxAgeDays
-  cleaned = cleaned.filter(alert => {
-    const alertTime = new Date(alert.timestamp).getTime();
-    const age = now - alertTime;
-    return age < maxAgeMs;
-  });
-  
-  // Keep only last maxAlerts
-  if (cleaned.length > maxAlerts) {
-    cleaned = cleaned.slice(0, maxAlerts);
-  }
-  
-  return cleaned;
-}
-
-/**
- * Store service status change as a dashboard alert
- */
-async function storeServiceAlert(env, eventType, serviceData) {
+function buildServiceAlertPayload(eventType, serviceData) {
   const timestamp = new Date().toISOString();
   const alertId = `alert:${Date.now()}:${Math.random().toString(36).substr(2, 9)}`;
-  
-  // Map event type to severity
+
   const severityMap = {
     'down': 'critical',
     'up': 'info',
     'degraded': 'warning'
   };
-  
-  // Create alert messages
+
   const titleMap = {
     'down': `Service Down: ${serviceData.serviceName}`,
     'up': `Service Recovered: ${serviceData.serviceName}`,
     'degraded': `Service Degraded: ${serviceData.serviceName}`
   };
-  
+
   const messageMap = {
     'down': `${serviceData.serviceName} is not responding. Last seen: ${serviceData.lastSeen ? new Date(serviceData.lastSeen).toLocaleString() : 'Never'}`,
     'up': `${serviceData.serviceName} has recovered and is now operational.`,
     'degraded': `${serviceData.serviceName} is experiencing degraded performance.`
   };
-  
-  const alert = {
+
+  return {
     id: alertId,
     title: titleMap[eventType] || `Service Status Change: ${serviceData.serviceName}`,
     message: messageMap[eventType] || `Status changed to ${serviceData.status}`,
     severity: severityMap[eventType] || 'info',
     source: 'heartbeat-monitor',
-    timestamp: timestamp,
+    timestamp,
     read: false,
     serviceId: serviceData.serviceId,
     status: serviceData.status
   };
-  
-  try {
-    // Get existing alerts
-    const alertsJson = await env.HEARTBEAT_LOGS.get('recent:alerts');
-    let alerts = alertsJson ? JSON.parse(alertsJson) : [];
-    
-    // Add new alert at the beginning
-    alerts.unshift(alert);
-    
-    // Load alert history settings from config
-    const historyConfig = notificationsConfig?.settings?.alertHistory || {};
-    
-    // Clean up old/excess alerts if enabled
-    if (historyConfig.cleanupOnAdd !== false) {
-      alerts = cleanupAlerts(alerts, historyConfig);
-    }
-    
-    // Store back
-    await env.HEARTBEAT_LOGS.put('recent:alerts', JSON.stringify(alerts));
-    
-    console.log(`Stored dashboard alert: ${alert.title} (total: ${alerts.length})`);
-  } catch (error) {
-    console.error('Error storing service alert for dashboard:', error);
-  }
+}
+
+/**
+ * Store service status change as a dashboard alert.
+ * Used by the public /api/alert endpoint for one-off appends.
+ * The cron loop uses the batched path in checkAndSendNotifications instead.
+ */
+async function storeServiceAlert(env, eventType, serviceData) {
+  const alert = buildServiceAlertPayload(eventType, serviceData);
+  await appendAlert(env, alert);
+  console.log(`Stored dashboard alert: ${alert.title}`);
 }
 
 export async function checkAndSendNotifications(env, currentResults, monitorData, servicesConfig) {
@@ -202,6 +160,11 @@ export async function checkAndSendNotifications(env, currentResults, monitorData
 
     const now = Date.now();
     const cooldownMs = (notificationsConfig.settings.cooldownMinutes || 5) * 60 * 1000;
+
+    // Collect alert payloads in-memory; write them in one batch at the end.
+    // This reduces recent:alerts KV ops from 2N (read+write per service) to 2
+    // (one read + one write) when multiple services flip state in the same cron tick.
+    const collected = [];
 
     for (const result of currentResults) {
       const serviceId = result.serviceId;
@@ -231,10 +194,22 @@ export async function checkAndSendNotifications(env, currentResults, monitorData
       if (!eventType) continue;
 
       const serviceConfig = servicesConfig.services.find(s => s.id === serviceId);
-      await sendNotifications(env, eventType, result, serviceConfig);
-      await storeServiceAlert(env, eventType, result);
+      await sendNotifications(env, eventType, result, serviceConfig);  // outbound HTTP, keep awaited
 
+      collected.push(buildServiceAlertPayload(eventType, result));
       previousStatus[serviceId].lastAlert = now;
+    }
+
+    // One read-merge-write for all collected alerts (batched).
+    if (collected.length > 0) {
+      const raw = await env.HEARTBEAT_LOGS.get('recent:alerts');
+      const existing = raw ? JSON.parse(raw) : [];
+      // Reverse collected so the first-detected event ends up first in the list
+      // after prepending (newest-first ordering matches appendAlert behaviour).
+      const merged = [...collected.reverse(), ...existing];
+      const trimmed = cleanupAlerts(merged);
+      await env.HEARTBEAT_LOGS.put('recent:alerts', JSON.stringify(trimmed));
+      console.log(`Stored ${collected.length} dashboard alert(s) in one batch write`);
     }
 
     // Save updated status
