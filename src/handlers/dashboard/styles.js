@@ -4,11 +4,12 @@ export function renderStyles(uiConfig) {
             /* Operator-overridable branding / theme tokens */
             --bg-primary: ${uiConfig.theme.colors.light.primary};
             --bg-secondary: ${uiConfig.theme.colors.light.secondary};
-            --bg-hover: #f3f4f6;
+            --bg-hover: #e2e8f0;
             --text-primary: ${uiConfig.theme.colors.light.text};
             --text-secondary: ${uiConfig.theme.colors.light.textSecondary};
-            --text-tertiary: #9ca3af;
+            --text-tertiary: #94a3b8;
             --border-color: ${uiConfig.theme.colors.light.border};
+            --accent: ${uiConfig.branding.primaryColor || '#3b82f6'};
             --status-up: ${uiConfig.theme.colors.light.statusUp};
             --status-up-bg: #d1fae5;
             --status-up-text: #065f46;
@@ -51,29 +52,29 @@ export function renderStyles(uiConfig) {
             --shadow-sm: 0 1px 2px rgba(0,0,0,.05);
             --shadow-md: 0 4px 12px rgba(0,0,0,.08);
 
-            /* Status tints */
-            --up-fg: #047857;
-            --up-bg: #ecfdf5;
-            --up-border: #a7f3d0;
-            --deg-fg: #b45309;
-            --deg-bg: #fffbeb;
-            --deg-border: #fde68a;
-            --down-fg: #b91c1c;
-            --down-bg: #fef2f2;
-            --down-border: #fecaca;
-            --unk-fg: #4b5563;
-            --unk-bg: #f3f4f6;
-            --unk-border: #e5e7eb;
+            /* Status tints - slate mono with amber/rose only for trouble states */
+            --up-fg: #334155;
+            --up-bg: #f1f5f9;
+            --up-border: #cbd5e1;
+            --deg-fg: #92400e;
+            --deg-bg: #fef3c7;
+            --deg-border: #fcd34d;
+            --down-fg: #9f1239;
+            --down-bg: #ffe4e6;
+            --down-border: #fda4af;
+            --unk-fg: #64748b;
+            --unk-bg: #f1f5f9;
+            --unk-border: #cbd5e1;
         }
 
         [data-theme="dark"] {
             /* Operator-overridable branding / theme tokens (dark) */
             --bg-primary: ${uiConfig.theme.colors.dark.primary};
             --bg-secondary: ${uiConfig.theme.colors.dark.secondary};
-            --bg-hover: #036358;
+            --bg-hover: #334155;
             --text-primary: ${uiConfig.theme.colors.dark.text};
             --text-secondary: ${uiConfig.theme.colors.dark.textSecondary};
-            --text-tertiary: #9ca3af;
+            --text-tertiary: #94a3b8;
             --border-color: ${uiConfig.theme.colors.dark.border};
             --status-up: ${uiConfig.theme.colors.dark.statusUp};
             --status-up-bg: #064e3b;
@@ -87,15 +88,19 @@ export function renderStyles(uiConfig) {
             --status-unknown-bg: #374151;
             --status-unknown-text: #d1d5db;
 
-            /* Design token dark overrides */
-            --up-bg:     #064e3b;
-            --up-border: #065f46;
-            --deg-bg:    #78350f;
-            --deg-border:#92400e;
-            --down-bg:   #7f1d1d;
-            --down-border:#991b1b;
-            --unk-bg:    #1f2937;
-            --unk-border:#374151;
+            /* Design token dark overrides - slate mono */
+            --up-fg:     #cbd5e1;
+            --up-bg:     #1e293b;
+            --up-border: #334155;
+            --deg-fg:    #fcd34d;
+            --deg-bg:    #451a03;
+            --deg-border:#78350f;
+            --down-fg:   #fda4af;
+            --down-bg:   #4c0519;
+            --down-border:#881337;
+            --unk-fg:    #94a3b8;
+            --unk-bg:    #1e293b;
+            --unk-border:#334155;
             --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
             --shadow-md: 0 4px 12px rgba(0,0,0,.5);
         }
@@ -608,9 +613,12 @@ export function renderStyles(uiConfig) {
 
         .appbar__nav {
             display: flex;
+            align-items: center;
             gap: var(--space-3);
             margin-left: var(--space-4);
         }
+
+        .appbar__nav a { line-height: 1; }
 
         .appbar__link {
             color: var(--text-secondary);
@@ -621,13 +629,14 @@ export function renderStyles(uiConfig) {
         .appbar__link:hover { color: var(--text-primary); }
 
         .appbar__link--highlight {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--accent);
             color: white;
             padding: var(--space-1) var(--space-3);
             border-radius: var(--radius-sm);
+            font-weight: var(--font-weight-medium);
         }
 
-        .appbar__link--highlight:hover { color: white; opacity: .9; }
+        .appbar__link--highlight:hover { color: white; opacity: .85; }
 
         .appbar__actions {
             margin-left: auto;

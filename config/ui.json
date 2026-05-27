@@ -34,20 +34,20 @@
     "colors": {
       "light": {
         "primary": "#ffffff",
-        "secondary": "#f9fafb",
-        "text": "#111827",
-        "textSecondary": "#6b7280",
-        "border": "#e5e7eb",
+        "secondary": "#f1f5f9",
+        "text": "#0f172a",
+        "textSecondary": "#475569",
+        "border": "#cbd5e1",
         "statusUp": "#10b981",
         "statusDown": "#ef4444",
         "statusDegraded": "#f59e0b"
       },
       "dark": {
-        "primary": "#111827",
-        "secondary": "#1f2937",
-        "text": "#f9fafb",
-        "textSecondary": "#d1d5db",
-        "border": "#374151",
+        "primary": "#0f172a",
+        "secondary": "#1e293b",
+        "text": "#f8fafc",
+        "textSecondary": "#94a3b8",
+        "border": "#334155",
         "statusUp": "#10b981",
         "statusDown": "#ef4444",
         "statusDegraded": "#f59e0b"
