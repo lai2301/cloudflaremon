@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { env } from 'cloudflare:test';
-import { checkAndSendNotifications, sendCustomAlert } from '../../src/core/notifications.js';
+import { checkAndSendNotifications, sendCustomAlert, normaliseSeverity } from '../../src/core/notifications.js';
 
 const servicesConfig = { services: [{ id: 'svc-a', name: 'svc-a' }] };
 
@@ -175,5 +175,23 @@ describe('severity guard', () => {
     };
 
     await expect(sendCustomAlert(env, alertData)).resolves.toBeDefined();
+  });
+});
+
+describe('normaliseSeverity helper', () => {
+  it('returns warning for null', () => {
+    expect(normaliseSeverity(null)).toBe('warning');
+  });
+  it('returns warning for undefined', () => {
+    expect(normaliseSeverity(undefined)).toBe('warning');
+  });
+  it('returns warning for non-string', () => {
+    expect(normaliseSeverity(123)).toBe('warning');
+    expect(normaliseSeverity({})).toBe('warning');
+  });
+  it('lowercases string input', () => {
+    expect(normaliseSeverity('CRITICAL')).toBe('critical');
+    expect(normaliseSeverity('Error')).toBe('error');
+    expect(normaliseSeverity('warning')).toBe('warning');
   });
 });

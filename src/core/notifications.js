@@ -8,7 +8,7 @@ import notificationsConfig from '../../config/notifications.json';
 /**
  * Normalize severity: convert to lowercase, default to 'warning' if null/undefined/non-string
  */
-function normaliseSeverity(sev) {
+export function normaliseSeverity(sev) {
   return (typeof sev === 'string' ? sev : 'warning').toLowerCase();
 }
 
