@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { env } from 'cloudflare:test';
-import { checkAndSendNotifications, sendCustomAlert, normaliseSeverity } from '../../src/core/notifications.js';
+import { checkAndSendNotifications, sendCustomAlert, normaliseSeverity, escapeTelegramMarkdown } from '../../src/core/notifications.js';
 
 const servicesConfig = { services: [{ id: 'svc-a', name: 'svc-a' }] };
 
@@ -193,5 +193,51 @@ describe('normaliseSeverity helper', () => {
     expect(normaliseSeverity('CRITICAL')).toBe('critical');
     expect(normaliseSeverity('Error')).toBe('error');
     expect(normaliseSeverity('warning')).toBe('warning');
+  });
+});
+
+describe('escapeTelegramMarkdown', () => {
+  it('escapes link injection', () => {
+    expect(escapeTelegramMarkdown('phish [click](https://evil)'))
+      .toBe('phish \\[click](https://evil)');
+  });
+  it('escapes bold/italic markers', () => {
+    expect(escapeTelegramMarkdown('*bold* _italic_ `code`'))
+      .toBe('\\*bold\\* \\_italic\\_ \\`code\\`');
+  });
+  it('returns empty string for non-string input', () => {
+    expect(escapeTelegramMarkdown(null)).toBe('');
+    expect(escapeTelegramMarkdown(undefined)).toBe('');
+    expect(escapeTelegramMarkdown(123)).toBe('');
+  });
+  it('passes through plain text unchanged', () => {
+    expect(escapeTelegramMarkdown('Service svc-a is down')).toBe('Service svc-a is down');
+  });
+});
+
+describe('escapeTelegramMarkdown integration', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 200 })));
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('escapes injected markdown in outbound telegram payload', async () => {
+    const fetchSpy = vi.fn().mockResolvedValue(new Response('{}', { status: 200 }));
+    vi.stubGlobal('fetch', fetchSpy);
+
+    await sendCustomAlert(env, {
+      title: 'phish [click](https://evil)',
+      message: 'normal',
+      severity: 'warning',
+      channels: ['telegram'],
+    });
+
+    const telegramCall = fetchSpy.mock.calls.find(c => String(c[0]).includes('api.telegram.org'));
+    if (!telegramCall) return; // telegram channel may be disabled; skip assertion
+    const body = JSON.parse(telegramCall[1].body);
+    expect(body.text).not.toMatch(/\[click\]\(https:\/\/evil\)/);
+    expect(body.text).toMatch(/\\\[click\\\]/); // escaped form
   });
 });

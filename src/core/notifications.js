@@ -12,6 +12,13 @@ export function normaliseSeverity(sev) {
   return (typeof sev === 'string' ? sev : 'warning').toLowerCase();
 }
 
+// Telegram legacy Markdown (parse_mode: 'Markdown') treats _ * ` [ as special.
+// Escape them in untrusted fields to prevent link/format injection.
+export function escapeTelegramMarkdown(s) {
+  if (typeof s !== 'string') return '';
+  return s.replace(/([_*`\[])/g, '\\$1');
+}
+
 /**
  * Render a template string with variables
  */
@@ -415,11 +422,11 @@ async function sendTelegramNotification(env, channel, eventType, serviceData) {
   const variables = prepareVariables(eventType, serviceData);
   const template = notificationsConfig.templates?.telegram || {};
   
-  const message = renderTemplate(template.message, variables) || 
+  const message = renderTemplate(template.message, variables) ||
     `${variables.emoji} *Service ${variables.eventType}*\n\n` +
-    `*Service:* ${variables.serviceName}\n` +
+    `*Service:* ${escapeTelegramMarkdown(variables.serviceName)}\n` +
     `*Status:* ${variables.eventType}\n` +
-    `*Last Seen:* ${variables.lastSeen}\n` +
+    `*Last Seen:* ${escapeTelegramMarkdown(variables.lastSeen)}\n` +
     `*Time:* ${variables.timestamp}`;
 
   const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
@@ -887,12 +894,12 @@ async function sendTelegramCustomAlert(env, channel, variables, template, alertD
     return;
   }
 
-  let message = `${variables.emoji} *${alertData.title}*\n\n`;
-  message += `${alertData.message}\n\n`;
-  message += `*Source:* ${alertData.source || 'External'}\n`;
-  message += `*Severity:* ${alertData.severity}\n`;
+  let message = `${variables.emoji} *${escapeTelegramMarkdown(alertData.title)}*\n\n`;
+  message += `${escapeTelegramMarkdown(alertData.message)}\n\n`;
+  message += `*Source:* ${escapeTelegramMarkdown(alertData.source || 'External')}\n`;
+  message += `*Severity:* ${escapeTelegramMarkdown(alertData.severity)}\n`;
   if (alertData.status) {
-    message += `*Status:* ${alertData.status}\n`;
+    message += `*Status:* ${escapeTelegramMarkdown(alertData.status)}\n`;
   }
   message += `*Time:* ${variables.timestamp}`;
 
