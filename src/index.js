@@ -23,16 +23,6 @@ import { testNotification } from './core/notifications.js';
 // Get UI config for dashboard
 const uiConfig = getUiConfig();
 
-/**
- * REMOVED: Functions now in modules
- * - buildServicesWithGroups() → config/loader.js
- * - handleHeartbeat() → handlers/heartbeat.js
- * - handleCustomAlert(), handleGetRecentAlerts(), storeRecentAlert(), cleanupAlerts() → handlers/alert.js
- * - handleGetStatus() → handlers/status.js
- * - handleGetUptime() → handlers/uptime.js
- * - checkHeartbeatStaleness(), updateMonitorData() → core/monitoring.js
- */
-
 // Build the merged services list (now imported from config/loader.js)
 const processedServices = buildServicesWithGroups();
 
@@ -165,28 +155,3 @@ export default {
     }
   }
 };
-
-/*
- * ============================================================================
- * FUNCTIONS EXTRACTED TO MODULES
- * ============================================================================
- * The following functions have been moved to separate modules for better
- * organization and maintainability:
- *
- * - handleHeartbeat() → src/handlers/heartbeat.js
- * - checkHeartbeatStaleness() → src/core/monitoring.js
- * - updateMonitorData() → src/core/monitoring.js
- * - storeRecentAlert() → src/handlers/alert.js
- * - cleanupAlerts() → src/handlers/alert.js
- * - handleCustomAlert() → src/handlers/alert.js
- * - handleGetRecentAlerts() → src/handlers/alert.js
- * - parseAlertmanagerPayload() → src/handlers/alert.js
- * - parseGrafanaPayload() → src/handlers/alert.js
- * - handleGetStatus() → src/handlers/status.js
- * - handleGetUptime() → src/handlers/uptime.js
- * - handleDashboard() → src/handlers/dashboard/index.js
- *
- * All functions are imported at the top of this file and used in the
- * export default routing above.
- * ============================================================================
- */
