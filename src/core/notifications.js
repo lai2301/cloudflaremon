@@ -4,6 +4,7 @@
  */
 
 import notificationsConfig from '../../config/notifications.json';
+import { appendAlert } from './alertStore.js';
 
 /**
  * Normalize severity: convert to lowercase, default to 'warning' if null/undefined/non-string
@@ -97,62 +98,32 @@ function prepareVariables(eventType, serviceData) {
 }
 
 /**
- * Check for status changes and send notifications
- */
-/**
- * Clean up old alerts based on configuration
- */
-function cleanupAlerts(alerts, config = {}) {
-  // Default settings
-  const maxAlerts = config.maxAlerts || 100;
-  const maxAgeDays = config.maxAgeDays || 7;
-  const now = Date.now();
-  const maxAgeMs = maxAgeDays * 24 * 60 * 60 * 1000;
-  
-  let cleaned = alerts;
-  
-  // Remove alerts older than maxAgeDays
-  cleaned = cleaned.filter(alert => {
-    const alertTime = new Date(alert.timestamp).getTime();
-    const age = now - alertTime;
-    return age < maxAgeMs;
-  });
-  
-  // Keep only last maxAlerts
-  if (cleaned.length > maxAlerts) {
-    cleaned = cleaned.slice(0, maxAlerts);
-  }
-  
-  return cleaned;
-}
-
-/**
  * Store service status change as a dashboard alert
  */
 async function storeServiceAlert(env, eventType, serviceData) {
   const timestamp = new Date().toISOString();
   const alertId = `alert:${Date.now()}:${Math.random().toString(36).substr(2, 9)}`;
-  
+
   // Map event type to severity
   const severityMap = {
     'down': 'critical',
     'up': 'info',
     'degraded': 'warning'
   };
-  
+
   // Create alert messages
   const titleMap = {
     'down': `Service Down: ${serviceData.serviceName}`,
     'up': `Service Recovered: ${serviceData.serviceName}`,
     'degraded': `Service Degraded: ${serviceData.serviceName}`
   };
-  
+
   const messageMap = {
     'down': `${serviceData.serviceName} is not responding. Last seen: ${serviceData.lastSeen ? new Date(serviceData.lastSeen).toLocaleString() : 'Never'}`,
     'up': `${serviceData.serviceName} has recovered and is now operational.`,
     'degraded': `${serviceData.serviceName} is experiencing degraded performance.`
   };
-  
+
   const alert = {
     id: alertId,
     title: titleMap[eventType] || `Service Status Change: ${serviceData.serviceName}`,
@@ -164,30 +135,10 @@ async function storeServiceAlert(env, eventType, serviceData) {
     serviceId: serviceData.serviceId,
     status: serviceData.status
   };
-  
-  try {
-    // Get existing alerts
-    const alertsJson = await env.HEARTBEAT_LOGS.get('recent:alerts');
-    let alerts = alertsJson ? JSON.parse(alertsJson) : [];
-    
-    // Add new alert at the beginning
-    alerts.unshift(alert);
-    
-    // Load alert history settings from config
-    const historyConfig = notificationsConfig?.settings?.alertHistory || {};
-    
-    // Clean up old/excess alerts if enabled
-    if (historyConfig.cleanupOnAdd !== false) {
-      alerts = cleanupAlerts(alerts, historyConfig);
-    }
-    
-    // Store back
-    await env.HEARTBEAT_LOGS.put('recent:alerts', JSON.stringify(alerts));
-    
-    console.log(`Stored dashboard alert: ${alert.title} (total: ${alerts.length})`);
-  } catch (error) {
-    console.error('Error storing service alert for dashboard:', error);
-  }
+
+  await appendAlert(env, alert);
+
+  console.log(`Stored dashboard alert: ${alert.title}`);
 }
 
 export async function checkAndSendNotifications(env, currentResults, monitorData, servicesConfig) {

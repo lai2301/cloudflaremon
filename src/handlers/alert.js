@@ -5,42 +5,15 @@
 
 import { timingSafeEqualStrings } from './heartbeat.js';
 import { corsHeaders } from '../core/cors.js';
-
-/**
- * Clean up old alerts based on configuration
- */
-export function cleanupAlerts(alerts, config = {}) {
-  // Default settings
-  const maxAlerts = config.maxAlerts || 100;
-  const maxAgeDays = config.maxAgeDays || 7;
-  const now = Date.now();
-  const maxAgeMs = maxAgeDays * 24 * 60 * 60 * 1000;
-  
-  let cleaned = alerts;
-  
-  // Remove alerts older than maxAgeDays
-  cleaned = cleaned.filter(alert => {
-    const alertTime = new Date(alert.timestamp).getTime();
-    const age = now - alertTime;
-    return age < maxAgeMs;
-  });
-  
-  // Keep only last maxAlerts
-  if (cleaned.length > maxAlerts) {
-    cleaned = cleaned.slice(0, maxAlerts);
-  }
-  
-  return cleaned;
-}
+import { appendAlert } from '../core/alertStore.js';
 
 /**
  * Store a recent alert for dashboard display
  */
-export async function storeRecentAlert(env, alertData) {
+async function storeRecentAlert(env, alertData) {
   const timestamp = new Date().toISOString();
   const alertId = `alert:${Date.now()}:${Math.random().toString(36).substr(2, 9)}`;
-  
-  // Create alert record
+
   const alert = {
     id: alertId,
     title: alertData.title,
@@ -50,27 +23,10 @@ export async function storeRecentAlert(env, alertData) {
     timestamp: timestamp,
     read: false
   };
-  
-  // Get existing alerts
-  const alertsJson = await env.HEARTBEAT_LOGS.get('recent:alerts');
-  let alerts = alertsJson ? JSON.parse(alertsJson) : [];
-  
-  // Add new alert at the beginning
-  alerts.unshift(alert);
-  
-  // Load notification config for alert history settings
-  const notificationsConfig = (await import('../../config/notifications.json')).default;
-  const historyConfig = notificationsConfig?.settings?.alertHistory || {};
-  
-  // Clean up old/excess alerts if enabled
-  if (historyConfig.cleanupOnAdd !== false) {
-    alerts = cleanupAlerts(alerts, historyConfig);
-  }
-  
-  // Store back
-  await env.HEARTBEAT_LOGS.put('recent:alerts', JSON.stringify(alerts));
-  
-  console.log(`Stored alert for dashboard: ${alertData.title} (total: ${alerts.length})`);
+
+  await appendAlert(env, alert);
+
+  console.log(`Stored alert for dashboard: ${alertData.title}`);
 }
 
 /**
