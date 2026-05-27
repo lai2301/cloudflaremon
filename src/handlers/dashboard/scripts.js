@@ -291,82 +291,47 @@ export function renderScripts({ uiConfig, processedServices, monitorData }) {
                 }
                 
                 if (!data.summary) {
-                    document.getElementById('overallStatus').innerHTML = \`
-                        <div class="status-indicator unknown"></div>
-                        <div class="status-text">
-                            <div class="status-title">No data available</div>
-                            <div class="status-description">Waiting for first status check...</div>
-                        </div>
-                    \`;
+                    const bannerEl = document.getElementById('overallStatus');
+                    bannerEl.className = 'status-banner status-banner--unknown';
+                    bannerEl.querySelector('.status-banner__title').textContent = 'No data available';
+                    bannerEl.querySelector('.status-banner__meta').textContent = 'Waiting for first status check...';
                     document.getElementById('servicesGroups').innerHTML = '<div class="loading"><p>No services data yet. Wait for the cron job to run.</p></div>';
-                    document.getElementById('statsGrid').style.display = 'none';
                     return;
                 }
 
                 const summary = data.summary;
-                const allUp = summary.servicesDown === 0 && summary.servicesDegraded === 0;
-                const hasIssues = summary.servicesDown > 0;
-                
-                // Get list of down services
-                const downServices = summary.results.filter(s => s.status === 'down');
-                const degradedServices = summary.results.filter(s => s.status === 'degraded');
-                
-                // Update overall status
-                const statusClass = hasIssues ? 'issues' : (summary.servicesDegraded > 0 ? 'degraded' : 'operational');
-                const statusTitle = hasIssues ? 'Some systems are down' : (summary.servicesDegraded > 0 ? 'Degraded performance' : 'All systems operational');
-                
-                let statusDesc = '';
-                if (hasIssues) {
-                    const downList = downServices.map(s => s.serviceName).join(', ');
-                    statusDesc = \`\${summary.servicesDown} service(s) down: \${downList}\`;
-                } else if (summary.servicesDegraded > 0) {
-                    const degradedList = degradedServices.map(s => s.serviceName).join(', ');
-                    statusDesc = \`\${summary.servicesDegraded} service(s) degraded: \${degradedList}\`;
-                } else {
-                    statusDesc = 'All monitored services are running normally';
-                }
-                
-                document.getElementById('overallStatus').innerHTML = \`
-                    <div class="status-indicator \${statusClass}"></div>
-                    <div class="status-text">
-                        <div class="status-title">\${statusTitle}</div>
-                        <div class="status-description">\${statusDesc}</div>
-                    </div>
-                    <div class="last-checked">
-                        Updated \${formatDuration(Date.now() - new Date(summary.timestamp).getTime())}
-                    </div>
-                \`;
+                const hasDown = summary.servicesDown > 0;
+                const hasDegraded = summary.servicesDegraded > 0;
 
-                // Update stats grid
-                document.getElementById('statsGrid').style.display = 'grid';
-                document.getElementById('statsGrid').innerHTML = \`
-                    <div class="stat-card">
-                        <div class="stat-value">\${summary.totalServices}</div>
-                        <div class="stat-label">Total</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value up">\${summary.servicesUp}</div>
-                        <div class="stat-label">Operational</div>
-                    </div>
-                    \${summary.servicesDegraded > 0 ? \`
-                    <div class="stat-card">
-                        <div class="stat-value degraded">\${summary.servicesDegraded}</div>
-                        <div class="stat-label">Degraded</div>
-                    </div>
-                    \` : ''}
-                    \${summary.servicesDown > 0 ? \`
-                    <div class="stat-card">
-                        <div class="stat-value down">\${summary.servicesDown}</div>
-                        <div class="stat-label">Down</div>
-                    </div>
-                    \` : ''}
-                    \${summary.servicesUnknown > 0 ? \`
-                    <div class="stat-card">
-                        <div class="stat-value unknown">\${summary.servicesUnknown}</div>
-                        <div class="stat-label">Unknown</div>
-                    </div>
-                    \` : ''}
-                \`;
+                // Determine aggregate state
+                let bannerState, bannerTitle;
+                if (hasDown) {
+                    bannerState = 'down';
+                    bannerTitle = 'Major outage detected';
+                } else if (hasDegraded) {
+                    bannerState = 'degraded';
+                    bannerTitle = 'Partial outage detected';
+                } else if (summary.totalServices > 0) {
+                    bannerState = 'up';
+                    bannerTitle = 'All systems operational';
+                } else {
+                    bannerState = 'unknown';
+                    bannerTitle = 'Status unknown';
+                }
+
+                // Update banner
+                const bannerEl = document.getElementById('overallStatus');
+                bannerEl.className = \`status-banner status-banner--\${bannerState}\`;
+                bannerEl.querySelector('.status-banner__title').textContent = bannerTitle;
+                bannerEl.querySelector('.status-banner__meta').textContent =
+                    'Updated ' + formatDuration(Date.now() - new Date(summary.timestamp).getTime());
+
+                // Update summary pills
+                document.querySelector('[data-stat="total"]').textContent   = summary.totalServices;
+                document.querySelector('[data-stat="up"]').textContent      = summary.servicesUp;
+                document.querySelector('[data-stat="degraded"]').textContent = summary.servicesDegraded;
+                document.querySelector('[data-stat="down"]').textContent    = summary.servicesDown;
+                document.querySelector('[data-stat="unknown"]').textContent = summary.servicesUnknown ?? 0;
                 
                 // Update services - fetch uptime data for each service
                 document.getElementById('servicesGroups').innerHTML = '<div class="loading"><p>Loading uptime data...</p></div>';
@@ -499,13 +464,10 @@ export function renderScripts({ uiConfig, processedServices, monitorData }) {
                 
             } catch (error) {
                 console.error('Error loading status:', error);
-                document.getElementById('overallStatus').innerHTML = \`
-                    <div class="status-indicator issues"></div>
-                    <div class="status-text">
-                        <div class="status-title">Error loading data</div>
-                        <div class="status-description">Failed to fetch status information. Check console for details.</div>
-                    </div>
-                \`;
+                const bannerEl = document.getElementById('overallStatus');
+                bannerEl.className = 'status-banner status-banner--down';
+                bannerEl.querySelector('.status-banner__title').textContent = 'Error loading data';
+                bannerEl.querySelector('.status-banner__meta').textContent = 'Failed to fetch status information. Check console for details.';
                 document.getElementById('servicesGroups').innerHTML = \`
                     <div class="loading">
                         <p>Error: \${error.message}</p>

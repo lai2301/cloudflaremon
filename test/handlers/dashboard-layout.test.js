@@ -107,4 +107,11 @@ describe('renderLayout', () => {
     expect(out).not.toContain('<script>');
     expect(out).not.toContain('</script>');
   });
+
+  it('renders the status banner shell and summary pills', () => {
+    const out = renderLayout(baseArgs);
+    expect(out).toContain('class="status-banner');
+    expect(out).toContain('data-stat="up"');
+    expect(out).toContain('summary-pill');
+  });
 });

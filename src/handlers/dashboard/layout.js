@@ -88,14 +88,20 @@ export function renderLayout({ uiConfig, processedServices, monitorData }) {
             ${uiConfig.customHtml.headerExtra}
         </header>
 
-        <div class="overall-status" id="overallStatus">
-            <div class="loading-spinner"></div>
-            <div class="status-text">
-                <div class="status-title">Loading status...</div>
-            </div>
-        </div>
+        <section id="overallStatus" class="status-banner status-banner--unknown" aria-live="polite">
+          <div class="status-banner__inner">
+            <div class="status-banner__title">Loading status...</div>
+            <div class="status-banner__meta">Fetching data...</div>
+          </div>
+        </section>
 
-        <div class="stats-grid" id="statsGrid" style="display: none;"></div>
+        <div id="statsGrid" class="summary-row">
+          <div class="summary-pill summary-pill--total"><span class="summary-pill__count" data-stat="total">0</span><span class="summary-pill__label">Total</span></div>
+          <div class="summary-pill summary-pill--up"><span class="summary-pill__count" data-stat="up">0</span><span class="summary-pill__label">Operational</span></div>
+          <div class="summary-pill summary-pill--degraded"><span class="summary-pill__count" data-stat="degraded">0</span><span class="summary-pill__label">Degraded</span></div>
+          <div class="summary-pill summary-pill--down"><span class="summary-pill__count" data-stat="down">0</span><span class="summary-pill__label">Down</span></div>
+          <div class="summary-pill summary-pill--unknown"><span class="summary-pill__count" data-stat="unknown">0</span><span class="summary-pill__label">Unknown</span></div>
+        </div>
 
         <div id="servicesGroups">
             <div class="loading">
