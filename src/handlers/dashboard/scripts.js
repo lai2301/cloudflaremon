@@ -1008,27 +1008,35 @@ export function renderScripts({ uiConfig, processedServices, monitorData }) {
         let allAlerts = [];
         let currentFilter = 'all';
         
-        async function openAlertHistory() {
-            const modal = document.getElementById('alertHistoryModal');
-            modal.classList.add('active');
-            
-            // Load alerts
-            await loadAlertHistory();
+        function openAlertHistory() {
+            const backdrop = document.getElementById('alertHistoryBackdrop');
+            const drawer = document.getElementById('alertHistoryModal');
+            backdrop.hidden = false; drawer.hidden = false;
+            requestAnimationFrame(() => {
+                backdrop.classList.add('is-open');
+                drawer.classList.add('is-open');
+            });
+            document.body.style.overflow = 'hidden';
+            loadAlertHistory();
         }
-        
+
         function closeAlertHistory() {
-            const modal = document.getElementById('alertHistoryModal');
-            modal.classList.remove('active');
+            const backdrop = document.getElementById('alertHistoryBackdrop');
+            const drawer = document.getElementById('alertHistoryModal');
+            backdrop.classList.remove('is-open');
+            drawer.classList.remove('is-open');
+            setTimeout(() => { backdrop.hidden = true; drawer.hidden = true; }, 250);
+            document.body.style.overflow = '';
         }
         
         async function loadAlertHistory() {
-            const bodyElement = document.getElementById('alertHistoryBody');
+            const bodyElement = document.getElementById('alertHistoryList');
             bodyElement.innerHTML = \`<div class="alert-history-empty"><div class="alert-history-empty-icon">\${ICONS.clock}</div><div>Loading alerts...</div></div>\`;
-            
+
             try {
                 const response = await fetch('/api/alerts/recent?limit=1000');
                 const data = await response.json();
-                
+
                 if (data.success) {
                     allAlerts = data.alerts || [];
                     renderAlertHistory();
@@ -1057,8 +1065,8 @@ export function renderScripts({ uiConfig, processedServices, monitorData }) {
         }
         
         function renderAlertHistory() {
-            const bodyElement = document.getElementById('alertHistoryBody');
-            
+            const bodyElement = document.getElementById('alertHistoryList');
+
             if (allAlerts.length === 0) {
                 bodyElement.innerHTML = \`<div class="alert-history-empty"><div class="alert-history-empty-icon">\${ICONS.inbox}</div><div>No alerts found</div></div>\`;
                 return;
@@ -1130,18 +1138,17 @@ export function renderScripts({ uiConfig, processedServices, monitorData }) {
         // Alert history button click handler
         document.getElementById('alertHistoryBtn')?.addEventListener('click', openAlertHistory);
         
-        // Close modal on backdrop click
-        document.getElementById('alertHistoryModal')?.addEventListener('click', (e) => {
-            if (e.target.id === 'alertHistoryModal') {
-                closeAlertHistory();
-            }
-        });
-        
-        // Close modal on Escape key
+        // Close drawer on backdrop click
+        document.getElementById('alertHistoryBackdrop')?.addEventListener('click', closeAlertHistory);
+
+        // Close drawer via close button
+        document.getElementById('alertHistoryClose')?.addEventListener('click', closeAlertHistory);
+
+        // Close drawer on Escape key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
-                const modal = document.getElementById('alertHistoryModal');
-                if (modal?.classList.contains('active')) {
+                const drawer = document.getElementById('alertHistoryModal');
+                if (drawer && !drawer.hidden && drawer.classList.contains('is-open')) {
                     closeAlertHistory();
                 }
             }

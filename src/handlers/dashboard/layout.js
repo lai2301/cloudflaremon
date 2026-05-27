@@ -5,29 +5,28 @@ export function renderLayout({ uiConfig, processedServices, monitorData }) {
     <!-- Alert Toast Container -->
     <div class="alert-toast-container" id="alertToastContainer"></div>
 
-    <!-- Alert History Modal -->
-    <div class="alert-history-modal" id="alertHistoryModal">
-        <div class="alert-history-content">
-            <div class="alert-history-header">
-                <h2>${icon('clipboard-list')} Alert History</h2>
-                <button class="alert-history-close" onclick="closeAlertHistory()" aria-label="Close">×</button>
-            </div>
-            <div class="alert-history-filters">
-                <button class="filter-btn active" data-filter="all" onclick="filterAlerts('all')">All</button>
-                <button class="filter-btn" data-filter="critical" onclick="filterAlerts('critical')">${icon('alert-octagon')} Critical</button>
-                <button class="filter-btn" data-filter="warning" onclick="filterAlerts('warning')">${icon('alert-triangle')} Warning</button>
-                <button class="filter-btn" data-filter="info" onclick="filterAlerts('info')">${icon('info')} Info</button>
-                <button class="filter-btn" data-filter="heartbeat-monitor" onclick="filterAlerts('heartbeat-monitor')">${icon('activity')} Service Status</button>
-                <button class="filter-btn" data-filter="external" onclick="filterAlerts('external')">${icon('radio')} External</button>
-            </div>
-            <div class="alert-history-body" id="alertHistoryBody">
-                <div class="alert-history-empty">
-                    <div class="alert-history-empty-icon">${icon('inbox', 'icon--xl')}</div>
-                    <div>Loading alerts...</div>
-                </div>
+    <!-- Alert History Drawer -->
+    <div id="alertHistoryBackdrop" class="drawer-backdrop" hidden></div>
+    <aside id="alertHistoryModal" class="drawer drawer--right" aria-modal="true" role="dialog" aria-labelledby="alertHistoryTitle" hidden>
+        <header class="drawer__header">
+            <h2 id="alertHistoryTitle" class="drawer__title">${icon('clipboard-list')} Alert History</h2>
+            <button id="alertHistoryClose" class="drawer__close" aria-label="Close" type="button">${icon('x')}</button>
+        </header>
+        <div class="drawer__filters">
+            <button class="filter-btn active" data-filter="all" onclick="filterAlerts('all')">All</button>
+            <button class="filter-btn" data-filter="critical" onclick="filterAlerts('critical')">${icon('alert-octagon')} Critical</button>
+            <button class="filter-btn" data-filter="warning" onclick="filterAlerts('warning')">${icon('alert-triangle')} Warning</button>
+            <button class="filter-btn" data-filter="info" onclick="filterAlerts('info')">${icon('info')} Info</button>
+            <button class="filter-btn" data-filter="heartbeat-monitor" onclick="filterAlerts('heartbeat-monitor')">${icon('activity')} Service Status</button>
+            <button class="filter-btn" data-filter="external" onclick="filterAlerts('external')">${icon('radio')} External</button>
+        </div>
+        <div id="alertHistoryList" class="drawer__list">
+            <div class="alert-history-empty">
+                <div class="alert-history-empty-icon">${icon('inbox', 'icon--xl')}</div>
+                <div>Loading alerts...</div>
             </div>
         </div>
-    </div>
+    </aside>
 
     <!-- App Bar -->
     <header class="appbar">
