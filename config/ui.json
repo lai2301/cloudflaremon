@@ -1,5 +1,5 @@
 {
-  "_notice": "⚠️ DEPRECATED: This file will be removed in a future version. Please migrate to dashboard.json + settings.json. See CONFIG_MIGRATION.md for details.",
+  "_notice": "DEPRECATED: This file will be removed in a future version. Please migrate to dashboard.json + settings.json. See CONFIG_MIGRATION.md for details.",
   "_migration": "The configuration has been split into two files for better organization: dashboard.json (UI/display) and settings.json (features/logic). Your existing ui.json still works but is no longer the recommended approach.",
   "header": {
     "title": "Service Monitor",
@@ -24,7 +24,7 @@
   },
   "branding": {
     "pageTitle": "Service Monitor Dashboard",
-    "favicon": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>📊</text></svg>",
+    "favicon": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23047857' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M22 12h-4l-3 9L9 3l-3 9H2'/></svg>",
     "primaryColor": "#3b82f6",
     "accentColor": "#10b981"
   },
