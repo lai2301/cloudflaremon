@@ -616,53 +616,54 @@ export function renderScripts({ uiConfig, processedServices, monitorData }) {
             return SEVERITY_FILTER.includes(alert.severity?.toLowerCase());
         }
         
-        function getSeverityIcon(severity) {
-            const icons = {
-                'critical': ICONS['alert-octagon'],
-                'error': ICONS.x,
-                'warning': ICONS['alert-triangle'],
-                'info': ICONS.info,
-                'success': ICONS.check
-            };
-            return icons[severity?.toLowerCase()] || ICONS.bell;
+        function mapSeverityClass(severity) {
+            const s = severity?.toLowerCase();
+            if (s === 'critical' || s === 'error') return 'critical';
+            if (s === 'warning') return 'warning';
+            if (s === 'info' || s === 'success') return 'info';
+            return 'service';
         }
-        
+
         function showToastNotification(alert) {
             // Check if toast notifications are enabled
             if (!ENABLE_TOAST_NOTIFICATIONS) return;
-            
+
             // Check if alert passes severity filter
             if (!shouldShowNotification(alert)) return;
-            
+
             const container = document.getElementById('alertToastContainer');
             if (!container) return;
-            
-            const toast = document.createElement('div');
-            toast.className = \`alert-toast severity-\${alert.severity}\`;
-            toast.innerHTML = \`
-                <div class="alert-toast-icon">\${getSeverityIcon(alert.severity)}</div>
-                <div class="alert-toast-content">
-                    <div class="alert-toast-title">\${alert.title}</div>
-                    <div class="alert-toast-message">\${alert.message}</div>
-                    <div class="alert-toast-time">\${new Date(alert.timestamp).toLocaleString()}</div>
+
+            const severityClass = mapSeverityClass(alert.severity);
+            const iconMap = {
+                critical: 'alert-octagon',
+                warning: 'alert-triangle',
+                info: 'info',
+                service: 'activity'
+            };
+            const iconKey = iconMap[severityClass] || 'info';
+
+            const div = document.createElement('div');
+            div.className = \`alert-toast alert-toast--\${severityClass}\`;
+            div.setAttribute('role', 'alert');
+            div.innerHTML = \`
+                <div class="alert-toast__bar"></div>
+                <div class="alert-toast__icon">\${ICONS[iconKey]}</div>
+                <div class="alert-toast__body">
+                    <div class="alert-toast__title">\${escapeHtml(alert.title || 'Alert')}</div>
+                    <div class="alert-toast__message">\${escapeHtml(alert.message || '')}</div>
                 </div>
-                <button class="alert-toast-close" onclick="closeToast(this.parentElement)">×</button>
+                <button class="alert-toast__close" aria-label="Dismiss" type="button">\${ICONS.x}</button>
             \`;
-            
-            container.appendChild(toast);
-            
+
+            div.querySelector('.alert-toast__close').addEventListener('click', () => div.remove());
+            container.appendChild(div);
+
             // Auto-dismiss after 10 seconds
             setTimeout(() => {
-                closeToast(toast);
+                div.remove();
             }, 10000);
         }
-        
-        window.closeToast = function(toast) {
-            toast.classList.add('closing');
-            setTimeout(() => {
-                toast.remove();
-            }, 300);
-        };
         
         function showBrowserNotification(alert) {
             // Check if browser notifications are enabled
