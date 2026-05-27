@@ -1259,5 +1259,10 @@ export function renderStyles(uiConfig) {
         
         /* Custom CSS from config */
         ${uiConfig.customCss}
+
+        /* Icon helper classes */
+        .icon { width: 1em; height: 1em; vertical-align: -0.125em; display: inline-block; flex-shrink: 0; }
+        .icon--lg { width: 1.25em; height: 1.25em; }
+        .icon--xl { width: 1.5em; height: 1.5em; }
     </style>`;
 }

@@ -1,5 +1,7 @@
+import { ICON_SYMBOLS } from './icons.js';
+
 export function renderLayout({ uiConfig, processedServices, monitorData }) {
-  return `
+  return `${ICON_SYMBOLS}
     <!-- Alert Toast Container -->
     <div class="alert-toast-container" id="alertToastContainer"></div>
 
