@@ -71,10 +71,10 @@ export function renderStyles(uiConfig) {
             /* Operator-overridable branding / theme tokens (dark) */
             --bg-primary: ${uiConfig.theme.colors.dark.primary};
             --bg-secondary: ${uiConfig.theme.colors.dark.secondary};
-            --bg-hover: #334155;
+            --bg-hover: #27272a;
             --text-primary: ${uiConfig.theme.colors.dark.text};
             --text-secondary: ${uiConfig.theme.colors.dark.textSecondary};
-            --text-tertiary: #94a3b8;
+            --text-tertiary: #71717a;
             --border-color: ${uiConfig.theme.colors.dark.border};
             --status-up: ${uiConfig.theme.colors.dark.statusUp};
             --status-up-bg: #064e3b;
@@ -88,19 +88,19 @@ export function renderStyles(uiConfig) {
             --status-unknown-bg: #374151;
             --status-unknown-text: #d1d5db;
 
-            /* Design token dark overrides - slate mono */
-            --up-fg:     #cbd5e1;
-            --up-bg:     #1e293b;
-            --up-border: #334155;
+            /* Design token dark overrides - zinc mono */
+            --up-fg:     #d4d4d8;
+            --up-bg:     #18181b;
+            --up-border: #27272a;
             --deg-fg:    #fcd34d;
             --deg-bg:    #451a03;
             --deg-border:#78350f;
             --down-fg:   #fda4af;
             --down-bg:   #4c0519;
             --down-border:#881337;
-            --unk-fg:    #94a3b8;
-            --unk-bg:    #1e293b;
-            --unk-border:#334155;
+            --unk-fg:    #a1a1aa;
+            --unk-bg:    #18181b;
+            --unk-border:#27272a;
             --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
             --shadow-md: 0 4px 12px rgba(0,0,0,.5);
         }

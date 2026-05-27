@@ -42,11 +42,11 @@
         "statusDegraded": "#f59e0b"
       },
       "dark": {
-        "primary": "#0f172a",
-        "secondary": "#1e293b",
-        "text": "#f8fafc",
-        "textSecondary": "#94a3b8",
-        "border": "#334155",
+        "primary": "#09090b",
+        "secondary": "#18181b",
+        "text": "#fafafa",
+        "textSecondary": "#a1a1aa",
+        "border": "#27272a",
         "statusUp": "#10b981",
         "statusDown": "#ef4444",
         "statusDegraded": "#f59e0b"
