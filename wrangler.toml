@@ -10,9 +10,14 @@ custom_domain = true
 binding = "HEARTBEAT_LOGS"
 id = "4bbad78883da446399f2cd8677b989ea"
 
-# Cron trigger - checks for stale heartbeats every 10 minutes
+# Cron trigger - checks for stale heartbeats every 10 minutes.
+# Offset by 1 minute (HH:01, HH:11, HH:21, ...) so heartbeat clients that
+# fire on HH:00 markers (K3s cronjob, systemd timers) write their per-service
+# `latest:<id>` keys before this worker aggregates them into monitor:latest.
+# Without the offset, a 4-second race between cron schedulers caused a full
+# 10-minute lag in the dashboard.
 [triggers]
-crons = ["*/10 * * * *"]
+crons = ["1-59/10 * * * *"]
 
 [observability]
 [observability.logs]
