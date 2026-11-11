@@ -12,7 +12,7 @@ import { withEnv, jsonRequest } from '../helpers/env.js';
 // gmk-m6 belongs to k3s-cluster group which has auth.required: true.
 // We use a wildcard API key so the auth path passes without extra complexity.
 const SERVICE_A = 'gmk-m6';
-const SERVICE_B = 'raspi4-8g';
+const SERVICE_B = 'hp-g6-1';
 const WILDCARD_KEY = 'testkey-race';
 const AUTH_HEADERS = { Authorization: `Bearer ${WILDCARD_KEY}` };
 
