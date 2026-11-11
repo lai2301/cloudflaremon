@@ -3,7 +3,7 @@
     {
       "id": "k3s-cluster",
       "name": "K3s Cluster",
-      "services": ["gmk-m6","raspi4-8g","um760"],
+      "services": ["gmk-m6","hp-g6-1","um760"],
       "uptimeThresholdSet": "strict",
       "stalenessThreshold": 900,
       "auth": {
@@ -23,8 +23,8 @@
       "enabled": true
     },
     {
-      "id": "raspi4-8g",
-      "name": "Raspberry Pi 4 8GB",
+      "id": "hp-g6-1",
+      "name": "HP EliteDesk 800 G6",
       "enabled": true
     },
     {
